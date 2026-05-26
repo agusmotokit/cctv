@@ -1290,7 +1290,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       {/* Video */}
       <div className="map-video-content" style={{ position: 'relative', overflow: 'hidden' }}>
         {/* Fullscreen Top Bar Overlay */}
-        {(isFullscreen || isRotated) && (
+        {(isFullscreen || isRotated) && !isMobileDevice && (
           <div className={`map-video-fullscreen-top-bar ${showControls ? 'active' : ''}`}>
             <div className="top-left">
               <span className="fullscreen-live-badge">
@@ -1921,7 +1921,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
       {/* Floating video player overlay */}
       {watchingCCTV && (watchingCCTV.id === 'bantul-14' || user) && (
         <div
-          className="map-video-backdrop"
+          className={`map-video-backdrop ${isPlayerFullscreen || isPlayerRotated ? 'active-fullscreen' : ''}`}
           onClick={() => {
             setIsPlayerFullscreen(false);
             setIsPlayerRotated(false);
@@ -2155,6 +2155,14 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           bottom: 0;
           z-index: 999;
           pointer-events: none; /* Let clicks pass through to Leaflet map */
+        }
+
+        .map-video-backdrop.active-fullscreen {
+          position: fixed !important;
+          inset: 0 !important;
+          z-index: 99999 !important;
+          pointer-events: auto !important;
+          background: #000000 !important;
         }
 
         .map-video-overlay {

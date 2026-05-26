@@ -602,7 +602,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       onMouseLeave={() => setShowControls(false)}
       onMouseMove={() => setShowControls(true)}
     >
-      {isRotated && (
+      {isRotated && !isMobileDevice && (
         <div className="cell-rotated-top-bar">
           <span className="cell-rotated-title">{cctv.name}</span>
           <button className="cell-rotated-close-btn" onClick={() => setIsRotated(false)}>
