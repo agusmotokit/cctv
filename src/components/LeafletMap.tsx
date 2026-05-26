@@ -2598,7 +2598,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         .map-video-overlay.fullscreen.rotated-landscape canvas,
         .map-video-overlay.rotated-landscape img,
         .map-video-overlay.fullscreen.rotated-landscape img {
-          object-fit: contain !important;
+          object-fit: fill !important;
           width: 100% !important;
           height: 100% !important;
         }

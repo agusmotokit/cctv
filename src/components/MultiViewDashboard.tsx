@@ -1124,7 +1124,7 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
         .multiview-cell-player.cell-rotated-landscape video,
         .multiview-cell-player.cell-rotated-landscape canvas,
         .multiview-cell-player.cell-rotated-landscape img {
-          object-fit: contain !important;
+          object-fit: fill !important;
           width: 100% !important;
           height: 100% !important;
         }
