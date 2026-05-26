@@ -1428,7 +1428,7 @@ const provinceCenters: Record<string, { lat: number; lng: number; zoom: number }
   'Sumatera Barat': { lat: -0.7399, lng: 100.8000, zoom: 8.5 },
   'Riau': { lat: 0.5070, lng: 101.4478, zoom: 9 },
   'Kepulauan Riau': { lat: 1.1301, lng: 104.0531, zoom: 9 },
-  'Semua Provinsi': { lat: -7.1612, lng: 112.6524, zoom: 10 }
+  'Semua Provinsi': { lat: -6.9908, lng: 110.4223, zoom: 12 }
 };
 
 const cityCenters: Record<string, { lat: number; lng: number; zoom: number }> = {
