@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, prefer-const, react-hooks/set-state-in-effect */
 import React, { useRef, useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Tooltip, ZoomControl } from 'react-leaflet';
 import * as L from 'leaflet';
 import Hls, { XhrLoader } from 'hls.js';
 import { type User } from 'firebase/auth';
@@ -1734,11 +1734,13 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         zoom={zoom} 
         scrollWheelZoom={true}
         maxZoom={19}
+        zoomControl={false}
         style={{ height: '100%', width: '100%' }}
       >
         <MapController lat={lat} lng={lng} zoom={zoom} />
         <MapBoundsTracker onBoundsChange={setMapBounds} onZoomChange={setCurrentZoom} />
         <PopupCloser watching={watchingCCTV} />
+        <ZoomControl position="bottomright" />
         {/* OpenStreetMap Standard Light TileLayer */}
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -2004,14 +2006,14 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           right: 0;
           bottom: 0;
           z-index: 999;
-          cursor: pointer;
+          pointer-events: none; /* Let clicks pass through to Leaflet map */
         }
 
         .map-video-overlay {
           position: absolute;
-          top: 50%;
+          top: 24px; /* Center-top position */
           left: 50%;
-          transform: translate(-50%, -50%);
+          transform: translate(-50%, 0);
           width: 560px;
           max-width: calc(100% - 48px);
           z-index: 1000;
@@ -2021,16 +2023,17 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
           overflow: hidden;
           animation: slideInVideo 0.3s ease-out;
+          pointer-events: auto; /* Make the player overlay interactive */
         }
 
         @keyframes slideInVideo {
           from {
             opacity: 0;
-            transform: translate(-50%, -50%) translateY(-12px) scale(0.96);
+            transform: translate(-50%, 0) translateY(-12px) scale(0.96);
           }
           to {
             opacity: 1;
-            transform: translate(-50%, -50%) translateY(0) scale(1);
+            transform: translate(-50%, 0) translateY(0) scale(1);
           }
         }
 
