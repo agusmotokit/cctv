@@ -240,7 +240,12 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     initialPan: { x: 0, y: 0 },
     initialCenter: { x: 0, y: 0 },
     isPinching: false,
-    isPanning: false
+    isPanning: false,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0,
+    isSwipe: false
   });
 
   // Sync refs with state changes
@@ -279,6 +284,25 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
   useEffect(() => {
     onRotationChange?.(isRotated);
   }, [isRotated, onRotationChange]);
+
+  // Back button handling on mobile when rotated
+  useEffect(() => {
+    if (!isRotated) return;
+
+    window.history.pushState({ rotated: true }, '');
+
+    const handlePopState = () => {
+      setIsRotated(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      if (window.history.state && window.history.state.rotated) {
+        window.history.back();
+      }
+    };
+  }, [isRotated]);
 
   // Keep panOffset clamped within the allowed bounds whenever scale changes
   useEffect(() => {
@@ -319,16 +343,27 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           setIsTouching(true);
           state.isPanning = true;
           state.isPinching = false;
+          state.isSwipe = false;
           state.initialCenter = {
             x: e.touches[0].clientX,
             y: e.touches[0].clientY
           };
           state.initialPan = { ...currentPan };
+        } else {
+          setIsTouching(true);
+          state.isPanning = false;
+          state.isPinching = false;
+          state.isSwipe = true;
+          state.startX = e.touches[0].clientX;
+          state.startY = e.touches[0].clientY;
+          state.currentX = e.touches[0].clientX;
+          state.currentY = e.touches[0].clientY;
         }
       } else if (e.touches.length === 2) {
         setIsTouching(true);
         state.isPinching = true;
         state.isPanning = false;
+        state.isSwipe = false;
         
         const t1 = e.touches[0];
         const t2 = e.touches[1];
@@ -401,13 +436,43 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           x: boundedX,
           y: boundedY
         });
+      } else if (state.isSwipe && e.touches.length === 1 && currentScale === 1) {
+        const clientY = e.touches[0].clientY;
+        const dy = clientY - state.startY;
+        if (Math.abs(dy) > 10) {
+          if (e.cancelable) e.preventDefault();
+        }
+        state.currentX = e.touches[0].clientX;
+        state.currentY = e.touches[0].clientY;
       }
     };
 
     const onTouchEnd = () => {
       setIsTouching(false);
+      const currentScale = zoomScaleRef.current;
+      
+      if (state.isSwipe && currentScale === 1) {
+        const dx = state.currentX - state.startX;
+        const dy = state.currentY - state.startY;
+        
+        // If it's a significant vertical swipe
+        if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx)) {
+          if (dy < 0) {
+            // Swipe Up -> Rotate to landscape
+            setIsRotated(true);
+          } else {
+            // Swipe Down -> Return to portrait
+            setIsRotated(false);
+          }
+        } else if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+          // It's a tap
+          togglePlay();
+        }
+      }
+
       state.isPinching = false;
       state.isPanning = false;
+      state.isSwipe = false;
     };
 
     el.addEventListener('touchstart', onTouchStart, { passive: true });
@@ -1306,8 +1371,16 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           )}
         </div>
 
+        {isMobileDevice && isLoaded && !hasError && !isPlaying && (
+          <div className="mobile-play-overlay" onClick={togglePlay}>
+            <div className="mobile-play-btn">
+              <Play size={24} fill="currentColor" />
+            </div>
+          </div>
+        )}
+
         {/* Floating controls HUD that appears on hover */}
-        {isLoaded && !hasError && (
+        {isLoaded && !hasError && !isMobileDevice && (
           <div className={`map-video-hud ${showControls || !isPlaying ? 'active' : ''}`}>
             <div className="map-hud-controls-bar">
               <div className="controls-left">
@@ -2553,6 +2626,34 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           .hud-btn.snapshot-btn span {
             display: none;
           }
+        }
+
+        .mobile-play-overlay {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.35);
+          z-index: 10;
+          cursor: pointer;
+        }
+
+        .mobile-play-btn {
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.25);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .mobile-play-btn svg {
+          margin-left: 3px;
         }
       `}</style>
     </div>

@@ -5,6 +5,8 @@ import JSMpeg from '@cycjimmy/jsmpeg-player';
 import { type CCTV } from '../data/cctvData';
 import { Heart, Map, Volume2, VolumeX, X, AlertTriangle, Play, Pause, Camera, Maximize } from 'lucide-react';
 
+const isMobileDevice = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
 // Lightweight player component for a single grid slot
 interface MultiVideoCellPlayerProps {
   cctv: CCTV;
@@ -34,7 +36,16 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
   const [isPlaying, setIsPlaying] = useState(true);
   const [volume, setVolume] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isRotated, setIsRotated] = useState(false);
   const [showControls, setShowControls] = useState(false);
+
+  const touchStateRef = useRef({
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0,
+    isSwipe: false
+  });
 
   useEffect(() => {
     let active = true;
@@ -464,6 +475,85 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
     return () => clearTimeout(timer);
   }, [showControls, isPlaying]);
 
+  // Back button handling on mobile when rotated
+  useEffect(() => {
+    if (!isRotated) return;
+
+    window.history.pushState({ cellRotated: true }, '');
+
+    const handlePopState = () => {
+      setIsRotated(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      if (window.history.state && window.history.state.cellRotated) {
+        window.history.back();
+      }
+    };
+  }, [isRotated]);
+
+  // Touch swipe & tap gestures for cell player
+  useEffect(() => {
+    const el = cellContainerRef.current;
+    if (!el) return;
+
+    const state = touchStateRef.current;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        state.isSwipe = true;
+        state.startX = e.touches[0].clientX;
+        state.startY = e.touches[0].clientY;
+        state.currentX = e.touches[0].clientX;
+        state.currentY = e.touches[0].clientY;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (state.isSwipe && e.touches.length === 1) {
+        const clientY = e.touches[0].clientY;
+        const dy = clientY - state.startY;
+        if (Math.abs(dy) > 10) {
+          if (e.cancelable) e.preventDefault();
+        }
+        state.currentX = e.touches[0].clientX;
+        state.currentY = e.touches[0].clientY;
+      }
+    };
+
+    const onTouchEnd = () => {
+      if (state.isSwipe) {
+        const dx = state.currentX - state.startX;
+        const dy = state.currentY - state.startY;
+
+        if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx)) {
+          if (dy < 0) {
+            setIsRotated(true);
+          } else {
+            setIsRotated(false);
+          }
+        } else if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+          togglePlay();
+        }
+      }
+      state.isSwipe = false;
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [togglePlay]);
+
   // Take snapshot
   const takeSnapshot = useCallback(() => {
     if (isMjpeg) {
@@ -506,18 +596,29 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
 
   return (
     <div
-      className={`multiview-cell-player ${isFullscreen ? 'cell-fullscreen' : ''}`}
+      className={`multiview-cell-player ${isFullscreen ? 'cell-fullscreen' : ''} ${isRotated ? 'cell-rotated-landscape' : ''}`}
       ref={cellContainerRef}
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
       onMouseMove={() => setShowControls(true)}
     >
-      <div className="cell-header">
-        <span className="cell-title">{cctv.name}</span>
-        <button className="cell-btn remove-btn" onClick={onClear} title="Hapus dari slot">
-          <X size={12} />
-        </button>
-      </div>
+      {isRotated && (
+        <div className="cell-rotated-top-bar">
+          <span className="cell-rotated-title">{cctv.name}</span>
+          <button className="cell-rotated-close-btn" onClick={() => setIsRotated(false)}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {!isRotated && (
+        <div className="cell-header">
+          <span className="cell-title">{cctv.name}</span>
+          <button className="cell-btn remove-btn" onClick={onClear} title="Hapus dari slot">
+            <X size={12} />
+          </button>
+        </div>
+      )}
       
       <div className="cell-content">
         {!isLoaded && !hasError && (
@@ -566,8 +667,16 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
           />
         )}
 
+        {isMobileDevice && isLoaded && !hasError && !isPlaying && (
+          <div className="mobile-play-overlay" onClick={togglePlay}>
+            <div className="mobile-play-btn">
+              <Play size={24} fill="currentColor" />
+            </div>
+          </div>
+        )}
+
         {/* HUD Controls overlay */}
-        {isLoaded && !hasError && (
+        {isLoaded && !hasError && !isMobileDevice && (
           <div className={`cell-hud ${showControls || !isPlaying ? 'active' : ''}`}>
             <div className="cell-hud-bar">
               <div className="cell-hud-left">
@@ -983,6 +1092,96 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
           z-index: 9999;
           border-radius: 0;
           background: #000;
+        }
+
+        .multiview-cell-player.cell-rotated-landscape {
+          position: fixed !important;
+          top: 50% !important;
+          left: 50% !important;
+          width: 100vh !important;
+          height: 100vw !important;
+          max-width: 100vh !important;
+          max-height: 100vw !important;
+          transform: translate(-50%, -50%) rotate(90deg) !important;
+          transform-origin: center center !important;
+          z-index: 99999 !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          border: none !important;
+          margin: 0 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          background: #000000 !important;
+        }
+
+        .multiview-cell-player.cell-rotated-landscape .cell-content {
+          width: 100% !important;
+          height: 100% !important;
+          flex: 1 !important;
+          aspect-ratio: auto !important;
+        }
+
+        .cell-rotated-top-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 16px;
+          background: rgba(0, 0, 0, 0.6);
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 100;
+        }
+
+        .cell-rotated-title {
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: #fff;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .cell-rotated-close-btn {
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          background: rgba(0, 0, 0, 0.4);
+          color: #fff;
+          width: 28px;
+          height: 28px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+
+        .mobile-play-overlay {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.35);
+          z-index: 10;
+          cursor: pointer;
+        }
+
+        .mobile-play-btn {
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.25);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .mobile-play-btn svg {
+          margin-left: 3px;
         }
 
         .cell-header {
