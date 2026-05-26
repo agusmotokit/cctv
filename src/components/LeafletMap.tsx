@@ -1408,6 +1408,8 @@ const CCTVMarker = React.memo<CCTVMarkerProps>(({
   );
 });
 
+const isMobileDevice = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
 CCTVMarker.displayName = 'CCTVMarker';
 
 export const LeafletMap: React.FC<LeafletMapProps> = ({
@@ -1434,8 +1436,16 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     if (!mapBounds) return cctvs;
     // Pad bounds by 10% to pre-render markers just outside the view for smooth dragging
     const paddedBounds = mapBounds.pad(0.1);
-    return cctvs.filter((cctv) => paddedBounds.contains([cctv.lat, cctv.lng]));
-  }, [cctvs, mapBounds]);
+    const inBounds = cctvs.filter((cctv) => paddedBounds.contains([cctv.lat, cctv.lng]));
+
+    // Thin out markers at low zoom levels to keep the map fast & responsive, especially on mobile
+    const maxMarkers = isMobileDevice ? 150 : 250;
+    if (inBounds.length > maxMarkers && currentZoom < 12) {
+      const step = Math.ceil(inBounds.length / maxMarkers);
+      return inBounds.filter((_, index) => index % step === 0);
+    }
+    return inBounds;
+  }, [cctvs, mapBounds, currentZoom]);
 
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number; zoom: number }>(() => {
     if (selectedCity && selectedCity !== 'Semua Kota' && cityCenters[selectedCity]) {
@@ -1563,7 +1573,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
             onToggleFavorite={handleToggleFavorite}
             onHover={handleHover}
             showDotOnly={currentZoom < 13}
-            showAnimation={currentZoom > 10}
+            showAnimation={!isMobileDevice && currentZoom > 11}
             user={user}
             onEdit={onEditCCTV}
             onDelete={onDeleteCCTV}

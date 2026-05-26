@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import fs from 'fs';
 import path from 'path';
@@ -15,6 +16,9 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Enable Gzip/Brotli compression for performance optimization
+app.use(compression());
 
 // Enable CORS for frontend development
 app.use(cors());
