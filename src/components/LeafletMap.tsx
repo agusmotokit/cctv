@@ -248,6 +248,11 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     panOffsetRef.current = panOffset;
   }, [panOffset]);
 
+  const isRotatedRef = useRef(false);
+  useEffect(() => {
+    isRotatedRef.current = isRotated;
+  }, [isRotated]);
+
   // Reset rotation, zoom and pan when CCTV changes
   useEffect(() => {
     setIsRotated(false);
@@ -334,11 +339,24 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         const dy = clientY - state.initialCenter.y;
         
         const rect = el.getBoundingClientRect();
-        const maxPanX = (rect.width * (currentScale - 1)) / (2 * currentScale);
-        const maxPanY = (rect.height * (currentScale - 1)) / (2 * currentScale);
+        const elementWidth = isRotatedRef.current ? rect.height : rect.width;
+        const elementHeight = isRotatedRef.current ? rect.width : rect.height;
+
+        const maxPanX = (elementWidth * (currentScale - 1)) / (2 * currentScale);
+        const maxPanY = (elementHeight * (currentScale - 1)) / (2 * currentScale);
         
-        const targetX = state.initialPan.x + dx / currentScale;
-        const targetY = state.initialPan.y + dy / currentScale;
+        let targetX = state.initialPan.x;
+        let targetY = state.initialPan.y;
+
+        if (isRotatedRef.current) {
+          // Rotated 90deg: screen X (dx) maps to local Y (inverted), screen Y (dy) maps to local X
+          targetX = state.initialPan.x + dy / currentScale;
+          targetY = state.initialPan.y - dx / currentScale;
+        } else {
+          // Portrait: standard mapping
+          targetX = state.initialPan.x + dx / currentScale;
+          targetY = state.initialPan.y + dy / currentScale;
+        }
         
         const boundedX = Math.min(Math.max(targetX, -maxPanX), maxPanX);
         const boundedY = Math.min(Math.max(targetY, -maxPanY), maxPanY);
