@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
+import { MultiViewDashboard } from './components/MultiViewDashboard';
 import { type CCTV } from './data/cctvData';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth } from './firebase';
@@ -28,8 +29,8 @@ export const App: React.FC = () => {
   const [selectedProvince, setSelectedProvince] = useState<string>('DI Yogyakarta');
   const [selectedCity, setSelectedCity] = useState<string>('Kab. Bantul');
   const [showOnlyOnline, setShowOnlyOnline] = useState<boolean>(false);
-  const [activeFilterFavorites, setActiveFilterFavorites] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(true);
+  const [viewMode, setViewMode] = useState<'map' | 'multiview'>('map');
 
   // Play Camera Action (Used to center/track active map selection)
   const [playingCCTV, setPlayingCCTV] = useState<CCTV | null>(null);
@@ -98,9 +99,8 @@ export const App: React.FC = () => {
     const matchesProvince = selectedProvince === 'Semua Provinsi' || cctv.province === selectedProvince;
     const matchesCity = selectedCity === 'Semua Kota' || cctv.city === selectedCity;
     const matchesOnline = !showOnlyOnline || cctv.status === 'online';
-    const matchesFavorites = !activeFilterFavorites || favorites.includes(cctv.id);
 
-    return matchesCountry && matchesSearch && matchesProvince && matchesCity && matchesOnline && matchesFavorites;
+    return matchesCountry && matchesSearch && matchesProvince && matchesCity && matchesOnline;
   });
 
   // Statistics
@@ -307,32 +307,42 @@ export const App: React.FC = () => {
         onLogout={handleLogout}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
       />
 
       <main className="main-content">
-        {/* View Workspace */}
         <div className="view-workspace">
-          <div className="map-layout">
-            <Suspense fallback={
-              <div className="map-loading-placeholder">
-                <div className="spinner"></div>
-                <span>Memuat Peta Pemantauan...</span>
-              </div>
-            }>
-              <LeafletMap
-                cctvs={filteredCCTVs}
-                onSelectCCTV={handlePlayCCTV}
-                selectedCCTV={playingCCTV}
-                favorites={favorites}
-                onToggleFavorite={toggleFavorite}
-                selectedProvince={selectedProvince}
-                selectedCity={selectedCity}
-                user={user}
-                onEditCCTV={handleOpenEditCCTV}
-                onDeleteCCTV={handleDeleteCCTV}
-              />
-            </Suspense>
-          </div>
+          {viewMode === 'multiview' ? (
+            <MultiViewDashboard
+              cctvs={cctvs}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+              onBackToMap={() => setViewMode('map')}
+            />
+          ) : (
+            <div className="map-layout">
+              <Suspense fallback={
+                <div className="map-loading-placeholder">
+                  <div className="spinner"></div>
+                  <span>Memuat Peta Pemantauan...</span>
+                </div>
+              }>
+                <LeafletMap
+                  cctvs={filteredCCTVs}
+                  onSelectCCTV={handlePlayCCTV}
+                  selectedCCTV={playingCCTV}
+                  favorites={favorites}
+                  onToggleFavorite={toggleFavorite}
+                  selectedProvince={selectedProvince}
+                  selectedCity={selectedCity}
+                  user={user}
+                  onEditCCTV={handleOpenEditCCTV}
+                  onDeleteCCTV={handleDeleteCCTV}
+                />
+              </Suspense>
+            </div>
+          )}
         </div>
 
         <Sidebar
@@ -347,8 +357,6 @@ export const App: React.FC = () => {
           setSelectedCity={setSelectedCity}
           showOnlyOnline={showOnlyOnline}
           setShowOnlyOnline={setShowOnlyOnline}
-          activeFilterFavorites={activeFilterFavorites}
-          setActiveFilterFavorites={setActiveFilterFavorites}
           totalCount={totalCount}
           onlineCount={onlineCount}
           offlineCount={offlineCount}

@@ -15,8 +15,7 @@ interface SidebarProps {
   setSelectedCity: (city: string) => void;
   showOnlyOnline: boolean;
   setShowOnlyOnline: (onlyOnline: boolean) => void;
-  activeFilterFavorites: boolean;
-  setActiveFilterFavorites: (filterFavs: boolean) => void;
+
   totalCount: number;
   onlineCount: number;
   offlineCount: number;
@@ -36,8 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setSelectedCity,
   showOnlyOnline,
   setShowOnlyOnline,
-  activeFilterFavorites,
-  setActiveFilterFavorites,
+
   totalCount,
   onlineCount,
   offlineCount,
@@ -50,7 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setSelectedProvince('Semua Provinsi');
     setSelectedCity('Semua Kota');
     setShowOnlyOnline(false);
-    setActiveFilterFavorites(false);
+
   };
 
   const availableCities = citiesByProvince[selectedProvince] || [];
@@ -173,18 +171,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
             <span className="checkmark"></span>
             <span className="toggle-text">Hanya CCTV Online</span>
-          </label>
-
-          <label className="toggle-container">
-            <input
-              id="toggle-favorites-only"
-              type="checkbox"
-              checked={activeFilterFavorites}
-              onChange={(e) => setActiveFilterFavorites(e.target.checked)}
-              aria-label="Tampilkan Terfavorit"
-            />
-            <span className="checkmark"></span>
-            <span className="toggle-text">Tampilkan Terfavorit</span>
           </label>
         </div>
       </div>

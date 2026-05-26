@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Menu, LogOut, LogIn, Search } from 'lucide-react';
+import { Camera, Menu, LogOut, LogIn, Search, Heart } from 'lucide-react';
 import { type User } from 'firebase/auth';
 
 interface NavbarProps {
@@ -10,6 +10,8 @@ interface NavbarProps {
   onLogout: () => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  viewMode: 'map' | 'multiview';
+  setViewMode: (mode: 'map' | 'multiview') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -19,7 +21,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onAuthClick,
   onLogout,
   searchQuery,
-  setSearchQuery
+  setSearchQuery,
+  viewMode,
+  setViewMode
 }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
@@ -77,6 +81,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           )}
         </div>
+
+        {/* Favorites Multi-View Toggle */}
+        <button
+          id="nav-btn-favorites-toggle"
+          className={`favorites-toggle-btn ${viewMode === 'multiview' ? 'active' : ''}`}
+          onClick={() => setViewMode(viewMode === 'map' ? 'multiview' : 'map')}
+          title={viewMode === 'map' ? 'Buka Multi-View Favorit' : 'Kembali ke Peta'}
+          aria-label={viewMode === 'map' ? 'Buka Multi-View Favorit' : 'Kembali ke Peta'}
+        >
+          <Heart size={16} />
+        </button>
 
         {user ? (
           <>
@@ -379,6 +394,45 @@ export const Navbar: React.FC<NavbarProps> = ({
           background: var(--accent-blue-glow);
           border-color: var(--border-color-active);
           color: var(--accent-blue);
+        }
+
+        .favorites-toggle-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid var(--border-color);
+          color: var(--text-primary);
+          width: 38px;
+          height: 38px;
+          border-radius: var(--radius-sm);
+          cursor: pointer;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+        }
+
+        .favorites-toggle-btn:hover {
+          color: #f87171;
+          border-color: rgba(239, 68, 68, 0.3);
+          background: rgba(239, 68, 68, 0.08);
+        }
+
+        .favorites-toggle-btn.active {
+          color: #fff;
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+          border-color: #ef4444;
+          box-shadow: 0 0 16px rgba(239, 68, 68, 0.35), 0 2px 8px rgba(239, 68, 68, 0.2);
+          animation: favoritesPulse 2s infinite;
+        }
+
+        .favorites-toggle-btn.active:hover {
+          background: linear-gradient(135deg, #dc2626, #b91c1c);
+          box-shadow: 0 0 20px rgba(239, 68, 68, 0.45), 0 2px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        @keyframes favoritesPulse {
+          0%, 100% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.35), 0 2px 8px rgba(239, 68, 68, 0.2); }
+          50% { box-shadow: 0 0 22px rgba(239, 68, 68, 0.5), 0 2px 12px rgba(239, 68, 68, 0.35); }
         }
 
         .search-popup-dropdown {
