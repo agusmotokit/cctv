@@ -345,8 +345,8 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         const maxPanX = (elementWidth * (currentScale - 1)) / (2 * currentScale);
         const maxPanY = (elementHeight * (currentScale - 1)) / (2 * currentScale);
         
-        let targetX = state.initialPan.x;
-        let targetY = state.initialPan.y;
+        let targetX: number;
+        let targetY: number;
 
         if (isRotatedRef.current) {
           // Rotated 90deg: screen X (dx) maps to local Y (inverted), screen Y (dy) maps to local X
