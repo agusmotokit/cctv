@@ -338,9 +338,10 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         const dx = clientX - state.initialCenter.x;
         const dy = clientY - state.initialCenter.y;
         
-        const rect = el.getBoundingClientRect();
-        const elementWidth = isRotatedRef.current ? rect.height : rect.width;
-        const elementHeight = isRotatedRef.current ? rect.width : rect.height;
+        const width = el.clientWidth;
+        const height = el.clientHeight;
+        const elementWidth = isRotatedRef.current ? height : width;
+        const elementHeight = isRotatedRef.current ? width : height;
 
         const maxPanX = (elementWidth * (currentScale - 1)) / (2 * currentScale);
         const maxPanY = (elementHeight * (currentScale - 1)) / (2 * currentScale);
