@@ -1277,9 +1277,11 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
             >
               <Heart size={14} fill={isFavorite ? "currentColor" : "none"} />
             </button>
-            <button className="map-video-btn" onClick={toggleFullscreen} title="Layar Penuh" aria-label="Layar Penuh">
-              <Maximize size={14} />
-            </button>
+            {!isMobileDevice && (
+              <button className="map-video-btn" onClick={toggleFullscreen} title="Layar Penuh" aria-label="Layar Penuh">
+                <Maximize size={14} />
+              </button>
+            )}
             <button className="map-video-btn map-video-close" onClick={onClose} title="Tutup" aria-label="Tutup pemutar">
               <X size={16} />
             </button>
