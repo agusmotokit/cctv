@@ -14,11 +14,7 @@ interface MultiVideoCellPlayerProps {
 const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onClear }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const jsmpegCanvasRef = useRef<HTMLDivElement>(null);
-  const jsmpegPlayerRef = useRef<any>(null);
-  
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const jsmpegPlayerRef = useRef<{ destroy?: () => void } | null>(null);
 
   const isMjpeg = cctv.streamUrl.includes('nph-zms') || cctv.streamUrl.includes('cgi-bin/nph-zms') || cctv.streamUrl.includes('jombangkab.go.id');
   const isJsmpeg = cctv.streamUrl.includes('streamer-jsmpeg') || cctv.streamUrl.includes('villabs.id/streamer');
@@ -28,21 +24,22 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
   const isMp4 = cctv.streamUrl.includes('.mp4');
   const isPurwakarta = cctv.id.startsWith('purwakarta-');
 
+  // Compute initial error/loaded state synchronously (not inside useEffect)
+  const isInitiallyOffline = cctv.status === 'offline' || (isIframe && (cctv.streamUrl === 'https://www.youtube.com/embed/' || cctv.streamUrl.endsWith('/embed/') || cctv.streamUrl === ''));
+
+  const [isLoaded, setIsLoaded] = useState(isInitiallyOffline);
+  const [hasError, setHasError] = useState(isInitiallyOffline);
+  const [isMuted, setIsMuted] = useState(true);
+
   useEffect(() => {
     let active = true;
     const cleanups: (() => void)[] = [];
 
-    if (cctv.status === 'offline' || (isIframe && (cctv.streamUrl === 'https://www.youtube.com/embed/' || cctv.streamUrl.endsWith('/embed/') || cctv.streamUrl === ''))) {
-      setHasError(true);
-      setIsLoaded(true);
-      return;
-    }
+    if (isInitiallyOffline) return;
 
     if (isMjpeg) return;
 
     if (isIframe) {
-      setHasError(false);
-      setIsLoaded(false);
       return;
     }
 
@@ -52,7 +49,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       wrapper.innerHTML = '';
 
       try {
-        const player = new (JSMpeg as any).VideoElement(
+        const player = new (JSMpeg as unknown as { VideoElement: new (...args: unknown[]) => { destroy?: () => void } }).VideoElement(
           wrapper,
           cctv.streamUrl,
           {
@@ -110,7 +107,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       let ws: WebSocket | null = null;
       let ms: MediaSource | null = null;
       let sb: SourceBuffer | null = null;
-      let reconnectTID: any = null;
+      let reconnectTID: ReturnType<typeof setTimeout> | null = null;
       let isPlayingStarted = false;
       const buffer = new Uint8Array(2 * 1024 * 1024);
       let bufferLength = 0;
@@ -137,7 +134,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
         try {
           video.src = '';
           video.srcObject = null;
-        } catch {}
+        } catch { /* ignore cleanup errors */ }
       };
 
       const connect = () => {
@@ -177,7 +174,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
                       }
                     }
                   });
-                } catch {}
+                } catch { /* ignore addSourceBuffer errors */ }
               }
             } else if (sb) {
               if (!isPlayingStarted) {
@@ -194,7 +191,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
               } else {
                 try {
                   sb.appendBuffer(event.data);
-                } catch {}
+                } catch { /* ignore appendBuffer errors */ }
               }
             }
           };
@@ -384,11 +381,11 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
           flvPlayer.unload();
           flvPlayer.detachMediaElement();
           flvPlayer.destroy();
-        } catch {}
+        } catch { /* ignore flv cleanup errors */ }
       }
       if (video) video.src = '';
     };
-  }, [cctv, isFlv, isIframe, isJsmpeg, isMjpeg, isMp4, isPurwakarta]);
+  }, [cctv, isFlv, isIframe, isInitiallyOffline, isJsmpeg, isMjpeg, isMp4, isPurwakarta]);
 
   const toggleMute = () => {
     if (isMjpeg || isIframe || isJsmpeg) return;
@@ -469,14 +466,12 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
 interface MultiViewDashboardProps {
   cctvs: CCTV[];
   favorites: string[];
-  onToggleFavorite: (id: string) => void;
   onBackToMap: () => void;
 }
 
 export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
   cctvs,
   favorites,
-  onToggleFavorite: _onToggleFavorite,
   onBackToMap
 }) => {
   const [gridSize, setGridSize] = useState<2 | 3 | 4>(2); // 2x2, 3x3, 4x4
@@ -488,31 +483,33 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
 
   // Auto-populate empty slots with unassigned favorites
   useEffect(() => {
-    const newAssignments = { ...slotAssignments };
-    const assignedIds = Object.values(newAssignments);
-    const unassignedFavs = favorites.filter(id => !assignedIds.includes(id));
-    
-    let unassignedIndex = 0;
-    const totalSlots = gridSize * gridSize;
+    setSlotAssignments(prev => {
+      const newAssignments = { ...prev };
+      const assignedIds = Object.values(newAssignments);
+      const unassignedFavs = favorites.filter(id => !assignedIds.includes(id));
 
-    for (let i = 0; i < totalSlots; i++) {
-      // Re-assign if slot is empty or the assigned ID is no longer in favorites
-      if (!newAssignments[i] || !favorites.includes(newAssignments[i])) {
-        if (unassignedFavs[unassignedIndex]) {
-          newAssignments[i] = unassignedFavs[unassignedIndex];
-          unassignedIndex++;
-        } else {
-          delete newAssignments[i];
+      let unassignedIndex = 0;
+      const totalSlots = gridSize * gridSize;
+
+      for (let i = 0; i < totalSlots; i++) {
+        // Re-assign if slot is empty or the assigned ID is no longer in favorites
+        if (!newAssignments[i] || !favorites.includes(newAssignments[i])) {
+          if (unassignedFavs[unassignedIndex]) {
+            newAssignments[i] = unassignedFavs[unassignedIndex];
+            unassignedIndex++;
+          } else {
+            delete newAssignments[i];
+          }
         }
       }
-    }
-    
-    // Clean up slots that exceed the current grid size bounds
-    for (let i = totalSlots; i < 16; i++) {
-      delete newAssignments[i];
-    }
 
-    setSlotAssignments(newAssignments);
+      // Clean up slots that exceed the current grid size bounds
+      for (let i = totalSlots; i < 16; i++) {
+        delete newAssignments[i];
+      }
+
+      return newAssignments;
+    });
   }, [favorites, gridSize]);
 
   const handleAssignCamera = (slotIndex: number, cctvId: string) => {

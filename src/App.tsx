@@ -317,7 +317,6 @@ export const App: React.FC = () => {
             <MultiViewDashboard
               cctvs={cctvs}
               favorites={favorites}
-              onToggleFavorite={toggleFavorite}
               onBackToMap={() => setViewMode('map')}
             />
           ) : (
