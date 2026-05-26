@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Hls from 'hls.js';
 import flvjs from 'flv.js';
 import JSMpeg from '@cycjimmy/jsmpeg-player';
 import { type CCTV } from '../data/cctvData';
-import { Heart, LayoutGrid, Map, Volume2, VolumeX, X, AlertTriangle } from 'lucide-react';
+import { Heart, Map, Volume2, VolumeX, X, AlertTriangle, Play, Pause, Camera, Maximize } from 'lucide-react';
 
 // Lightweight player component for a single grid slot
 interface MultiVideoCellPlayerProps {
@@ -14,6 +14,7 @@ interface MultiVideoCellPlayerProps {
 const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onClear }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const jsmpegCanvasRef = useRef<HTMLDivElement>(null);
+  const cellContainerRef = useRef<HTMLDivElement>(null);
   const jsmpegPlayerRef = useRef<{ destroy?: () => void } | null>(null);
 
   const isMjpeg = cctv.streamUrl.includes('nph-zms') || cctv.streamUrl.includes('cgi-bin/nph-zms') || cctv.streamUrl.includes('jombangkab.go.id');
@@ -30,6 +31,10 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
   const [isLoaded, setIsLoaded] = useState(isInitiallyOffline);
   const [hasError, setHasError] = useState(isInitiallyOffline);
   const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [volume, setVolume] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -387,29 +392,131 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
     };
   }, [cctv, isFlv, isIframe, isInitiallyOffline, isJsmpeg, isMjpeg, isMp4, isPurwakarta]);
 
-  const toggleMute = () => {
+  // Play/Pause
+  const togglePlay = useCallback(() => {
     if (isMjpeg || isIframe || isJsmpeg) return;
     const video = videoRef.current;
-    if (video) {
-      video.muted = !isMuted;
-      setIsMuted(!isMuted);
+    if (!video || !isLoaded) return;
+    if (isPlaying) {
+      video.pause();
+      setIsPlaying(false);
+    } else {
+      video.play().catch(() => { /* autoplay blocked */ });
+      setIsPlaying(true);
     }
-  };
+  }, [isMjpeg, isIframe, isJsmpeg, isLoaded, isPlaying]);
+
+  // Mute toggle
+  const toggleMute = useCallback(() => {
+    if (isMjpeg || isIframe || isJsmpeg) return;
+    const video = videoRef.current;
+    if (!video) return;
+    if (isMuted) {
+      video.muted = false;
+      video.volume = 0.5;
+      setVolume(0.5);
+      setIsMuted(false);
+    } else {
+      video.muted = true;
+      setVolume(0);
+      setIsMuted(true);
+    }
+  }, [isMjpeg, isIframe, isJsmpeg, isMuted]);
+
+  // Volume slider
+  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isMjpeg || isIframe || isJsmpeg) return;
+    const video = videoRef.current;
+    if (!video) return;
+    const val = parseFloat(e.target.value);
+    video.volume = val;
+    setVolume(val);
+    if (val === 0) {
+      video.muted = true;
+      setIsMuted(true);
+    } else {
+      video.muted = false;
+      setIsMuted(false);
+    }
+  }, [isMjpeg, isIframe, isJsmpeg]);
+
+  // Fullscreen
+  const toggleFullscreen = useCallback(() => {
+    const container = cellContainerRef.current;
+    if (!container) return;
+    if (!document.fullscreenElement) {
+      container.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => { /* fullscreen denied */ });
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false));
+    }
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
+  // Auto-hide controls
+  useEffect(() => {
+    if (!showControls || !isPlaying) return;
+    const timer = setTimeout(() => setShowControls(false), 2500);
+    return () => clearTimeout(timer);
+  }, [showControls, isPlaying]);
+
+  // Take snapshot
+  const takeSnapshot = useCallback(() => {
+    if (isMjpeg) {
+      const img = cellContainerRef.current?.querySelector('img');
+      if (!img || !isLoaded) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || 640;
+      canvas.height = img.naturalHeight || 480;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      drawWatermark(ctx, canvas, cctv.name);
+      downloadCanvas(canvas, cctv.name);
+      return;
+    }
+    if (isJsmpeg) {
+      const sourceCanvas = jsmpegCanvasRef.current?.querySelector('canvas');
+      if (!sourceCanvas || !isLoaded) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = sourceCanvas.width || 640;
+      canvas.height = sourceCanvas.height || 480;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
+      drawWatermark(ctx, canvas, cctv.name);
+      downloadCanvas(canvas, cctv.name);
+      return;
+    }
+    const video = videoRef.current;
+    if (!video || !isLoaded) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    drawWatermark(ctx, canvas, cctv.name);
+    downloadCanvas(canvas, cctv.name);
+  }, [isMjpeg, isJsmpeg, isLoaded, cctv.name]);
 
   return (
-    <div className="multiview-cell-player">
+    <div
+      className={`multiview-cell-player ${isFullscreen ? 'cell-fullscreen' : ''}`}
+      ref={cellContainerRef}
+      onMouseEnter={() => setShowControls(true)}
+      onMouseLeave={() => setShowControls(false)}
+      onMouseMove={() => setShowControls(true)}
+    >
       <div className="cell-header">
         <span className="cell-title">{cctv.name}</span>
-        <div className="cell-actions">
-          {!isMjpeg && !isIframe && !isJsmpeg && (
-            <button className="cell-btn" onClick={toggleMute} title={isMuted ? "Unmute" : "Mute"}>
-              {isMuted ? <VolumeX size={12} /> : <Volume2 size={12} />}
-            </button>
-          )}
-          <button className="cell-btn remove-btn" onClick={onClear} title="Hapus dari slot">
-            <X size={12} />
-          </button>
-        </div>
+        <button className="cell-btn remove-btn" onClick={onClear} title="Hapus dari slot">
+          <X size={12} />
+        </button>
       </div>
       
       <div className="cell-content">
@@ -455,12 +562,82 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
             muted={isMuted}
             playsInline
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onClick={togglePlay}
           />
+        )}
+
+        {/* HUD Controls overlay */}
+        {isLoaded && !hasError && (
+          <div className={`cell-hud ${showControls || !isPlaying ? 'active' : ''}`}>
+            <div className="cell-hud-bar">
+              <div className="cell-hud-left">
+                {!isMjpeg && !isIframe && !isJsmpeg && (
+                  <button className="cell-hud-btn" onClick={togglePlay} title={isPlaying ? 'Jeda' : 'Putar'}>
+                    {isPlaying ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
+                  </button>
+                )}
+                {!isMjpeg && !isIframe && !isJsmpeg && (
+                  <div className="cell-volume-wrapper">
+                    <button className="cell-hud-btn" onClick={toggleMute} title={isMuted ? 'Bunyikan' : 'Bisukan'}>
+                      {isMuted ? <VolumeX size={12} /> : <Volume2 size={12} />}
+                    </button>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={volume}
+                      onChange={handleVolumeChange}
+                      className="cell-volume-slider"
+                      title="Volume"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="cell-hud-right">
+                {!isIframe && (
+                  <button className="cell-hud-btn" onClick={takeSnapshot} title="Ambil Foto">
+                    <Camera size={12} />
+                  </button>
+                )}
+                <button className="cell-hud-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}>
+                  <Maximize size={12} />
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
   );
 };
+
+// Snapshot watermark helpers
+function drawWatermark(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, name: string) {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+  ctx.fillStyle = '#10b981';
+  ctx.font = 'bold 16px Outfit, sans-serif';
+  ctx.fillText('NUSANTARA CCTV', 16, canvas.height - 18);
+  const now = new Date();
+  const formattedTime = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID');
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '13px Inter, sans-serif';
+  ctx.fillText(`|  ${name.toUpperCase()}  |  ${formattedTime}`, 180, canvas.height - 18);
+}
+
+function downloadCanvas(canvas: HTMLCanvasElement, name: string) {
+  try {
+    const dataUrl = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = `CCTV_${name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.png`;
+    link.href = dataUrl;
+    link.click();
+  } catch {
+    /* CORS restriction on stream source */
+    alert('Gagal mengambil screenshot: batasan keamanan CORS pada server stream.');
+  }
+}
 
 // Main dashboard
 interface MultiViewDashboardProps {
@@ -474,7 +651,7 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
   favorites,
   onBackToMap
 }) => {
-  const [gridSize, setGridSize] = useState<2 | 3 | 4>(2); // 2x2, 3x3, 4x4
+  const [gridSize, setGridSize] = useState<1 | 2 | 3 | 4>(2); // 1x1, 2x2, 3x3, 4x4
   const [slotAssignments, setSlotAssignments] = useState<Record<number, string>>({});
 
   const favoritedCCTVs = useMemo(() => {
@@ -532,26 +709,17 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
   return (
     <div className="multiview-dashboard">
       <div className="multiview-header">
-        <div className="header-left">
-          <div className="dashboard-title-row">
-            <LayoutGrid className="dashboard-icon" size={20} />
-            <h2>Multi-View Dashboard</h2>
-          </div>
-          <p className="dashboard-subtitle">Pantau kamera terfavorit secara bersamaan dalam bentuk grid</p>
+        <div className="grid-selector">
+          <button className={`grid-btn ${gridSize === 1 ? 'active' : ''}`} onClick={() => setGridSize(1)}>1x1</button>
+          <button className={`grid-btn ${gridSize === 2 ? 'active' : ''}`} onClick={() => setGridSize(2)}>2x2</button>
+          <button className={`grid-btn ${gridSize === 3 ? 'active' : ''}`} onClick={() => setGridSize(3)}>3x3</button>
+          <button className={`grid-btn ${gridSize === 4 ? 'active' : ''}`} onClick={() => setGridSize(4)}>4x4</button>
         </div>
 
-        <div className="header-right">
-          <div className="grid-selector">
-            <button className={`grid-btn ${gridSize === 2 ? 'active' : ''}`} onClick={() => setGridSize(2)}>2x2</button>
-            <button className={`grid-btn ${gridSize === 3 ? 'active' : ''}`} onClick={() => setGridSize(3)}>3x3</button>
-            <button className={`grid-btn ${gridSize === 4 ? 'active' : ''}`} onClick={() => setGridSize(4)}>4x4</button>
-          </div>
-
-          <button className="btn-secondary back-map-btn" onClick={onBackToMap}>
-            <Map size={14} />
-            <span>Kembali ke Peta</span>
-          </button>
-        </div>
+        <button className="btn-secondary back-map-btn" onClick={onBackToMap}>
+          <Map size={14} />
+          <span>Kembali ke Peta</span>
+        </button>
       </div>
 
       {favorites.length === 0 ? (
@@ -609,8 +777,8 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
           flex-direction: column;
           height: 100%;
           width: 100%;
-          padding: 16px;
-          gap: 16px;
+          padding: 12px;
+          gap: 12px;
           overflow: hidden;
           background: var(--bg-primary);
           font-family: var(--font-body);
@@ -620,37 +788,9 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding-bottom: 12px;
+          padding-bottom: 10px;
           border-bottom: 1px solid var(--border-color);
           flex-shrink: 0;
-        }
-
-        .dashboard-title-row {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .dashboard-icon {
-          color: var(--accent-blue);
-        }
-
-        .multiview-header h2 {
-          font-size: 1.25rem;
-          color: var(--text-primary);
-          margin: 0;
-        }
-
-        .dashboard-subtitle {
-          font-size: 0.8rem;
-          color: var(--text-secondary);
-          margin-top: 4px;
-        }
-
-        .header-right {
-          display: flex;
-          align-items: center;
-          gap: 12px;
         }
 
         .grid-selector {
@@ -728,9 +868,14 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
         .multiview-grid {
           flex: 1;
           display: grid;
-          gap: 12px;
+          gap: 8px;
           overflow-y: auto;
           padding-right: 4px;
+        }
+
+        .multiview-grid.grid-1x1 {
+          grid-template-columns: repeat(1, 1fr);
+          grid-template-rows: repeat(1, 1fr);
         }
 
         .multiview-grid.grid-2x2 {
@@ -753,10 +898,6 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
           .multiview-grid.grid-4x4 {
             grid-template-columns: repeat(2, 1fr);
             grid-template-rows: auto;
-          }
-          .header-right {
-            flex-direction: column;
-            align-items: flex-end;
           }
         }
 
@@ -836,36 +977,43 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
           position: relative;
         }
 
+        .multiview-cell-player.cell-fullscreen {
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          border-radius: 0;
+          background: #000;
+        }
+
         .cell-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 6px 10px;
-          background: rgba(0, 0, 0, 0.4);
+          padding: 5px 10px;
+          background: rgba(0, 0, 0, 0.5);
           border-bottom: 1px solid rgba(255, 255, 255, 0.04);
           z-index: 10;
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
         }
 
         .cell-title {
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           font-weight: 500;
-          color: var(--text-primary);
+          color: rgba(255, 255, 255, 0.85);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          max-width: calc(100% - 60px);
-        }
-
-        .cell-actions {
-          display: flex;
-          align-items: center;
-          gap: 4px;
+          max-width: calc(100% - 30px);
+          text-shadow: 0 1px 3px rgba(0,0,0,0.6);
         }
 
         .cell-btn {
           border: none;
           background: transparent;
-          color: var(--text-secondary);
+          color: rgba(255, 255, 255, 0.6);
           width: 22px;
           height: 22px;
           border-radius: 4px;
@@ -877,13 +1025,13 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
         }
 
         .cell-btn:hover {
-          color: var(--text-primary);
-          background: rgba(255, 255, 255, 0.06);
+          color: #fff;
+          background: rgba(255, 255, 255, 0.1);
         }
 
         .cell-btn.remove-btn:hover {
           color: #ef4444;
-          background: rgba(239, 68, 68, 0.1);
+          background: rgba(239, 68, 68, 0.15);
         }
 
         .cell-content {
@@ -925,6 +1073,102 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
 
         .text-red {
           color: #ef4444;
+        }
+
+        /* HUD Controls */
+        .cell-hud {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 15;
+          opacity: 0;
+          transform: translateY(4px);
+          transition: opacity 0.2s ease, transform 0.2s ease;
+          pointer-events: none;
+        }
+
+        .cell-hud.active {
+          opacity: 1;
+          transform: translateY(0);
+          pointer-events: auto;
+        }
+
+        .cell-hud-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 5px 8px;
+          background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+        }
+
+        .cell-hud-left,
+        .cell-hud-right {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+        }
+
+        .cell-hud-btn {
+          border: none;
+          background: transparent;
+          color: rgba(255, 255, 255, 0.75);
+          width: 26px;
+          height: 26px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          flex-shrink: 0;
+        }
+
+        .cell-hud-btn:hover {
+          color: #fff;
+          background: rgba(255, 255, 255, 0.12);
+        }
+
+        .cell-volume-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+        }
+
+        .cell-volume-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 50px;
+          height: 3px;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 2px;
+          outline: none;
+          cursor: pointer;
+          transition: width 0.2s ease;
+        }
+
+        .cell-volume-wrapper:hover .cell-volume-slider {
+          width: 65px;
+        }
+
+        .cell-volume-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 10px;
+          height: 10px;
+          background: #fff;
+          border-radius: 50%;
+          cursor: pointer;
+          box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .cell-volume-slider::-moz-range-thumb {
+          width: 10px;
+          height: 10px;
+          background: #fff;
+          border-radius: 50%;
+          border: none;
+          cursor: pointer;
+          box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
         }
 
         @keyframes spin {
