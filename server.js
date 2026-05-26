@@ -383,6 +383,10 @@ if (fs.existsSync(distPath)) {
 }
 
 // Start Server
-app.listen(PORT, () => {
-  console.log(`[Server] Express backend server is running on http://localhost:${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`[Server] Express backend server is running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
