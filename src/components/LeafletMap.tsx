@@ -222,10 +222,152 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
   const [isRotated, setIsRotated] = useState(false);
   const [showControls, setShowControls] = useState(false);
 
-  // Reset rotation when CCTV changes
+  const [zoomScale, setZoomScale] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isTouching, setIsTouching] = useState(false);
+
+  const viewportContainerRef = useRef<HTMLDivElement>(null);
+  
+  const zoomScaleRef = useRef(1);
+  const panOffsetRef = useRef({ x: 0, y: 0 });
+  const touchStateRef = useRef({
+    initialDistance: 0,
+    initialScale: 1,
+    initialPan: { x: 0, y: 0 },
+    initialCenter: { x: 0, y: 0 },
+    isPinching: false,
+    isPanning: false
+  });
+
+  // Sync refs with state changes
+  useEffect(() => {
+    zoomScaleRef.current = zoomScale;
+  }, [zoomScale]);
+
+  useEffect(() => {
+    panOffsetRef.current = panOffset;
+  }, [panOffset]);
+
+  // Reset rotation, zoom and pan when CCTV changes
   useEffect(() => {
     setIsRotated(false);
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
   }, [cctv.id]);
+
+  // Reset zoom and pan when fullscreen or orientation changes
+  useEffect(() => {
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, [isFullscreen, isRotated]);
+
+  // Touch gestures for pinch-to-zoom and pan/drag
+  useEffect(() => {
+    const el = viewportContainerRef.current;
+    if (!el) return;
+
+    const state = touchStateRef.current;
+
+    const onTouchStart = (e: TouchEvent) => {
+      const currentScale = zoomScaleRef.current;
+      const currentPan = panOffsetRef.current;
+
+      if (e.touches.length === 1) {
+        if (currentScale > 1) {
+          setIsTouching(true);
+          state.isPanning = true;
+          state.isPinching = false;
+          state.initialCenter = {
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY
+          };
+          state.initialPan = { ...currentPan };
+        }
+      } else if (e.touches.length === 2) {
+        setIsTouching(true);
+        state.isPinching = true;
+        state.isPanning = false;
+        
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        state.initialDistance = dist;
+        state.initialScale = currentScale;
+        state.initialPan = { ...currentPan };
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const currentScale = zoomScaleRef.current;
+
+      if (state.isPinching && e.touches.length === 2) {
+        if (e.cancelable) e.preventDefault();
+        
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        const initialDist = state.initialDistance;
+        if (initialDist > 0) {
+          const factor = dist / initialDist;
+          const newScale = Math.min(Math.max(state.initialScale * factor, 1), 4);
+          setZoomScale(newScale);
+          
+          if (newScale === 1) {
+            setPanOffset({ x: 0, y: 0 });
+          }
+        }
+      } else if (state.isPanning && e.touches.length === 1 && currentScale > 1) {
+        if (e.cancelable) e.preventDefault();
+        
+        const clientX = e.touches[0].clientX;
+        const clientY = e.touches[0].clientY;
+        
+        const dx = clientX - state.initialCenter.x;
+        const dy = clientY - state.initialCenter.y;
+        
+        const rect = el.getBoundingClientRect();
+        const maxPanX = (rect.width * (currentScale - 1)) / 2;
+        const maxPanY = (rect.height * (currentScale - 1)) / 2;
+        
+        const targetX = state.initialPan.x + dx;
+        const targetY = state.initialPan.y + dy;
+        
+        const boundedX = Math.min(Math.max(targetX, -maxPanX), maxPanX);
+        const boundedY = Math.min(Math.max(targetY, -maxPanY), maxPanY);
+
+        setPanOffset({
+          x: boundedX,
+          y: boundedY
+        });
+      }
+    };
+
+    const onTouchEnd = () => {
+      setIsTouching(false);
+      state.isPinching = false;
+      state.isPanning = false;
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, []);
 
   const isMjpeg = cctv.streamUrl.includes('nph-zms') || cctv.streamUrl.includes('cgi-bin/nph-zms') || cctv.streamUrl.includes('jombangkab.go.id');
   const isJsmpeg = cctv.streamUrl.includes('streamer-jsmpeg') || cctv.streamUrl.includes('villabs.id/streamer');
@@ -1027,7 +1169,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       )}
 
       {/* Video */}
-      <div className="map-video-content" style={{ position: 'relative' }}>
+      <div className="map-video-content" style={{ position: 'relative', overflow: 'hidden' }}>
         {/* Fullscreen Top Bar Overlay */}
         {(isFullscreen || isRotated) && (
           <div className={`map-video-fullscreen-top-bar ${showControls ? 'active' : ''}`}>
@@ -1064,39 +1206,51 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           </div>
         )}
 
-        {isIframe && !hasError ? (
-          <iframe
-            src={isYoutube ? `${cctv.streamUrl}?autoplay=1&mute=1` : cctv.streamUrl}
-            title={cctv.name}
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            style={{ width: '100%', height: '100%', border: 'none', display: isLoaded ? 'block' : 'none' }}
-            onLoad={() => setIsLoaded(true)}
-          />
-        ) : isMjpeg ? (
-          <img
-            src={cctv.streamUrl}
-            alt={cctv.name}
-            style={{ width: '100%', height: '100%', objectFit: 'contain', display: isLoaded ? 'block' : 'none' }}
-            onLoad={() => setIsLoaded(true)}
-            onError={() => setHasError(true)}
-          />
-        ) : isJsmpeg ? (
-          <div
-            ref={jsmpegCanvasRef}
-            style={{ width: '100%', height: '100%', background: '#000' }}
-          />
-        ) : (
-          <video
-            ref={videoRef}
-            autoPlay
-            muted={isMuted}
-            playsInline
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onClick={togglePlay}
-          />
-        )}
+        <div 
+          className="map-video-viewport"
+          ref={viewportContainerRef}
+          style={{
+            width: '100%',
+            height: '100%',
+            transform: `scale(${zoomScale}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+            transformOrigin: 'center center',
+            transition: isTouching ? 'none' : 'transform 0.15s ease-out'
+          }}
+        >
+          {isIframe && !hasError ? (
+            <iframe
+              src={isYoutube ? `${cctv.streamUrl}?autoplay=1&mute=1` : cctv.streamUrl}
+              title={cctv.name}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{ width: '100%', height: '100%', border: 'none', display: isLoaded ? 'block' : 'none' }}
+              onLoad={() => setIsLoaded(true)}
+            />
+          ) : isMjpeg ? (
+            <img
+              src={cctv.streamUrl}
+              alt={cctv.name}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: isLoaded ? 'block' : 'none' }}
+              onLoad={() => setIsLoaded(true)}
+              onError={() => setHasError(true)}
+            />
+          ) : isJsmpeg ? (
+            <div
+              ref={jsmpegCanvasRef}
+              style={{ width: '100%', height: '100%', background: '#000' }}
+            />
+          ) : (
+            <video
+              ref={videoRef}
+              autoPlay
+              muted={isMuted}
+              playsInline
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              onClick={togglePlay}
+            />
+          )}
+        </div>
 
         {/* Floating controls HUD that appears on hover */}
         {isLoaded && !hasError && (
@@ -1958,6 +2112,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           width: 100%;
           aspect-ratio: 16 / 9;
           background: #000;
+          overflow: hidden;
         }
 
         .map-video-loading,
@@ -2249,7 +2404,8 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         }
 
         /* Rotated landscape handling for map overlay player on mobile */
-        .map-video-overlay.rotated-landscape {
+        .map-video-overlay.rotated-landscape,
+        .map-video-overlay.fullscreen.rotated-landscape {
           position: fixed !important;
           top: 50% !important;
           left: 50% !important;
@@ -2269,16 +2425,29 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           background: #000000 !important;
         }
 
-        .map-video-overlay.rotated-landscape .map-video-content {
+        .map-video-overlay.rotated-landscape .map-video-content,
+        .map-video-overlay.fullscreen.rotated-landscape .map-video-content {
           width: 100% !important;
           height: 100% !important;
           flex: 1 !important;
           aspect-ratio: auto !important;
         }
 
-        .map-video-overlay.rotated-landscape .map-video-hud {
+        .map-video-overlay.rotated-landscape .map-video-hud,
+        .map-video-overlay.fullscreen.rotated-landscape .map-video-hud {
           bottom: 24px;
           max-width: 480px;
+        }
+
+        .map-video-viewport {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          background: #000000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          touch-action: none;
         }
 
         .hud-btn.rotation-btn.active {
