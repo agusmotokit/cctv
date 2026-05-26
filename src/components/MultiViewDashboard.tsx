@@ -39,13 +39,76 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
   const [isRotated, setIsRotated] = useState(false);
   const [showControls, setShowControls] = useState(false);
 
+  const [zoomScale, setZoomScale] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isTouching, setIsTouching] = useState(false);
+
+  const viewportContainerRef = useRef<HTMLDivElement>(null);
+  
+  const zoomScaleRef = useRef(1);
+  const panOffsetRef = useRef({ x: 0, y: 0 });
+  const isRotatedRef = useRef(false);
   const touchStateRef = useRef({
+    initialDistance: 0,
+    initialScale: 1,
+    initialPan: { x: 0, y: 0 },
+    initialCenter: { x: 0, y: 0 },
+    isPinching: false,
+    isPanning: false,
     startX: 0,
     startY: 0,
     currentX: 0,
     currentY: 0,
     isSwipe: false
   });
+
+  // Sync refs with state changes
+  useEffect(() => {
+    zoomScaleRef.current = zoomScale;
+  }, [zoomScale]);
+
+  useEffect(() => {
+    panOffsetRef.current = panOffset;
+  }, [panOffset]);
+
+  useEffect(() => {
+    isRotatedRef.current = isRotated;
+  }, [isRotated]);
+
+  // Reset rotation, zoom and pan when CCTV changes
+  useEffect(() => {
+    setIsRotated(false);
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, [cctv.id]);
+
+  // Reset zoom and pan when fullscreen or orientation changes
+  useEffect(() => {
+    setZoomScale(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, [isFullscreen, isRotated]);
+
+  // Keep panOffset clamped within the allowed bounds whenever scale changes
+  useEffect(() => {
+    const el = viewportContainerRef.current;
+    if (!el) return;
+
+    const width = el.clientWidth;
+    const height = el.clientHeight;
+    
+    const maxPanX = (width * (zoomScale - 1)) / (2 * zoomScale);
+    const maxPanY = (height * (zoomScale - 1)) / (2 * zoomScale);
+
+    setPanOffset(prev => {
+      const clampedX = Math.min(Math.max(prev.x, -maxPanX), maxPanX);
+      const clampedY = Math.min(Math.max(prev.y, -maxPanY), maxPanY);
+      
+      if (clampedX !== prev.x || clampedY !== prev.y) {
+        return { x: clampedX, y: clampedY };
+      }
+      return prev;
+    });
+  }, [zoomScale]);
 
   useEffect(() => {
     let active = true;
@@ -494,25 +557,116 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
     };
   }, [isRotated]);
 
-  // Touch swipe & tap gestures for cell player
+  // Touch gestures for pinch-to-zoom and pan/drag in cell player
   useEffect(() => {
-    const el = cellContainerRef.current;
+    const el = viewportContainerRef.current;
     if (!el) return;
 
     const state = touchStateRef.current;
 
     const onTouchStart = (e: TouchEvent) => {
+      const currentScale = zoomScaleRef.current;
+      const currentPan = panOffsetRef.current;
+
       if (e.touches.length === 1) {
-        state.isSwipe = true;
-        state.startX = e.touches[0].clientX;
-        state.startY = e.touches[0].clientY;
-        state.currentX = e.touches[0].clientX;
-        state.currentY = e.touches[0].clientY;
+        if (currentScale > 1) {
+          setIsTouching(true);
+          state.isPanning = true;
+          state.isPinching = false;
+          state.isSwipe = false;
+          state.initialCenter = {
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY
+          };
+          state.initialPan = { ...currentPan };
+        } else {
+          setIsTouching(true);
+          state.isPanning = false;
+          state.isPinching = false;
+          state.isSwipe = true;
+          state.startX = e.touches[0].clientX;
+          state.startY = e.touches[0].clientY;
+          state.currentX = e.touches[0].clientX;
+          state.currentY = e.touches[0].clientY;
+        }
+      } else if (e.touches.length === 2) {
+        setIsTouching(true);
+        state.isPinching = true;
+        state.isPanning = false;
+        state.isSwipe = false;
+        
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        state.initialDistance = dist;
+        state.initialScale = currentScale;
+        state.initialPan = { ...currentPan };
       }
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (state.isSwipe && e.touches.length === 1) {
+      const currentScale = zoomScaleRef.current;
+
+      if (state.isPinching && e.touches.length === 2) {
+        if (e.cancelable) e.preventDefault();
+        
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        const initialDist = state.initialDistance;
+        if (initialDist > 0) {
+          const factor = dist / initialDist;
+          const newScale = Math.min(Math.max(state.initialScale * factor, 1), 4);
+          setZoomScale(newScale);
+          
+          if (newScale === 1) {
+            setPanOffset({ x: 0, y: 0 });
+          }
+        }
+      } else if (state.isPanning && e.touches.length === 1 && currentScale > 1) {
+        if (e.cancelable) e.preventDefault();
+        
+        const clientX = e.touches[0].clientX;
+        const clientY = e.touches[0].clientY;
+        
+        const dx = clientX - state.initialCenter.x;
+        const dy = clientY - state.initialCenter.y;
+        
+        const width = el.clientWidth;
+        const height = el.clientHeight;
+
+        const maxPanX = (width * (currentScale - 1)) / (2 * currentScale);
+        const maxPanY = (height * (currentScale - 1)) / (2 * currentScale);
+        
+        let targetX: number;
+        let targetY: number;
+
+        if (isRotatedRef.current) {
+          // Rotated 90deg: screen X (dx) maps to local Y (inverted), screen Y (dy) maps to local X
+          targetX = state.initialPan.x + dy / currentScale;
+          targetY = state.initialPan.y - dx / currentScale;
+        } else {
+          // Portrait: standard mapping
+          targetX = state.initialPan.x + dx / currentScale;
+          targetY = state.initialPan.y + dy / currentScale;
+        }
+        
+        const boundedX = Math.min(Math.max(targetX, -maxPanX), maxPanX);
+        const boundedY = Math.min(Math.max(targetY, -maxPanY), maxPanY);
+
+        setPanOffset({
+          x: boundedX,
+          y: boundedY
+        });
+      } else if (state.isSwipe && e.touches.length === 1 && currentScale === 1) {
         const clientY = e.touches[0].clientY;
         const dy = clientY - state.startY;
         if (Math.abs(dy) > 10) {
@@ -524,10 +678,13 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
     };
 
     const onTouchEnd = () => {
-      if (state.isSwipe) {
+      setIsTouching(false);
+      const currentScale = zoomScaleRef.current;
+      
+      if (state.isSwipe && currentScale === 1) {
         const dx = state.currentX - state.startX;
         const dy = state.currentY - state.startY;
-
+        
         if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx)) {
           if (dy < 0) {
             setIsRotated(true);
@@ -538,6 +695,9 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
           togglePlay();
         }
       }
+
+      state.isPinching = false;
+      state.isPanning = false;
       state.isSwipe = false;
     };
 
@@ -634,38 +794,50 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
           </div>
         )}
 
-        {isIframe && !hasError ? (
-          <iframe
-            src={isYoutube ? `${cctv.streamUrl}?autoplay=1&mute=1` : cctv.streamUrl}
-            title={cctv.name}
-            frameBorder="0"
-            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-            style={{ width: '100%', height: '100%', border: 'none', display: isLoaded ? 'block' : 'none' }}
-            onLoad={() => setIsLoaded(true)}
-          />
-        ) : isMjpeg ? (
-          <img
-            src={cctv.streamUrl}
-            alt={cctv.name}
-            style={{ width: '100%', height: '100%', objectFit: 'contain', display: isLoaded ? 'block' : 'none' }}
-            onLoad={() => setIsLoaded(true)}
-            onError={() => setHasError(true)}
-          />
-        ) : isJsmpeg ? (
-          <div
-            ref={jsmpegCanvasRef}
-            style={{ width: '100%', height: '100%', background: '#000' }}
-          />
-        ) : (
-          <video
-            ref={videoRef}
-            autoPlay
-            muted={isMuted}
-            playsInline
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onClick={togglePlay}
-          />
-        )}
+        <div 
+          className="cell-video-viewport"
+          ref={viewportContainerRef}
+          style={{
+            width: '100%',
+            height: '100%',
+            transform: `scale(${zoomScale}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+            transformOrigin: 'center center',
+            transition: isTouching ? 'none' : 'transform 0.15s ease-out'
+          }}
+        >
+          {isIframe && !hasError ? (
+            <iframe
+              src={isYoutube ? `${cctv.streamUrl}?autoplay=1&mute=1` : cctv.streamUrl}
+              title={cctv.name}
+              frameBorder="0"
+              allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+              style={{ width: '100%', height: '100%', border: 'none', display: isLoaded ? 'block' : 'none' }}
+              onLoad={() => setIsLoaded(true)}
+            />
+          ) : isMjpeg ? (
+            <img
+              src={cctv.streamUrl}
+              alt={cctv.name}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: isLoaded ? 'block' : 'none' }}
+              onLoad={() => setIsLoaded(true)}
+              onError={() => setHasError(true)}
+            />
+          ) : isJsmpeg ? (
+            <div
+              ref={jsmpegCanvasRef}
+              style={{ width: '100%', height: '100%', background: '#000' }}
+            />
+          ) : (
+            <video
+              ref={videoRef}
+              autoPlay
+              muted={isMuted}
+              playsInline
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              onClick={togglePlay}
+            />
+          )}
+        </div>
 
         {isMobileDevice && isLoaded && !hasError && !isPlaying && (
           <div className="mobile-play-overlay" onClick={togglePlay}>
@@ -1127,6 +1299,17 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
           object-fit: fill !important;
           width: 100% !important;
           height: 100% !important;
+        }
+
+        .cell-video-viewport {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          background: #000000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          touch-action: none;
         }
 
         .cell-rotated-top-bar {
