@@ -1,5 +1,5 @@
-import React from 'react';
-import { Camera, Menu, LogOut, LogIn } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Camera, Menu, LogOut, LogIn, Search } from 'lucide-react';
 import { type User } from 'firebase/auth';
 
 interface NavbarProps {
@@ -8,6 +8,8 @@ interface NavbarProps {
   user: User | null;
   onAuthClick: () => void;
   onLogout: () => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -15,8 +17,24 @@ export const Navbar: React.FC<NavbarProps> = ({
   setIsSidebarCollapsed,
   user,
   onAuthClick,
-  onLogout
+  onLogout,
+  searchQuery,
+  setSearchQuery
 }) => {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchWrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   return (
     <header className="navbar-container">
       <div className="navbar-brand">
@@ -31,6 +49,35 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       <div className="navbar-actions">
+        {/* Search Popover */}
+        <div className="navbar-search-wrapper" ref={searchWrapperRef}>
+          <button
+            id="nav-btn-search-toggle"
+            className={`search-toggle-btn ${isSearchOpen ? 'active' : ''}`}
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+            title="Cari Kamera CCTV"
+            aria-label="Cari Kamera CCTV"
+          >
+            <Search size={16} />
+          </button>
+          
+          {isSearchOpen && (
+            <div className="search-popup-dropdown">
+              <div className="search-popup-arrow"></div>
+              <div className="search-popup-input-wrapper">
+                <input
+                  type="text"
+                  placeholder="Cari..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="search-popup-input"
+                  autoFocus
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
         {user ? (
           <>
             <span className="user-email-display" title={user.email || undefined}>{user.email}</span>
@@ -305,6 +352,92 @@ export const Navbar: React.FC<NavbarProps> = ({
         .menu-icon {
           width: 20px;
           height: 20px;
+        }
+
+        .navbar-search-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .search-toggle-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid var(--border-color);
+          color: var(--text-primary);
+          width: 38px;
+          height: 38px;
+          border-radius: var(--radius-sm);
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .search-toggle-btn:hover,
+        .search-toggle-btn.active {
+          background: var(--accent-blue-glow);
+          border-color: var(--border-color-active);
+          color: var(--accent-blue);
+        }
+
+        .search-popup-dropdown {
+          position: absolute;
+          top: calc(100% + 12px);
+          right: 0;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-color-active);
+          border-radius: var(--radius-sm);
+          padding: 8px;
+          width: 280px;
+          box-shadow: var(--shadow-lg);
+          z-index: 1010;
+          animation: slideDownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideDownFade {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .search-popup-arrow {
+          position: absolute;
+          bottom: 100%;
+          right: 14px;
+          width: 10px;
+          height: 10px;
+          background: var(--bg-secondary);
+          border-top: 1px solid var(--border-color-active);
+          border-left: 1px solid var(--border-color-active);
+          transform: translateY(5px) rotate(45deg);
+        }
+
+        .search-popup-input-wrapper {
+          width: 100%;
+        }
+
+        .search-popup-input {
+          width: 100%;
+          background: rgba(8, 12, 20, 0.6);
+          border: 1px solid var(--border-color);
+          color: var(--text-primary);
+          padding: 8px 12px;
+          border-radius: var(--radius-sm);
+          font-family: var(--font-body);
+          font-size: 0.875rem;
+          outline: none;
+          transition: all var(--transition-fast);
+        }
+
+        .search-popup-input:focus {
+          border-color: var(--accent-blue);
+          box-shadow: 0 0 0 2px var(--accent-blue-glow);
         }
       `}</style>
     </header>

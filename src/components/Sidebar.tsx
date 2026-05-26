@@ -1,14 +1,12 @@
 import React, { useMemo } from 'react';
 import { provinces, citiesByProvince, type CCTV } from '../data/cctvData';
-import { MapPin, Power, Search, Plus } from 'lucide-react';
+import { MapPin, Power, Plus } from 'lucide-react';
 import { type User } from 'firebase/auth';
 
 interface SidebarProps {
   cctvs: CCTV[];
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
   selectedCountry: string;
   setSelectedCountry: (country: string) => void;
   selectedProvince: string;
@@ -30,8 +28,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   cctvs,
   isCollapsed,
 
-  searchQuery,
-  setSearchQuery,
   selectedCountry,
   setSelectedCountry,
   selectedProvince,
@@ -98,21 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="sidebar-content-wrapper">
 
 
-      <div className="filter-section">
 
-        <div className="search-input-wrapper">
-          <Search size={16} className="sidebar-search-icon" />
-          <input
-            id="sidebar-search-input"
-            type="text"
-            placeholder="Cari jalan, kota, atau daerah..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="input-field search-input"
-            aria-label="Cari kamera CCTV"
-          />
-        </div>
-      </div>
 
       <div className="filter-section">
         <label className="filter-label">

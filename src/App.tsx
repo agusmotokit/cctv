@@ -305,6 +305,8 @@ export const App: React.FC = () => {
         user={user}
         onAuthClick={() => setShowAuthModal(true)}
         onLogout={handleLogout}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
       />
 
       <main className="main-content">
@@ -337,8 +339,6 @@ export const App: React.FC = () => {
           cctvs={cctvs}
           isCollapsed={isSidebarCollapsed}
           setIsCollapsed={setIsSidebarCollapsed}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
           selectedCountry={selectedCountry}
           setSelectedCountry={setSelectedCountry}
           selectedProvince={selectedProvince}
