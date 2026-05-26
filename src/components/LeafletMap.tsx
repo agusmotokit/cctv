@@ -200,13 +200,17 @@ interface MapVideoPlayerProps {
   onClose: () => void;
   isFavorite: boolean;
   onToggleFavorite: () => void;
+  onFullscreenChange?: (isFullscreen: boolean) => void;
+  onRotationChange?: (isRotated: boolean) => void;
 }
 
 const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
   cctv,
   onClose,
   isFavorite,
-  onToggleFavorite
+  onToggleFavorite,
+  onFullscreenChange,
+  onRotationChange
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -265,6 +269,16 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     setZoomScale(1);
     setPanOffset({ x: 0, y: 0 });
   }, [isFullscreen, isRotated]);
+
+  // Sync fullscreen state changes to parent callback
+  useEffect(() => {
+    onFullscreenChange?.(isFullscreen);
+  }, [isFullscreen, onFullscreenChange]);
+
+  // Sync rotation state changes to parent callback
+  useEffect(() => {
+    onRotationChange?.(isRotated);
+  }, [isRotated, onRotationChange]);
 
   // Keep panOffset clamped within the allowed bounds whenever scale changes
   useEffect(() => {
@@ -1652,6 +1666,8 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   const [hoveredCCTV, setHoveredCCTV] = useState<CCTV | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ lat: number; lng: number } | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(10);
+  const [isPlayerFullscreen, setIsPlayerFullscreen] = useState(false);
+  const [isPlayerRotated, setIsPlayerRotated] = useState(false);
 
   // Filter CCTVs to only render those currently within padded map bounds
   const visibleCCTVs = React.useMemo(() => {
@@ -1732,6 +1748,14 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     }
   }, [selectedCCTV, user]);
 
+  // Reset player fullscreen/rotation states when player is closed/unmounted
+  useEffect(() => {
+    if (!watchingCCTV) {
+      setIsPlayerFullscreen(false);
+      setIsPlayerRotated(false);
+    }
+  }, [watchingCCTV]);
+
   const { lat, lng, zoom } = mapCenter;
 
   const onToggleFavoriteRef = useRef(onToggleFavorite);
@@ -1760,13 +1784,14 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   return (
     <div 
       ref={wrapperRef}
-      className={`map-view-wrapper ${watchingCCTV ? 'video-active' : ''}`}
+      className={`map-view-wrapper ${watchingCCTV ? 'video-active' : ''} ${isPlayerRotated || isPlayerFullscreen ? 'player-expanded' : ''}`}
       style={{
         width: '100%',
         height: '100%',
         borderRadius: 'var(--radius-md)',
         overflow: 'hidden',
         position: 'relative',
+        zIndex: (isPlayerRotated || isPlayerFullscreen) && watchingCCTV ? 99999 : undefined
       }}
     >
       <MapContainer 
@@ -1824,15 +1849,25 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
       {watchingCCTV && (watchingCCTV.id === 'bantul-14' || user) && (
         <div
           className="map-video-backdrop"
-          onClick={() => setWatchingCCTV(null)}
+          onClick={() => {
+            setIsPlayerFullscreen(false);
+            setIsPlayerRotated(false);
+            setWatchingCCTV(null);
+          }}
         >
           <div onClick={(e) => e.stopPropagation()}>
             <MapVideoPlayer
               key={watchingCCTV.id}
               cctv={watchingCCTV}
-              onClose={() => setWatchingCCTV(null)}
+              onClose={() => {
+                setIsPlayerFullscreen(false);
+                setIsPlayerRotated(false);
+                setWatchingCCTV(null);
+              }}
               isFavorite={favorites.includes(watchingCCTV.id)}
               onToggleFavorite={() => onToggleFavorite(watchingCCTV.id)}
+              onFullscreenChange={setIsPlayerFullscreen}
+              onRotationChange={setIsPlayerRotated}
             />
           </div>
         </div>
