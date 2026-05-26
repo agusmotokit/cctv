@@ -266,6 +266,29 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     setPanOffset({ x: 0, y: 0 });
   }, [isFullscreen, isRotated]);
 
+  // Keep panOffset clamped within the allowed bounds whenever scale changes
+  useEffect(() => {
+    const el = viewportContainerRef.current;
+    if (!el) return;
+
+    const width = el.clientWidth;
+    const height = el.clientHeight;
+    
+    // local bounds are always determined by layout width and height, independent of rotation
+    const maxPanX = (width * (zoomScale - 1)) / (2 * zoomScale);
+    const maxPanY = (height * (zoomScale - 1)) / (2 * zoomScale);
+
+    setPanOffset(prev => {
+      const clampedX = Math.min(Math.max(prev.x, -maxPanX), maxPanX);
+      const clampedY = Math.min(Math.max(prev.y, -maxPanY), maxPanY);
+      
+      if (clampedX !== prev.x || clampedY !== prev.y) {
+        return { x: clampedX, y: clampedY };
+      }
+      return prev;
+    });
+  }, [zoomScale]);
+
   // Touch gestures for pinch-to-zoom and pan/drag
   useEffect(() => {
     const el = viewportContainerRef.current;
@@ -340,11 +363,9 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         
         const width = el.clientWidth;
         const height = el.clientHeight;
-        const elementWidth = isRotatedRef.current ? height : width;
-        const elementHeight = isRotatedRef.current ? width : height;
 
-        const maxPanX = (elementWidth * (currentScale - 1)) / (2 * currentScale);
-        const maxPanY = (elementHeight * (currentScale - 1)) / (2 * currentScale);
+        const maxPanX = (width * (currentScale - 1)) / (2 * currentScale);
+        const maxPanY = (height * (currentScale - 1)) / (2 * currentScale);
         
         let targetX: number;
         let targetY: number;
