@@ -48,8 +48,10 @@ class PlaylistLoader extends XhrLoader {
 import flvjs from 'flv.js';
 import JSMpeg from '@cycjimmy/jsmpeg-player';
 import type { CCTV } from '../data/cctvData';
-import { Play, Pause, Volume2, VolumeX, Maximize, Camera, MapPin, Tag, X, Radio, Heart } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Camera, MapPin, Tag, X, Radio, Heart, RotateCw } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
+
+const isMobileDevice = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 // Create CCTV camera pin marker icon (SVG-based)
 const createCCTVMarker = (status: 'online' | 'offline', showAnimation = true) => {
@@ -217,7 +219,13 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isRotated, setIsRotated] = useState(false);
   const [showControls, setShowControls] = useState(false);
+
+  // Reset rotation when CCTV changes
+  useEffect(() => {
+    setIsRotated(false);
+  }, [cctv.id]);
 
   const isMjpeg = cctv.streamUrl.includes('nph-zms') || cctv.streamUrl.includes('cgi-bin/nph-zms') || cctv.streamUrl.includes('jombangkab.go.id');
   const isJsmpeg = cctv.streamUrl.includes('streamer-jsmpeg') || cctv.streamUrl.includes('villabs.id/streamer');
@@ -985,14 +993,15 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
 
   return (
     <div 
-      className={`map-video-overlay ${isFullscreen ? 'fullscreen' : ''}`} 
+      className={`map-video-overlay ${isFullscreen ? 'fullscreen' : ''} ${isRotated ? 'rotated-landscape' : ''}`} 
       ref={containerRef}
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
       onMouseMove={handleMouseMove}
+      onClick={() => setShowControls(true)}
     >
       {/* Title bar (only in windowed mode) */}
-      {!isFullscreen && (
+      {!isFullscreen && !isRotated && (
         <div className="map-video-header">
           <div className="map-video-title-row">
             <Radio size={12} className="map-video-live-icon" />
@@ -1020,7 +1029,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       {/* Video */}
       <div className="map-video-content" style={{ position: 'relative' }}>
         {/* Fullscreen Top Bar Overlay */}
-        {isFullscreen && (
+        {(isFullscreen || isRotated) && (
           <div className={`map-video-fullscreen-top-bar ${showControls ? 'active' : ''}`}>
             <div className="top-left">
               <span className="fullscreen-live-badge">
@@ -1028,6 +1037,17 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
                 Live
               </span>
               <span className="fullscreen-cam-name">{cctv.name}</span>
+            </div>
+            <div className="top-right">
+              <button 
+                className="map-video-btn map-video-close" 
+                onClick={onClose} 
+                title="Tutup" 
+                aria-label="Tutup pemutar"
+                style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(255,255,255,0.25)', color: '#fff' }}
+              >
+                <X size={16} />
+              </button>
             </div>
           </div>
         )}
@@ -1131,6 +1151,16 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
                     <span>Ambil Foto</span>
                   </button>
                 )}
+                {isMobileDevice && (
+                  <button
+                    className={`hud-btn rotation-btn ${isRotated ? 'active' : ''}`}
+                    onClick={() => setIsRotated(!isRotated)}
+                    title={isRotated ? "Kembali ke Portrait" : "Putar ke Landscape"}
+                    aria-label={isRotated ? "Kembali ke Portrait" : "Putar ke Landscape"}
+                  >
+                    <RotateCw size={14} className={isRotated ? 'rotated-icon' : ''} />
+                  </button>
+                )}
                 <button
                   className="hud-btn"
                   onClick={toggleFullscreen}
@@ -1146,7 +1176,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       </div>
 
       {/* Footer (only in windowed mode) */}
-      {!isFullscreen && (
+      {!isFullscreen && !isRotated && (
         <div className="map-video-footer">
           <span className="map-video-live-badge">
             <span className="map-video-live-dot"></span>
@@ -1407,8 +1437,6 @@ const CCTVMarker = React.memo<CCTVMarkerProps>(({
     </Marker>
   );
 });
-
-const isMobileDevice = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 CCTVMarker.displayName = 'CCTVMarker';
 
@@ -2218,6 +2246,53 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
 
         .map-video-overlay.fullscreen .map-video-footer {
           display: none !important;
+        }
+
+        /* Rotated landscape handling for map overlay player on mobile */
+        .map-video-overlay.rotated-landscape {
+          position: fixed !important;
+          top: 50% !important;
+          left: 50% !important;
+          width: 100vh !important;
+          height: 100vw !important;
+          max-width: 100vh !important;
+          max-height: 100vw !important;
+          transform: translate(-50%, -50%) rotate(90deg) !important;
+          transform-origin: center center !important;
+          z-index: 99999 !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          border: none !important;
+          margin: 0 !important;
+          display: flex !important;
+          flex-direction: column !important;
+          background: #000000 !important;
+        }
+
+        .map-video-overlay.rotated-landscape .map-video-content {
+          width: 100% !important;
+          height: 100% !important;
+          flex: 1 !important;
+          aspect-ratio: auto !important;
+        }
+
+        .map-video-overlay.rotated-landscape .map-video-hud {
+          bottom: 24px;
+          max-width: 480px;
+        }
+
+        .hud-btn.rotation-btn.active {
+          color: #3b82f6 !important;
+          background: rgba(59, 130, 246, 0.15) !important;
+          border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        }
+
+        .hud-btn.rotation-btn svg {
+          transition: transform 0.3s ease;
+        }
+
+        .hud-btn.rotation-btn.active svg {
+          transform: rotate(-90deg);
         }
 
         /* Responsive for smaller screens */
