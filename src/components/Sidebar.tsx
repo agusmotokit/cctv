@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { provinces, citiesByProvince, type CCTV } from '../data/cctvData';
-import { MapPin, Power, ChevronLeft, Search, Plus } from 'lucide-react';
+import { MapPin, Power, Search, Plus } from 'lucide-react';
 import { type User } from 'firebase/auth';
 
 interface SidebarProps {
@@ -29,7 +29,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   cctvs,
   isCollapsed,
-  setIsCollapsed,
+
   searchQuery,
   setSearchQuery,
   selectedCountry,
@@ -93,16 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className={`sidebar-container glass-panel ${isCollapsed ? 'collapsed' : ''}`}>
-      {isCollapsed && (
-        <button 
-          className="sidebar-toggle-btn floating glass-panel" 
-          onClick={() => setIsCollapsed(false)}
-          title="Tampilkan Filter"
-          aria-label="Tampilkan Filter"
-        >
-          <ChevronLeft size={18} />
-        </button>
-      )}
+      
       
       <div className="sidebar-content-wrapper">
 
