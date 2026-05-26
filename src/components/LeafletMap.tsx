@@ -2584,6 +2584,17 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           aspect-ratio: auto !important;
         }
 
+        .map-video-overlay.rotated-landscape video,
+        .map-video-overlay.fullscreen.rotated-landscape video,
+        .map-video-overlay.rotated-landscape canvas,
+        .map-video-overlay.fullscreen.rotated-landscape canvas,
+        .map-video-overlay.rotated-landscape img,
+        .map-video-overlay.fullscreen.rotated-landscape img {
+          object-fit: contain !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
+
         .map-video-overlay.rotated-landscape .map-video-hud,
         .map-video-overlay.fullscreen.rotated-landscape .map-video-hud {
           bottom: 24px;

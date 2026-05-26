@@ -1121,6 +1121,14 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
           aspect-ratio: auto !important;
         }
 
+        .multiview-cell-player.cell-rotated-landscape video,
+        .multiview-cell-player.cell-rotated-landscape canvas,
+        .multiview-cell-player.cell-rotated-landscape img {
+          object-fit: contain !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
+
         .cell-rotated-top-bar {
           display: flex;
           align-items: center;
