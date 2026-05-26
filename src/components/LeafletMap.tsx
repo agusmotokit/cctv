@@ -894,6 +894,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           hls = new Hls({
             enableWorker: true,
             lowLatencyMode: true,
+            capLevelToPlayerSize: false,
             backBufferLength: 30,
             maxBufferLength: isShortWindowStream ? 4 : 30,
             maxMaxBufferLength: isShortWindowStream ? 6 : 45,
@@ -955,10 +956,18 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           hls.attachMedia(video);
 
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (hls && hls.levels && hls.levels.length > 0) {
+              const highestLevel = hls.levels.length - 1;
+              hls.startLevel = highestLevel;
+              hls.currentLevel = highestLevel;
+              hls.loadLevel = highestLevel;
+            }
             if (!active) return;
             video.play().catch(() => {
               setIsPlaying(false);
             });
+            setIsLoaded(true);
+            setIsPlaying(true);
           });
 
           hls.on(Hls.Events.ERROR, (_, data) => {
@@ -2620,6 +2629,14 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           align-items: center;
           justify-content: center;
           touch-action: none;
+        }
+
+        .map-video-viewport video,
+        .map-video-viewport canvas,
+        .map-video-viewport img {
+          image-rendering: -webkit-optimize-contrast !important;
+          image-rendering: crisp-edges !important;
+          image-rendering: pixelated !important;
         }
 
         .hud-btn.rotation-btn.active {

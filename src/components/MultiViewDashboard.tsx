@@ -412,6 +412,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
           hls = new Hls({
             enableWorker: true,
             lowLatencyMode: true,
+            capLevelToPlayerSize: false,
             maxBufferLength: isShortWindow ? 3 : 15,
             liveSyncDurationCount: 2,
             liveMaxLatencyDurationCount: 5
@@ -420,6 +421,12 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
           hls.attachMedia(video);
 
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (hls && hls.levels && hls.levels.length > 0) {
+              const highestLevel = hls.levels.length - 1;
+              hls.startLevel = highestLevel;
+              hls.currentLevel = highestLevel;
+              hls.loadLevel = highestLevel;
+            }
             if (active) video.play().catch(() => {});
           });
 
@@ -1310,6 +1317,14 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
           align-items: center;
           justify-content: center;
           touch-action: none;
+        }
+
+        .cell-video-viewport video,
+        .cell-video-viewport canvas,
+        .cell-video-viewport img {
+          image-rendering: -webkit-optimize-contrast !important;
+          image-rendering: crisp-edges !important;
+          image-rendering: pixelated !important;
         }
 
         .cell-rotated-top-bar {
