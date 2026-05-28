@@ -1503,8 +1503,7 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
           bottom: 8px;
           left: 50%;
           transform: translate(-50%, 6px);
-          width: calc(100% - 16px);
-          max-width: 280px;
+          width: max-content;
           z-index: 15;
           opacity: 0;
           transition: opacity 0.2s ease, transform 0.2s ease;
@@ -1520,29 +1519,28 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
         .cell-hud-bar {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
           padding: 6px 12px;
-          background: rgba(15, 22, 38, 0.45);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
+          background: transparent !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+          border: none !important;
           width: 100%;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-          gap: 8px;
+          box-shadow: none !important;
+          gap: 16px;
         }
 
         .cell-hud-left,
         .cell-hud-right {
           display: flex;
           align-items: center;
-          gap: 2px;
+          gap: 6px;
         }
 
         .cell-hud-btn {
           border: none;
           background: transparent;
-          color: rgba(255, 255, 255, 0.75);
+          color: rgba(255, 255, 255, 0.85);
           width: 26px;
           height: 26px;
           border-radius: 4px;
@@ -1552,6 +1550,7 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
           cursor: pointer;
           transition: all 0.15s ease;
           flex-shrink: 0;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
         }
 
         .cell-hud-btn:hover {
@@ -1562,7 +1561,7 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
         .cell-volume-wrapper {
           display: flex;
           align-items: center;
-          gap: 2px;
+          gap: 4px;
         }
 
         .cell-volume-slider {
@@ -1570,11 +1569,12 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
           appearance: none;
           width: 50px;
           height: 3px;
-          background: rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.25);
           border-radius: 2px;
           outline: none;
           cursor: pointer;
           transition: width 0.2s ease;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
         }
 
         .cell-volume-wrapper:hover .cell-volume-slider {

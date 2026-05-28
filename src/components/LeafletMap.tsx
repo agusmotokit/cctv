@@ -2360,8 +2360,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           left: 50%;
           bottom: 12px;
           transform: translate(-50%, 8px);
-          width: calc(100% - 24px);
-          max-width: 440px;
+          width: max-content;
           z-index: 20;
           opacity: 0;
           pointer-events: none;
@@ -2378,28 +2377,27 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         .map-hud-controls-bar {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          background: rgba(15, 22, 38, 0.45);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 12px;
-          padding: 8px 16px;
+          justify-content: center;
+          background: transparent !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+          border: none !important;
+          padding: 8px 12px;
           width: 100%;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-          gap: 12px;
+          box-shadow: none !important;
+          gap: 16px;
         }
 
         .controls-left, .controls-right {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 8px;
         }
 
         .hud-btn {
           background: transparent;
           border: none;
-          color: rgba(255, 255, 255, 0.8);
+          color: rgba(255, 255, 255, 0.85);
           cursor: pointer;
           width: 32px;
           height: 32px;
@@ -2408,6 +2406,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           align-items: center;
           justify-content: center;
           transition: all 0.2s ease;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
         }
 
         .hud-btn:hover {
@@ -2421,7 +2420,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           width: auto;
           font-size: 0.8rem;
           font-weight: 600;
-          color: rgba(255, 255, 255, 0.9);
+          color: rgba(255, 255, 255, 0.95);
         }
 
         .hud-btn.snapshot-btn:hover {
@@ -2439,10 +2438,11 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           width: 60px;
           height: 4px;
           appearance: none;
-          background: rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.25);
           border-radius: 2px;
           outline: none;
           cursor: pointer;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
           transition: background 0.2s ease;
         }
 
