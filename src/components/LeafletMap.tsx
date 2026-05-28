@@ -171,7 +171,7 @@ const MapController: React.FC<MapControllerProps> = ({
               const rect = overlay.getBoundingClientRect();
               const containerRect = container.getBoundingClientRect();
               const overlayBottomRelative = rect.bottom - containerRect.top;
-              return overlayBottomRelative + 57;
+              return overlayBottomRelative + 270;
             } else {
               // Estimate overlay dimensions
               const mapWidth = map.getSize().x;
@@ -181,7 +181,7 @@ const MapController: React.FC<MapControllerProps> = ({
               const footerHeight = 31;
               const topOffset = 24;
               const overlayHeight = headerHeight + videoHeight + footerHeight;
-              return topOffset + overlayHeight + 57;
+              return topOffset + overlayHeight + 270;
             }
           })();
 
@@ -1695,6 +1695,7 @@ interface CCTVMarkerProps {
   user: any;
   onEdit: (cctv: CCTV) => void;
   onDelete: (id: string) => void;
+  isVideoActive?: boolean;
 }
 
 const CCTVMarker = React.memo<CCTVMarkerProps>(({
@@ -1708,7 +1709,8 @@ const CCTVMarker = React.memo<CCTVMarkerProps>(({
   showAnimation,
   user,
   onEdit,
-  onDelete
+  onDelete,
+  isVideoActive
 }) => {
   const eventHandlers = React.useMemo(() => ({
     click: () => {
@@ -1737,7 +1739,7 @@ const CCTVMarker = React.memo<CCTVMarkerProps>(({
       alt={`Kamera CCTV ${cctv.name} - ${cctv.status === 'online' ? 'Online' : 'Offline'}`}
       eventHandlers={eventHandlers}
     >
-      <Popup className="map-popup-custom">
+      <Popup className="map-popup-custom" autoPan={!isVideoActive}>
         <div className="map-popup-card">
           <div className="popup-header">
             <span className={`status-badge ${cctv.status === 'online' ? 'status-online' : 'status-offline'}`}>
@@ -2046,6 +2048,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
             user={user}
             onEdit={onEditCCTV}
             onDelete={onDeleteCCTV}
+            isVideoActive={!!watchingCCTV}
           />
         ))}
 
