@@ -330,17 +330,112 @@ export const Navbar: React.FC<NavbarProps> = ({
         }
 
         @media (max-width: 600px) {
+          .navbar-container {
+            padding: 0 12px;
+            height: 60px;
+          }
+
+          .navbar-brand {
+            gap: 8px;
+          }
+
+          .brand-logo-wrapper {
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+          }
+
+          .brand-icon {
+            width: 18px;
+            height: 18px;
+          }
+
+          .brand-text h1 {
+            font-size: 0.95rem;
+          }
+
+          .brand-text p {
+            font-size: 0.6rem;
+          }
+
+          .navbar-actions {
+            gap: 6px;
+          }
+
+          .search-toggle-btn,
+          .favorites-toggle-btn,
+          .menu-toggle-btn,
+          .login-btn,
+          .logout-btn {
+            width: 34px !important;
+            height: 34px !important;
+            min-width: 34px !important;
+            padding: 0 !important;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .login-btn span,
+          .logout-btn span,
           .user-email-display {
-            display: none;
+            display: none !important;
           }
-          .add-cctv-btn span, .logout-btn span {
-            display: none;
-          }
-          .add-cctv-btn, .logout-btn {
-            padding: 8px;
-          }
-          .add-cctv-btn svg, .logout-btn svg {
+
+          .login-btn svg,
+          .logout-btn svg {
             margin-right: 0 !important;
+          }
+
+          .search-popup-dropdown {
+            width: calc(100vw - 24px) !important;
+            max-width: 280px !important;
+          }
+
+          .search-popup-arrow {
+            right: 12px !important;
+          }
+        }
+
+        @media (max-width: 375px) {
+          .brand-text p {
+            display: none;
+          }
+
+          .brand-text h1 {
+            font-size: 0.85rem;
+          }
+
+          .navbar-container {
+            padding: 0 8px;
+          }
+
+          .navbar-actions {
+            gap: 4px;
+          }
+
+          .brand-logo-wrapper {
+            width: 30px;
+            height: 30px;
+          }
+
+          .brand-icon {
+            width: 16px;
+            height: 16px;
+          }
+
+          .search-toggle-btn,
+          .favorites-toggle-btn,
+          .menu-toggle-btn,
+          .login-btn,
+          .logout-btn {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+          }
+
+          .search-popup-arrow {
+            right: 11px !important;
           }
         }
 
