@@ -123,6 +123,30 @@
       "dest": "api/index.js"
     },
     {
+      "src": "/balangan-stream/(.*)",
+      "dest": "api/index.js"
+    },
+    {
+      "src": "/kotabaru-stream/(.*)",
+      "dest": "api/index.js"
+    },
+    {
+      "src": "/tabalong-stream/(.*)",
+      "dest": "api/index.js"
+    },
+    {
+      "src": "/tanahbumbu-stream/(.*)",
+      "dest": "api/index.js"
+    },
+    {
+      "src": "/kutim-hls/(.*)",
+      "dest": "api/index.js"
+    },
+    {
+      "src": "/tapin-stream/(.*)",
+      "dest": "api/index.js"
+    },
+    {
       "src": "/assets/(.*)",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"

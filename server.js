@@ -78,6 +78,24 @@ setInterval(refreshMalangCookies, 5 * 60 * 1000);
 refreshSingkawangCookies();
 setInterval(refreshSingkawangCookies, 5 * 60 * 1000);
 
+let bontangSession = '';
+async function refreshBontangSession() {
+  try {
+    const res = await fetch('https://intip.bontangkota.go.id/token.json');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.session) {
+        bontangSession = data.session;
+        console.log('[Bontang Session Refresh] Session updated.');
+      }
+    }
+  } catch (err) {
+    console.error('[Bontang Session Refresh] Failed:', err.message);
+  }
+}
+refreshBontangSession();
+setInterval(refreshBontangSession, 5 * 60 * 1000);
+
 
 // Helper for CORS proxy response headers
 function configureCorsHeaders(proxyRes) {
@@ -301,20 +319,53 @@ app.get('/api/banjar-stream/:id', async (req, res) => {
   }
 });
 
+// Bontang Dynamic Stream and Snapshot Endpoints
+app.get('/api/bontang-stream/:cameraId/stream.mp4', (req, res) => {
+  const { cameraId } = req.params;
+  res.redirect(`https://i-see.iconpln.co.id/ckexo/media?session=${bontangSession}&cameraId=${cameraId}&format=fmp4&frames=all&media=video&t=live`);
+});
+
+app.get('/api/bontang-snapshot/:cameraId', (req, res) => {
+  const { cameraId } = req.params;
+  res.redirect(`https://i-see.iconpln.co.id/ckexo/media?session=${bontangSession}&cameraId=${cameraId}&format=jpeg&frames=1&media=image`);
+});
+
+// Kutai Timur Dynamic Stream Wakeup and Proxy Endpoint
+app.get('/api/kutim-stream/:streamKey', async (req, res) => {
+  const { streamKey } = req.params;
+  try {
+    const startUrl = `https://apicctv.kutaitimurkab.go.id/api/stream/${streamKey}/start`;
+    const triggerRes = await fetch(startUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    console.log(`[Kutim Stream Wakeup] ${streamKey} -> Status: ${triggerRes.status}`);
+  } catch (err) {
+    console.error(`[Kutim Stream Wakeup Error] ${streamKey}:`, err.message);
+  }
+  res.redirect(`/kutim-hls/${streamKey}/index.m3u8`);
+});
+
 // Proxy setups for different region stream sources
 const createCctvProxy = (prefix, target, options = {}) => {
   app.use(prefix, createProxyMiddleware({
     target,
     changeOrigin: true,
     secure: false,
+    pathRewrite: options.pathRewrite,
+    followRedirects: options.followRedirects,
     on: {
-      proxyReq: (proxyReq) => {
+      proxyReq: (proxyReq, req) => {
+        console.log(`[Proxy] ${req.method} ${req.originalUrl} -> ${proxyReq.path}`);
         if (options.origin) proxyReq.setHeader('Origin', options.origin);
         if (options.referer) proxyReq.setHeader('Referer', options.referer);
         if (options.userAgent) proxyReq.setHeader('User-Agent', options.userAgent);
         if (options.cookies) proxyReq.setHeader('Cookie', options.cookies);
       },
-      proxyRes: (proxyRes) => {
+      proxyRes: (proxyRes, req, res) => {
+        console.log(`[Proxy Response] ${req.method} ${req.originalUrl} -> Target Status: ${proxyRes.statusCode}, Content-Type: ${proxyRes.headers['content-type']}`);
         configureCorsHeaders(proxyRes);
       }
     }
@@ -426,6 +477,20 @@ createCctvProxy('/buleleng-stream', 'https://shinobi.bulelengkab.go.id');
 createCctvProxy('/kebumen-stream', 'https://cctv.kebumenkab.go.id');
 createCctvProxy('/surabaya-api', 'http://36.66.208.101:5000');
 createCctvProxy('/banjar-stream', 'https://cctv.banjarkab.go.id');
+createCctvProxy('/balangan-stream', 'https://cctv.balangankab.go.id/hls');
+createCctvProxy('/kotabaru-stream', 'https://atcs.dishubkotabaru.id/live');
+createCctvProxy('/tabalong-stream', 'https://cctv.tabalongkab.go.id', {
+  pathRewrite: {
+    '^/': '/api/stream/hls/'
+  },
+  origin: 'https://cctv.tabalongkab.go.id',
+  referer: 'https://cctv.tabalongkab.go.id/',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  followRedirects: true
+});
+createCctvProxy('/tanahbumbu-stream', 'https://atcs.tanahbumbukab.go.id/hls');
+createCctvProxy('/kutim-hls', 'https://cctv.kutaitimurkab.go.id/hls');
+createCctvProxy('/tapin-stream', 'https://cctv.tapinkab.go.id');
 
 // Serve compiled static frontend assets in production mode
 const distPath = path.join(__dirname, 'dist');

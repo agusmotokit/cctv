@@ -1671,7 +1671,10 @@ const cityCenters: Record<string, { lat: number; lng: number; zoom: number }> = 
   'Kab. Nganjuk': { lat: -7.601, lng: 111.903, zoom: 12 },
   'Kota Surabaya': { lat: -7.28, lng: 112.75, zoom: 12 },
   'Kota Pekanbaru': { lat: 0.5070, lng: 101.4478, zoom: 12 },
-  'Kota Batam': { lat: 1.1301, lng: 104.0531, zoom: 12 }
+  'Kota Batam': { lat: 1.1301, lng: 104.0531, zoom: 12 },
+  'Kab. Kutai Timur': { lat: 0.5149, lng: 117.5577, zoom: 12 },
+  'Kota Bontang': { lat: 0.134, lng: 117.474, zoom: 13 },
+  'Kab. Tapin': { lat: -2.92, lng: 115.15, zoom: 12 }
 };
 
 const getCategoryLabel = (category: string) => {
