@@ -1483,19 +1483,20 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
         /* HUD Controls */
         .cell-hud {
           position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
+          bottom: 8px;
+          left: 50%;
+          transform: translate(-50%, 6px);
+          width: calc(100% - 16px);
+          max-width: 280px;
           z-index: 15;
           opacity: 0;
-          transform: translateY(4px);
           transition: opacity 0.2s ease, transform 0.2s ease;
           pointer-events: none;
         }
 
         .cell-hud.active {
           opacity: 1;
-          transform: translateY(0);
+          transform: translate(-50%, 0);
           pointer-events: auto;
         }
 
@@ -1503,8 +1504,15 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 5px 8px;
-          background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+          padding: 6px 12px;
+          background: rgba(15, 22, 38, 0.45);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          width: 100%;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+          gap: 8px;
         }
 
         .cell-hud-left,

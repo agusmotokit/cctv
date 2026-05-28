@@ -2364,14 +2364,14 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           display: flex;
           align-items: center;
           justify-content: space-between;
-          background: rgba(15, 23, 42, 0.85);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          background: rgba(15, 22, 38, 0.45);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 12px;
           padding: 8px 16px;
           width: 100%;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
           gap: 12px;
         }
 
