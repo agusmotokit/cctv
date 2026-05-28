@@ -231,6 +231,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
   const [isTouching, setIsTouching] = useState(false);
 
   const viewportContainerRef = useRef<HTMLDivElement>(null);
+  const togglePlayRef = useRef<() => void>(() => {});
   
   const zoomScaleRef = useRef(1);
   const panOffsetRef = useRef({ x: 0, y: 0 });
@@ -339,8 +340,13 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       const currentPan = panOffsetRef.current;
 
       if (e.touches.length === 1) {
+        setIsTouching(true);
+        state.startX = e.touches[0].clientX;
+        state.startY = e.touches[0].clientY;
+        state.currentX = e.touches[0].clientX;
+        state.currentY = e.touches[0].clientY;
+
         if (currentScale > 1) {
-          setIsTouching(true);
           state.isPanning = true;
           state.isPinching = false;
           state.isSwipe = false;
@@ -350,14 +356,9 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           };
           state.initialPan = { ...currentPan };
         } else {
-          setIsTouching(true);
           state.isPanning = false;
           state.isPinching = false;
           state.isSwipe = true;
-          state.startX = e.touches[0].clientX;
-          state.startY = e.touches[0].clientY;
-          state.currentX = e.touches[0].clientX;
-          state.currentY = e.touches[0].clientY;
         }
       } else if (e.touches.length === 2) {
         setIsTouching(true);
@@ -406,6 +407,9 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         
         const clientX = e.touches[0].clientX;
         const clientY = e.touches[0].clientY;
+
+        state.currentX = clientX;
+        state.currentY = clientY;
         
         const dx = clientX - state.initialCenter.x;
         const dy = clientY - state.initialCenter.y;
@@ -451,10 +455,13 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       setIsTouching(false);
       const currentScale = zoomScaleRef.current;
       
-      if (state.isSwipe && currentScale === 1) {
-        const dx = state.currentX - state.startX;
-        const dy = state.currentY - state.startY;
-        
+      const dx = state.currentX - state.startX;
+      const dy = state.currentY - state.startY;
+      
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+        // Universal Tap: play/pause on tap at any scale (both zoomed and normal)
+        togglePlayRef.current();
+      } else if (state.isSwipe && currentScale === 1) {
         // If it's a significant vertical swipe
         if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx)) {
           if (dy < 0) {
@@ -464,9 +471,6 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
             // Swipe Down -> Return to portrait
             setIsRotated(false);
           }
-        } else if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-          // It's a tap
-          togglePlay();
         }
       }
 
@@ -1056,6 +1060,10 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     }
   };
 
+  useEffect(() => {
+    togglePlayRef.current = togglePlay;
+  }, [togglePlay]);
+
   // Handle Mute/Volume
   const toggleMute = () => {
     if (isMjpeg || isIframe || isJsmpeg) return;
@@ -1372,7 +1380,11 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
               muted={isMuted}
               playsInline
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              onClick={togglePlay}
+              onClick={() => {
+                if (!isMobileDevice) {
+                  togglePlay();
+                }
+              }}
             />
           )}
         </div>
