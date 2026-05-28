@@ -147,6 +147,19 @@ app.get('/api/cctvs', (req, res) => {
   res.json(cctvData);
 });
 
+// Capture client-side debug logs in server output
+app.post('/api/debug-log', (req, res) => {
+  console.log('[CLIENT DEBUG]', req.body);
+  try {
+    const logFilePath = path.join(__dirname, 'debug.log');
+    const logLine = `[${new Date().toISOString()}] ${JSON.stringify(req.body)}\n`;
+    fs.appendFileSync(logFilePath, logLine, 'utf-8');
+  } catch (err) {
+    console.error('[Debug Log File Error]', err.message);
+  }
+  res.json({ success: true });
+});
+
 // Add CCTV (Protected)
 app.post('/api/cctvs', authenticateFirebaseToken, (req, res) => {
   const { name, city, province, lat, lng, streamUrl, category, status, description } = req.body;

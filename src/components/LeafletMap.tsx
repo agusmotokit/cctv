@@ -53,6 +53,7 @@ import 'leaflet/dist/leaflet.css';
 
 const isMobileDevice = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
+
 // Create CCTV camera pin marker icon (SVG-based)
 const createCCTVMarker = (status: 'online' | 'offline', showAnimation = true) => {
   const isOnline = status === 'online';
@@ -119,14 +120,86 @@ interface MapControllerProps {
   lat: number;
   lng: number;
   zoom: number;
+  timestamp: number;
+  watchingCCTV: CCTV | null;
+  selectedCCTV: CCTV | null;
+  isPlayerFullscreen: boolean;
+  isPlayerRotated: boolean;
 }
 
-const MapController: React.FC<MapControllerProps> = ({ lat, lng, zoom }) => {
+const MapController: React.FC<MapControllerProps> = ({
+  lat,
+  lng,
+  zoom,
+  timestamp,
+  watchingCCTV,
+  selectedCCTV,
+  isPlayerFullscreen,
+  isPlayerRotated
+}) => {
   const map = useMap();
 
+  const watchingCCTVRef = useRef(watchingCCTV);
+  const selectedCCTVRef = useRef(selectedCCTV);
+  const isPlayerFullscreenRef = useRef(isPlayerFullscreen);
+  const isPlayerRotatedRef = useRef(isPlayerRotated);
+
   useEffect(() => {
-    map.setView([lat, lng], zoom, { animate: true });
-  }, [lat, lng, zoom, map]);
+    watchingCCTVRef.current = watchingCCTV;
+    selectedCCTVRef.current = selectedCCTV;
+    isPlayerFullscreenRef.current = isPlayerFullscreen;
+    isPlayerRotatedRef.current = isPlayerRotated;
+  }, [watchingCCTV, selectedCCTV, isPlayerFullscreen, isPlayerRotated]);
+
+  useEffect(() => {
+    const handle = requestAnimationFrame(() => {
+      const isOffsetActive = watchingCCTVRef.current && !isPlayerFullscreenRef.current && !isPlayerRotatedRef.current;
+
+      
+      if (selectedCCTVRef.current || watchingCCTVRef.current) {
+        const liveZoom = map.getZoom();
+        
+        if (isOffsetActive) {
+          const mapHeight = map.getSize().y;
+          const targetLatLng = L.latLng(lat, lng);
+          
+          const Y_target = (() => {
+            const overlay = document.querySelector('.map-video-overlay');
+            const container = map.getContainer();
+            
+            if (overlay && container) {
+              const rect = overlay.getBoundingClientRect();
+              const containerRect = container.getBoundingClientRect();
+              const overlayBottomRelative = rect.bottom - containerRect.top;
+              return overlayBottomRelative + 57;
+            } else {
+              // Estimate overlay dimensions
+              const mapWidth = map.getSize().x;
+              const overlayWidth = Math.min(560, mapWidth - 32);
+              const headerHeight = 38;
+              const videoHeight = (overlayWidth * 9) / 16;
+              const footerHeight = 31;
+              const topOffset = 24;
+              const overlayHeight = headerHeight + videoHeight + footerHeight;
+              return topOffset + overlayHeight + 57;
+            }
+          })();
+
+          const targetPoint = map.project(targetLatLng, liveZoom);
+          const centerPoint = targetPoint.add(L.point(0, (mapHeight / 2) - Y_target));
+          const centerLatLng = map.unproject(centerPoint, liveZoom);
+          
+          map.setView(centerLatLng, liveZoom, { animate: true });
+        } else {
+          map.setView([lat, lng], liveZoom, { animate: true });
+        }
+      } else {
+        map.setView([lat, lng], zoom, { animate: true });
+      }
+    });
+
+    return () => cancelAnimationFrame(handle);
+  }, [lat, lng, zoom, timestamp, watchingCCTV, selectedCCTV, isPlayerFullscreen, isPlayerRotated, map]);
 
   useEffect(() => {
     map.invalidateSize();
@@ -162,6 +235,15 @@ const PopupCloser: React.FC<{ watching: CCTV | null }> = ({ watching }) => {
       map.closePopup();
     }
   }, [watching, map]);
+  return null;
+};
+
+// Component to track map instance for parent access
+const MapInstanceTracker: React.FC<{ onMapReady: (map: L.Map) => void }> = ({ onMapReady }) => {
+  const map = useMap();
+  useEffect(() => {
+    onMapReady(map);
+  }, [map, onMapReady]);
   return null;
 };
 
@@ -1055,7 +1137,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
   }, [isLoaded, isMuted, volume, isMjpeg, isIframe, isJsmpeg]);
 
   // Handle Play/Pause
-  const togglePlay = () => {
+  const togglePlay = React.useCallback(() => {
     if (isMjpeg || isIframe || isJsmpeg) return;
 
     const video = videoRef.current;
@@ -1068,7 +1150,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       video.play().catch(() => {});
       setIsPlaying(true);
     }
-  };
+  }, [isMjpeg, isIframe, isJsmpeg, isLoaded, isPlaying]);
 
   useEffect(() => {
     togglePlayRef.current = togglePlay;
@@ -1762,11 +1844,16 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   onDeleteCCTV
 }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
   const [watchingCCTV, setWatchingCCTV] = useState<CCTV | null>(null);
   const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
   const [hoveredCCTV, setHoveredCCTV] = useState<CCTV | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ lat: number; lng: number } | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(10);
+  const currentZoomRef = useRef(currentZoom);
+  useEffect(() => {
+    currentZoomRef.current = currentZoom;
+  }, [currentZoom]);
   const [isPlayerFullscreen, setIsPlayerFullscreen] = useState(false);
   const [isPlayerRotated, setIsPlayerRotated] = useState(false);
 
@@ -1786,14 +1873,14 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     return inBounds;
   }, [cctvs, mapBounds, currentZoom]);
 
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number; zoom: number }>(() => {
+  const [mapTarget, setMapTarget] = useState<{ lat: number; lng: number; zoom: number; timestamp: number }>(() => {
+    let initialCenter = { lat: -7.1612, lng: 112.6524, zoom: 10 };
     if (selectedCity && selectedCity !== 'Semua Kota' && cityCenters[selectedCity]) {
-      return cityCenters[selectedCity];
+      initialCenter = cityCenters[selectedCity];
+    } else if (selectedProvince && provinceCenters[selectedProvince]) {
+      initialCenter = provinceCenters[selectedProvince];
     }
-    if (selectedProvince && provinceCenters[selectedProvince]) {
-      return provinceCenters[selectedProvince];
-    }
-    return { lat: -7.1612, lng: 112.6524, zoom: 10 };
+    return { ...initialCenter, timestamp: Date.now() };
   });
 
   // Keep a stable ref to onSelectCCTV so we can call it inside effects
@@ -1817,20 +1904,19 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     if (selectedCity && selectedCity !== 'Semua Kota') {
       const center = cityCenters[selectedCity];
       if (center) {
-        setMapCenter(center);
+        setMapTarget({ ...center, timestamp: Date.now() });
         setWatchingCCTV(null);
         onSelectCCTVRef.current(null);
       }
     } else if (selectedProvince) {
       const center = provinceCenters[selectedProvince];
       if (center) {
-        setMapCenter(center);
+        setMapTarget({ ...center, timestamp: Date.now() });
         setWatchingCCTV(null);
         onSelectCCTVRef.current(null);
       }
     }
   }, [selectedProvince, selectedCity]);
-
   // Update map center when a specific CCTV is selected/clicked
   useEffect(() => {
     console.log('[LeafletMap] selectedCCTV effect. selected:', selectedCCTV?.name, 'user:', user?.email);
@@ -1840,10 +1926,16 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         return;
       }
       console.log('[LeafletMap] autoplaying selectedCCTV:', selectedCCTV.name);
-      setMapCenter({
+      
+      // Use direct map instance zoom if ready, fallback to tracked currentZoomRef
+      const activeZoom = mapRef.current ? mapRef.current.getZoom() : currentZoomRef.current;
+      console.log('[LeafletMap] selectedCCTV effect. selected:', selectedCCTV.name, 'activeZoom computed:', activeZoom, 'mapZoom:', mapRef.current?.getZoom(), 'currentZoomRef:', currentZoomRef.current);
+      
+      setMapTarget({
         lat: selectedCCTV.lat,
         lng: selectedCCTV.lng,
-        zoom: 13
+        zoom: activeZoom,
+        timestamp: Date.now()
       });
       setWatchingCCTV(selectedCCTV);
     }
@@ -1854,10 +1946,11 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     if (!watchingCCTV) {
       setIsPlayerFullscreen(false);
       setIsPlayerRotated(false);
+      onSelectCCTVRef.current(null); // synchronize parent state!
     }
   }, [watchingCCTV]);
 
-  const { lat, lng, zoom } = mapCenter;
+  const { lat, lng, zoom } = mapTarget;
 
   const onToggleFavoriteRef = useRef(onToggleFavorite);
   useEffect(() => {
@@ -1903,8 +1996,18 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         zoomControl={false}
         style={{ height: '100%', width: '100%' }}
       >
-        <MapController lat={lat} lng={lng} zoom={zoom} />
+        <MapController 
+          lat={lat} 
+          lng={lng} 
+          zoom={zoom} 
+          timestamp={mapTarget.timestamp}
+          watchingCCTV={watchingCCTV}
+          selectedCCTV={selectedCCTV}
+          isPlayerFullscreen={isPlayerFullscreen}
+          isPlayerRotated={isPlayerRotated}
+        />
         <MapBoundsTracker onBoundsChange={setMapBounds} onZoomChange={setCurrentZoom} />
+        <MapInstanceTracker onMapReady={(map) => { mapRef.current = map; }} />
         <PopupCloser watching={watchingCCTV} />
         <ZoomControl position="bottomright" />
         {/* OpenStreetMap Standard Light TileLayer */}
