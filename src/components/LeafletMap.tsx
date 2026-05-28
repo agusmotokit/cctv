@@ -246,7 +246,8 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     startY: 0,
     currentX: 0,
     currentY: 0,
-    isSwipe: false
+    isSwipe: false,
+    gestureOccurred: false
   });
 
   // Sync refs with state changes
@@ -339,6 +340,8 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       const currentScale = zoomScaleRef.current;
       const currentPan = panOffsetRef.current;
 
+      state.gestureOccurred = false;
+
       if (e.touches.length === 1) {
         setIsTouching(true);
         state.startX = e.touches[0].clientX;
@@ -365,6 +368,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         state.isPinching = true;
         state.isPanning = false;
         state.isSwipe = false;
+        state.gestureOccurred = true;
         
         const t1 = e.touches[0];
         const t2 = e.touches[1];
@@ -384,6 +388,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
 
       if (state.isPinching && e.touches.length === 2) {
         if (e.cancelable) e.preventDefault();
+        state.gestureOccurred = true;
         
         const t1 = e.touches[0];
         const t2 = e.touches[1];
@@ -404,6 +409,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         }
       } else if (state.isPanning && e.touches.length === 1 && currentScale > 1) {
         if (e.cancelable) e.preventDefault();
+        state.gestureOccurred = true;
         
         const clientX = e.touches[0].clientX;
         const clientY = e.touches[0].clientY;
@@ -445,6 +451,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         const dy = clientY - state.startY;
         if (Math.abs(dy) > 10) {
           if (e.cancelable) e.preventDefault();
+          state.gestureOccurred = true;
         }
         state.currentX = e.touches[0].clientX;
         state.currentY = e.touches[0].clientY;
@@ -458,7 +465,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       const dx = state.currentX - state.startX;
       const dy = state.currentY - state.startY;
       
-      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+      if (!state.gestureOccurred && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
         if (e.cancelable) {
           e.preventDefault();
         }
@@ -2378,13 +2385,14 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
           display: flex;
           align-items: center;
           justify-content: center;
-          background: transparent !important;
+          background: rgba(15, 22, 38, 0.3) !important;
           backdrop-filter: none !important;
           -webkit-backdrop-filter: none !important;
-          border: none !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          border-radius: 12px;
           padding: 8px 12px;
           width: 100%;
-          box-shadow: none !important;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
           gap: 16px;
         }
 
