@@ -28,7 +28,6 @@ export const App: React.FC = () => {
   const [selectedCountry, setSelectedCountry] = useState<string>('Indonesia');
   const [selectedProvince, setSelectedProvince] = useState<string>('DI Yogyakarta');
   const [selectedCity, setSelectedCity] = useState<string>('Kab. Bantul');
-  const [showOnlyOnline, setShowOnlyOnline] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(true);
   const [viewMode, setViewMode] = useState<'map' | 'multiview'>('map');
 
@@ -98,9 +97,8 @@ export const App: React.FC = () => {
     const matchesCountry = selectedCountry === 'Semua Negara' || selectedCountry === 'Indonesia';
     const matchesProvince = selectedProvince === 'Semua Provinsi' || cctv.province === selectedProvince;
     const matchesCity = selectedCity === 'Semua Kota' || cctv.city === selectedCity;
-    const matchesOnline = !showOnlyOnline || cctv.status === 'online';
 
-    return matchesCountry && matchesSearch && matchesProvince && matchesCity && matchesOnline;
+    return matchesCountry && matchesSearch && matchesProvince && matchesCity;
   });
 
   // Statistics
@@ -354,8 +352,6 @@ export const App: React.FC = () => {
           setSelectedProvince={setSelectedProvince}
           selectedCity={selectedCity}
           setSelectedCity={setSelectedCity}
-          showOnlyOnline={showOnlyOnline}
-          setShowOnlyOnline={setShowOnlyOnline}
           totalCount={totalCount}
           onlineCount={onlineCount}
           offlineCount={offlineCount}

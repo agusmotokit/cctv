@@ -13,8 +13,6 @@ interface SidebarProps {
   setSelectedProvince: (province: string) => void;
   selectedCity: string;
   setSelectedCity: (city: string) => void;
-  showOnlyOnline: boolean;
-  setShowOnlyOnline: (onlyOnline: boolean) => void;
 
   totalCount: number;
   onlineCount: number;
@@ -33,8 +31,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setSelectedProvince,
   selectedCity,
   setSelectedCity,
-  showOnlyOnline,
-  setShowOnlyOnline,
 
   totalCount,
   onlineCount,
@@ -47,8 +43,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setSelectedCountry('Indonesia');
     setSelectedProvince('Semua Provinsi');
     setSelectedCity('Semua Kota');
-    setShowOnlyOnline(false);
-
   };
 
   const availableCities = citiesByProvince[selectedProvince] || [];
@@ -156,24 +150,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-
-
-      <div className="filter-section">
-
-        <div className="toggle-options">
-          <label className="toggle-container">
-            <input
-              id="toggle-online-only"
-              type="checkbox"
-              checked={showOnlyOnline}
-              onChange={(e) => setShowOnlyOnline(e.target.checked)}
-              aria-label="Hanya CCTV Online"
-            />
-            <span className="checkmark"></span>
-            <span className="toggle-text">Hanya CCTV Online</span>
-          </label>
-        </div>
-      </div>
 
       <div className="sidebar-stats">
         <div className="stats-header">
