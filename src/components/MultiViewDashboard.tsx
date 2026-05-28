@@ -692,7 +692,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       }
     };
 
-    const onTouchEnd = () => {
+    const onTouchEnd = (e: TouchEvent) => {
       setIsTouching(false);
       const currentScale = zoomScaleRef.current;
       
@@ -700,6 +700,9 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       const dy = state.currentY - state.startY;
       
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
         // Universal Tap: play/pause on tap at any scale (both zoomed and normal)
         togglePlayRef.current();
       } else if (state.isSwipe && currentScale === 1) {
@@ -720,7 +723,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
 
     el.addEventListener('touchstart', onTouchStart, { passive: true });
     el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener('touchend', onTouchEnd, { passive: false });
     el.addEventListener('touchcancel', onTouchEnd, { passive: true });
 
     return () => {
