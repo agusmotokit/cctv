@@ -1689,6 +1689,7 @@ interface CCTVMarkerProps {
   onSelect: (cctv: CCTV) => void;
   onToggleFavorite: (id: string) => void;
   onHover: (cctv: CCTV | null, pos: { lat: number; lng: number } | null) => void;
+  onClick: (cctv: CCTV) => void;
   showDotOnly: boolean;
   showAnimation: boolean;
   user: any;
@@ -1702,6 +1703,7 @@ const CCTVMarker = React.memo<CCTVMarkerProps>(({
   onSelect,
   onToggleFavorite,
   onHover,
+  onClick,
   showDotOnly,
   showAnimation,
   user,
@@ -1709,13 +1711,16 @@ const CCTVMarker = React.memo<CCTVMarkerProps>(({
   onDelete
 }) => {
   const eventHandlers = React.useMemo(() => ({
+    click: () => {
+      onClick(cctv);
+    },
     mouseover: () => {
       onHover(cctv, { lat: cctv.lat, lng: cctv.lng });
     },
     mouseout: () => {
       onHover(null, null);
     }
-  }), [cctv, onHover]);
+  }), [cctv, onHover, onClick]);
 
   return (
     <Marker 
@@ -1966,6 +1971,16 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     setTooltipPos(pos);
   }, []);
 
+  const handleMarkerClick = React.useCallback((cctv: CCTV) => {
+    const activeZoom = mapRef.current ? mapRef.current.getZoom() : currentZoomRef.current;
+    setMapTarget({
+      lat: cctv.lat,
+      lng: cctv.lng,
+      zoom: activeZoom,
+      timestamp: Date.now()
+    });
+  }, []);
+
   const handlePantauLive = React.useCallback((cctv: CCTV) => {
     if (cctv.id !== 'bantul-14' && !user) {
       onSelectCCTVRef.current(cctv);
@@ -2025,6 +2040,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
             onSelect={handlePantauLive}
             onToggleFavorite={handleToggleFavorite}
             onHover={handleHover}
+            onClick={handleMarkerClick}
             showDotOnly={currentZoom < 13}
             showAnimation={!isMobileDevice && currentZoom > 11}
             user={user}
