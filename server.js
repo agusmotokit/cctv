@@ -265,6 +265,42 @@ app.delete('/api/cctvs/:id', authenticateAdminToken, (req, res) => {
   }
 });
 
+// Banjar Dynamic Stream Endpoint
+app.get('/api/banjar-stream/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const getStreamUrl = `https://cctv.banjarkab.go.id/get_stream.php?id=${id}`;
+    const streamRes = await fetch(getStreamUrl);
+    if (!streamRes.ok) {
+      return res.status(streamRes.status).send(`Failed to get stream URL for camera ${id}`);
+    }
+    const streamData = await streamRes.json();
+    const targetUrl = streamData.url;
+    if (!targetUrl) {
+      return res.status(404).send(`No stream URL found for camera ${id}`);
+    }
+
+    const playlistRes = await fetch(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    if (!playlistRes.ok) {
+      return res.status(playlistRes.status).send(`Failed to fetch playlist for camera ${id}`);
+    }
+
+    let playlistText = await playlistRes.text();
+    playlistText = playlistText.replaceAll('proxy.php?', '/banjar-stream/proxy.php?');
+
+    res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.send(playlistText);
+  } catch (err) {
+    console.error(`[Banjar Stream] Error for ID ${id}:`, err.message);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 // Proxy setups for different region stream sources
 const createCctvProxy = (prefix, target, options = {}) => {
   app.use(prefix, createProxyMiddleware({
@@ -389,6 +425,7 @@ createCctvProxy('/palembang-stream', 'https://stream.palembang.go.id');
 createCctvProxy('/buleleng-stream', 'https://shinobi.bulelengkab.go.id');
 createCctvProxy('/kebumen-stream', 'https://cctv.kebumenkab.go.id');
 createCctvProxy('/surabaya-api', 'http://36.66.208.101:5000');
+createCctvProxy('/banjar-stream', 'https://cctv.banjarkab.go.id');
 
 // Serve compiled static frontend assets in production mode
 const distPath = path.join(__dirname, 'dist');
