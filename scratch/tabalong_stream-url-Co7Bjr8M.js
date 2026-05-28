@@ -1,0 +1,1 @@
+function e(e,t){let n=`/api/stream/hls/${encodeURIComponent(e)}/index.m3u8`;return t?`${t.replace(/\/$/,``)}${n}`:n}function t(e){return`/api/stream/webrtc/${encodeURIComponent(e)}`}export{t as n,e as t};

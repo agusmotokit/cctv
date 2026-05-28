@@ -1,0 +1,137 @@
+[
+  {
+    "name": "Pasir Panjang 1",
+    "rtsp": "rtsp://admin:admin123@10.20.51.244:554/cam/realmonitor?channel=1&subtype=1",
+    "path": "stream/pp/ch-1/stream.m3u8",
+    "coordinates": [
+      108.87844937035827,
+      0.8405427591343505
+    ]
+  },
+  {
+    "name": "Simpang Mahkota",
+    "rtsp": "rtsp://admin:admin123@10.20.51.248:554/cam/realmonitor?channel=1&subtype=1",
+    "path": "stream/mahkota/ch-1/stream.m3u8",
+    "coordinates": [
+      108.9765854923171,
+      0.8945643611377108
+    ]
+  },
+  {
+    "name": "Simpang Kuala Yosudarso",
+    "rtsp": "rtsp://admin:admin123@10.20.51.246:554/cam/realmonitor?channel=2&subtype=1",
+    "path": "stream/kuala/ch-2/stream.m3u8",
+    "coordinates": [
+      108.98208657713678,
+      0.9144604593366956
+    ]
+  },
+  {
+    "name": "Simpang Ponegoro",
+    "rtsp": "rtsp://admin:admin123@10.20.51.233:554/cam/realmonitor?channel=4&subtype=1",
+    "path": "stream/poneg/ch-1/stream.m3u8",
+    "coordinates": [
+      108.98098955367169,
+      0.8995385183040434
+    ]
+  },
+  {
+    "name": "Simpang PU",
+    "rtsp": "rtsp://admin:admin123@10.20.51.65:554/cam/realmonitor?channel=1&subtype=1",
+    "path": "stream/pu/ch-1/stream.m3u8",
+    "coordinates": [
+      108.96608854158812,
+      0.89160953606128
+    ]
+  },
+  {
+    "name": "Simpang Hermansyah",
+    "rtsp": "rtsp://admin:admin123@10.20.51.233:554/cam/realmonitor?channel=2&subtype=1",
+    "path": "stream/herman/ch-2/stream.m3u8",
+    "coordinates": [
+      108.98499014387522,
+      0.907524531937483
+    ]
+  },
+  {
+    "name": "SIMPANG VIT",
+    "rtsp": "rtsp://admin:admin123@10.20.51.236:554/cam/realmonitor?channel=1&subtype=1",
+    "path": "stream/simpangvit/ch-1/stream.m3u8",
+    "coordinates": [
+      108.98213583451079,
+      0.9327162253815037
+    ]
+  },
+  {
+    "name": "Simpang PLN S.WIE",
+    "rtsp": "rtsp://admin:admin123@10.20.51.97:554/cam/realmonitor?channel=1&subtype=1",
+    "path": "stream/tudung/ch-1/stream.m3u8",
+    "coordinates": [
+      108.98679295456407,
+      0.9232282059778214
+    ]
+  },
+  {
+    "name": "Simpang AI",
+    "rtsp": "rtsp://admin:admin123@10.22.17.5:554/cam/realmonitor?channel=2&subtype=1",
+    "path": "stream/ai/ch-2/stream.m3u8",
+    "coordinates": [
+      108.96360311010564,
+      0.8925022736655129
+    ]
+  },
+  {
+    "name": "GM SITUT",
+    "rtsp": "rtsp://admin:admin123@10.20.51.95:554/cam/realmonitor?channel=1&subtype=1",
+    "path": "stream/gmsitut/ch-1/stream.m3u8",
+    "coordinates": [
+      108.98595299500529,
+      0.9000349078129009
+    ]
+  },
+  {
+    "name": "GERBANG SKW UTARA - SEMELAGI",
+    "rtsp": "rtsp://admin:admin123@10.20.61.3:554/cam/realmonitor?channel=2&subtype=1",
+    "path": "stream/semelagi/ch-2/stream.m3u8",
+    "coordinates": [
+      108.98712434883163,
+      0.9957920572614825
+    ]
+  },
+  {
+    "name": "MAYASOPA",
+    "rtsp": "rtsp://admin:admin123@10.20.51.93:554/cam/realmonitor?channel=1&subtype=1",
+    "path": "stream/maya1/ch-2/stream.m3u8",
+    "coordinates": [
+      109.1001295189496,
+      0.8650657390331893
+    ]
+  },
+  {
+    "name": "Simpang Veteran Roban",
+    "rtsp": "rtsp://admin:admin123@10.20.51.234:554/cam/realmonitor?channel=1&subtype=0",
+    "path": "stream/roban/ch-1/stream.m3u8",
+    "coordinates": [
+      109.0029986836576,
+      0.9056728868721704
+    ]
+  },
+  {
+    "name": "Simpang New Fashion",
+    "rtsp": "rtsp://admin:admin123@10.20.51.244:554/cam/realmonitor?channel=4&subtype=1",
+    "path": "stream/newfashion/ch-1/stream.m3u8",
+    "coordinates": [
+      108.99081162476547,
+      0.9087891283077383
+    ]
+  },
+  {
+    "name": "Simpang Alianyang - Tsafioddin",
+    "rtsp": "rtsp://admin:admin123@10.20.61.3:554/cam/realmonitor?channel=3&subtype=1",
+    "path": "stream/alitsafioddin/ch-3/stream.m3u8",
+    "coordinates": [
+      108.979917,
+      0.909982
+    ]
+  }
+]
