@@ -48,7 +48,7 @@ class PlaylistLoader extends XhrLoader {
 import flvjs from 'flv.js';
 import JSMpeg from '@cycjimmy/jsmpeg-player';
 import type { CCTV } from '../data/cctvData';
-import { Play, Pause, Volume2, VolumeX, Maximize, Camera, MapPin, Tag, X, Radio, Heart, RotateCw } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Camera, MapPin, Tag, X, Radio, Heart, RotateCw, Settings } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
 const isMobileDevice = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -299,6 +299,12 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
   const jsmpegCanvasRef = useRef<HTMLDivElement>(null);
   const jsmpegPlayerRef = useRef<any>(null);
   
+  const hlsRef = useRef<Hls | null>(null);
+  const [availableLevels, setAvailableLevels] = useState<Hls.Level[]>([]);
+  const [currentLevelIndex, setCurrentLevelIndex] = useState<number>(-1); // -1 is Auto
+  const [activePlayLevelIndex, setActivePlayLevelIndex] = useState<number>(-1);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [volume, setVolume] = useState(0); // Muted by default
@@ -351,6 +357,10 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     setIsRotated(false);
     setZoomScale(1);
     setPanOffset({ x: 0, y: 0 });
+    setAvailableLevels([]);
+    setCurrentLevelIndex(-1);
+    setActivePlayLevelIndex(-1);
+    setShowQualityMenu(false);
   }, [cctv.id]);
 
   // Reset zoom and pan when fullscreen or orientation changes
@@ -1056,6 +1066,8 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
             pLoader: PlaylistLoader as any
           });
 
+          hlsRef.current = hls;
+
           hls.loadSource(streamUrl);
           hls.attachMedia(video);
 
@@ -1078,9 +1090,18 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
               hls.startLevel = highestLevel;
               hls.currentLevel = highestLevel;
               hls.loadLevel = highestLevel;
+              setAvailableLevels(hls.levels);
+              setCurrentLevelIndex(highestLevel);
+              setActivePlayLevelIndex(highestLevel);
             }
             // Fallback: if FRAG_BUFFERED didn't fire yet, try playing on MANIFEST_PARSED
             startPlay();
+          });
+
+          hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
+            if (active) {
+              setActivePlayLevelIndex(data.level);
+            }
           });
 
           hls.on(Hls.Events.ERROR, (_, data) => {
@@ -1097,6 +1118,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
                   setHasError(true);
                   setIsLoaded(false);
                   hls?.destroy();
+                  hlsRef.current = null;
                   break;
               }
             }
@@ -1129,6 +1151,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       active = false;
       cleanups.forEach((cleanup) => cleanup());
       if (hls) hls.destroy();
+      hlsRef.current = null;
       if (flvPlayer) {
         try {
           flvPlayer.unload();
@@ -1225,6 +1248,27 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       });
     }
   };
+
+  // Change HLS stream quality level
+  const changeLevel = (levelIndex: number) => {
+    setCurrentLevelIndex(levelIndex);
+    setShowQualityMenu(false);
+    if (hlsRef.current) {
+      if (levelIndex === -1) {
+        hlsRef.current.currentLevel = -1; // Auto ABR
+      } else {
+        hlsRef.current.currentLevel = levelIndex;
+        hlsRef.current.loadLevel = levelIndex; // force immediate switch
+      }
+    }
+  };
+
+  // Auto-close quality menu when controls hide
+  useEffect(() => {
+    if (!showControls) {
+      setShowQualityMenu(false);
+    }
+  }, [showControls]);
 
   // Listen for fullscreen change
   useEffect(() => {
@@ -1490,9 +1534,12 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
               muted={isMuted}
               playsInline
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              onClick={() => {
+              onClick={(e) => {
                 if (!isMobileDevice) {
                   togglePlay();
+                } else {
+                  e.stopPropagation();
+                  setShowControls((prev) => !prev);
                 }
               }}
             />
@@ -1508,7 +1555,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         )}
 
         {/* Floating controls HUD that appears on hover */}
-        {isLoaded && !hasError && !isMobileDevice && (
+        {isLoaded && !hasError && (
           <div className={`map-video-hud ${showControls || !isPlaying ? 'active' : ''}`}>
             <div className="map-hud-controls-bar">
               <div className="controls-left">
@@ -1549,6 +1596,61 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
               </div>
 
               <div className="controls-right">
+                {availableLevels.length > 1 && (
+                  <div className="quality-control-wrapper" style={{ position: 'relative' }}>
+                    <button
+                      className={`hud-btn quality-btn ${showQualityMenu ? 'active' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowQualityMenu(!showQualityMenu);
+                      }}
+                      title="Pilih Kualitas Video"
+                      aria-label="Pilih Kualitas Video"
+                    >
+                      <Settings size={14} className={showQualityMenu ? 'rotated-icon' : ''} />
+                      <span className="quality-label" style={{ fontSize: '11px', marginLeft: '4px', fontWeight: 500 }}>
+                        {currentLevelIndex === -1 
+                          ? `Auto${activePlayLevelIndex !== -1 && availableLevels[activePlayLevelIndex] ? ` (${availableLevels[activePlayLevelIndex].height || 'HD'})` : ''}` 
+                          : `${availableLevels[currentLevelIndex]?.height || 'HD'}p`}
+                      </span>
+                    </button>
+
+                    {showQualityMenu && (
+                      <div className="quality-menu-popup glass-panel">
+                        <div className="quality-menu-header">Resolusi</div>
+                        <button
+                          type="button"
+                          className={`quality-menu-item ${currentLevelIndex === -1 ? 'active' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            changeLevel(-1);
+                          }}
+                        >
+                          <span className="checkmark">{currentLevelIndex === -1 ? '✓' : ''}</span>
+                          <span>Otomatis (Auto)</span>
+                        </button>
+                        {[...availableLevels]
+                          .map((level, idx) => ({ ...level, originalIdx: idx }))
+                          .sort((a, b) => b.height - a.height || b.bitrate - a.bitrate)
+                          .map((level) => (
+                            <button
+                              key={level.originalIdx}
+                              type="button"
+                              className={`quality-menu-item ${currentLevelIndex === level.originalIdx ? 'active' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                changeLevel(level.originalIdx);
+                              }}
+                            >
+                              <span className="checkmark">{currentLevelIndex === level.originalIdx ? '✓' : ''}</span>
+                              <span>{level.height ? `${level.height}p` : `Kualitas ${level.originalIdx + 1}`}</span>
+                            </button>
+                          ))
+                        }
+                      </div>
+                    )}
+                  </div>
+                )}
                 {!isIframe && (
                   <button
                     className="hud-btn snapshot-btn"
@@ -2590,6 +2692,96 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         .hud-btn.snapshot-btn:hover {
           color: #ffffff;
           background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Quality selector styling */
+        .quality-control-wrapper {
+          position: relative;
+        }
+
+        .hud-btn.quality-btn {
+          gap: 4px;
+          padding: 0 8px;
+          width: auto;
+          min-width: 48px;
+          font-size: 0.75rem;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.9);
+        }
+
+        .quality-btn.active {
+          background: rgba(59, 130, 246, 0.2);
+          color: var(--accent-blue);
+          border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        }
+
+        .rotated-icon {
+          transition: transform 0.25s ease;
+        }
+
+        .quality-btn.active .rotated-icon {
+          transform: rotate(45deg);
+        }
+
+        .quality-menu-popup {
+          position: absolute;
+          bottom: 38px;
+          right: 0;
+          width: 140px;
+          background: rgba(15, 22, 38, 0.95) !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          border-radius: 8px;
+          padding: 6px 0;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+          z-index: 100;
+          backdrop-filter: blur(8px) !important;
+          -webkit-backdrop-filter: blur(8px) !important;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .quality-menu-header {
+          font-size: 0.65rem;
+          text-transform: uppercase;
+          color: var(--text-secondary);
+          padding: 4px 12px;
+          font-weight: 700;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          margin-bottom: 4px;
+          letter-spacing: 0.05em;
+        }
+
+        .quality-menu-item {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          background: transparent;
+          border: none;
+          color: var(--text-secondary);
+          padding: 6px 12px;
+          font-size: 0.75rem;
+          cursor: pointer;
+          text-align: left;
+          transition: all 0.15s ease;
+        }
+
+        .quality-menu-item:hover {
+          background: rgba(255, 255, 255, 0.08);
+          color: var(--text-primary);
+        }
+
+        .quality-menu-item.active {
+          color: var(--accent-blue) !important;
+          font-weight: 600;
+        }
+
+        .quality-menu-item .checkmark {
+          display: inline-block;
+          width: 16px;
+          font-size: 0.75rem;
+          color: var(--accent-blue);
+          margin-right: 4px;
         }
 
         .volume-control-wrapper {

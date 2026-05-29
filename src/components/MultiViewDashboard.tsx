@@ -3,7 +3,7 @@ import Hls from 'hls.js';
 import flvjs from 'flv.js';
 import JSMpeg from '@cycjimmy/jsmpeg-player';
 import { type CCTV } from '../data/cctvData';
-import { Heart, Map, Volume2, VolumeX, X, AlertTriangle, Play, Pause, Camera, Maximize } from 'lucide-react';
+import { Heart, Map, Volume2, VolumeX, X, AlertTriangle, Play, Pause, Camera, Maximize, Settings } from 'lucide-react';
 
 const isMobileDevice = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
@@ -29,6 +29,12 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
 
   // Compute initial error/loaded state synchronously (not inside useEffect)
   const isInitiallyOffline = cctv.status === 'offline' || (isIframe && (cctv.streamUrl === 'https://www.youtube.com/embed/' || cctv.streamUrl.endsWith('/embed/') || cctv.streamUrl === ''));
+
+  const hlsRef = useRef<Hls | null>(null);
+  const [availableLevels, setAvailableLevels] = useState<Hls.Level[]>([]);
+  const [currentLevelIndex, setCurrentLevelIndex] = useState<number>(-1);
+  const [activePlayLevelIndex, setActivePlayLevelIndex] = useState<number>(-1);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
 
   const [isLoaded, setIsLoaded] = useState(isInitiallyOffline);
   const [hasError, setHasError] = useState(isInitiallyOffline);
@@ -83,6 +89,10 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
     setIsRotated(false);
     setZoomScale(1);
     setPanOffset({ x: 0, y: 0 });
+    setAvailableLevels([]);
+    setCurrentLevelIndex(-1);
+    setActivePlayLevelIndex(-1);
+    setShowQualityMenu(false);
   }, [cctv.id]);
 
   // Reset zoom and pan when fullscreen or orientation changes
@@ -433,6 +443,8 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
             liveSyncDurationCount: isShortWindow ? 1 : 2,
             liveMaxLatencyDurationCount: isShortWindow ? 2 : 4
           });
+          hlsRef.current = hls;
+
           hls.loadSource(streamUrl);
           hls.attachMedia(video);
 
@@ -452,8 +464,17 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
               hls.startLevel = highestLevel;
               hls.currentLevel = highestLevel;
               hls.loadLevel = highestLevel;
+              setAvailableLevels(hls.levels);
+              setCurrentLevelIndex(highestLevel);
+              setActivePlayLevelIndex(highestLevel);
             }
             startPlay();
+          });
+
+          hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
+            if (active) {
+              setActivePlayLevelIndex(data.level);
+            }
           });
 
           hls.on(Hls.Events.ERROR, (_, data) => {
@@ -466,6 +487,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
               } else {
                 setHasError(true);
                 hls?.destroy();
+                hlsRef.current = null;
               }
             }
           });
@@ -488,6 +510,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       active = false;
       cleanups.forEach((cleanup) => cleanup());
       if (hls) hls.destroy();
+      hlsRef.current = null;
       if (flvPlayer) {
         try {
           flvPlayer.unload();
@@ -561,6 +584,28 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       document.exitFullscreen().then(() => setIsFullscreen(false));
     }
   }, []);
+
+  // Change HLS stream quality level
+  const changeLevel = useCallback((levelIndex: number) => {
+    setCurrentLevelIndex(levelIndex);
+    setShowQualityMenu(false);
+    if (hlsRef.current) {
+      if (levelIndex === -1) {
+        hlsRef.current.currentLevel = -1; // Auto ABR
+      } else {
+        hlsRef.current.currentLevel = levelIndex;
+        hlsRef.current.loadLevel = levelIndex; // force immediate switch
+      }
+    }
+  }, []);
+
+  // Auto-close quality menu when controls hide
+  useEffect(() => {
+    if (!showControls) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset, batched by React
+      setShowQualityMenu(false);
+    }
+  }, [showControls]);
 
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement);
@@ -886,9 +931,12 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
               muted={isMuted}
               playsInline
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              onClick={() => {
+              onClick={(e) => {
                 if (!isMobileDevice) {
                   togglePlay();
+                } else {
+                  e.stopPropagation();
+                  setShowControls((prev) => !prev);
                 }
               }}
             />
@@ -904,7 +952,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
         )}
 
         {/* HUD Controls overlay */}
-        {isLoaded && !hasError && !isMobileDevice && (
+        {isLoaded && !hasError && (
           <div className={`cell-hud ${showControls || !isPlaying ? 'active' : ''}`}>
             <div className="cell-hud-bar">
               <div className="cell-hud-left">
@@ -932,6 +980,62 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
                 )}
               </div>
               <div className="cell-hud-right">
+                {availableLevels.length > 1 && (
+                  <div className="quality-control-wrapper" style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      className={`cell-hud-btn quality-btn ${showQualityMenu ? 'active' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowQualityMenu(!showQualityMenu);
+                      }}
+                      title="Pilih Kualitas Video"
+                      aria-label="Pilih Kualitas Video"
+                    >
+                      <Settings size={12} className={showQualityMenu ? 'rotated-icon' : ''} />
+                      <span className="quality-label" style={{ fontSize: '10px', marginLeft: '3px', fontWeight: 500 }}>
+                        {currentLevelIndex === -1 
+                          ? `Auto${activePlayLevelIndex !== -1 && availableLevels[activePlayLevelIndex] ? ` (${availableLevels[activePlayLevelIndex].height || 'HD'})` : ''}` 
+                          : `${availableLevels[currentLevelIndex]?.height || 'HD'}p`}
+                      </span>
+                    </button>
+
+                    {showQualityMenu && (
+                      <div className="quality-menu-popup glass-panel">
+                        <div className="quality-menu-header">Resolusi</div>
+                        <button
+                          type="button"
+                          className={`quality-menu-item ${currentLevelIndex === -1 ? 'active' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            changeLevel(-1);
+                          }}
+                        >
+                          <span className="checkmark">{currentLevelIndex === -1 ? '✓' : ''}</span>
+                          <span>Otomatis (Auto)</span>
+                        </button>
+                        {[...availableLevels]
+                          .map((level, idx) => ({ ...level, originalIdx: idx }))
+                          .sort((a, b) => b.height - a.height || b.bitrate - a.bitrate)
+                          .map((level) => (
+                            <button
+                              key={level.originalIdx}
+                              type="button"
+                              className={`quality-menu-item ${currentLevelIndex === level.originalIdx ? 'active' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                changeLevel(level.originalIdx);
+                              }}
+                            >
+                              <span className="checkmark">{currentLevelIndex === level.originalIdx ? '✓' : ''}</span>
+                              <span>{level.height ? `${level.height}p` : `Kualitas ${level.originalIdx + 1}`}</span>
+                            </button>
+                          ))
+                        }
+                      </div>
+                    )}
+                  </div>
+                )}
                 {!isIframe && (
                   <button className="cell-hud-btn" onClick={takeSnapshot} title="Ambil Foto">
                     <Camera size={12} />
@@ -1590,6 +1694,96 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
         .cell-hud-btn:hover {
           color: #fff;
           background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Quality selector styling */
+        .quality-control-wrapper {
+          position: relative;
+        }
+
+        .cell-hud-btn.quality-btn {
+          gap: 3px;
+          padding: 0 6px;
+          width: auto;
+          min-width: 42px;
+          font-size: 0.7rem;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.9);
+        }
+
+        .quality-btn.active {
+          background: rgba(59, 130, 246, 0.2);
+          color: var(--accent-blue);
+          border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        }
+
+        .rotated-icon {
+          transition: transform 0.25s ease;
+        }
+
+        .quality-btn.active .rotated-icon {
+          transform: rotate(45deg);
+        }
+
+        .quality-menu-popup {
+          position: absolute;
+          bottom: 32px;
+          right: 0;
+          width: 130px;
+          background: rgba(15, 22, 38, 0.95) !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          border-radius: 6px;
+          padding: 4px 0;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+          z-index: 100;
+          backdrop-filter: blur(8px) !important;
+          -webkit-backdrop-filter: blur(8px) !important;
+          display: flex;
+          flex-direction: column;
+          gap: 1px;
+        }
+
+        .quality-menu-header {
+          font-size: 0.6rem;
+          text-transform: uppercase;
+          color: var(--text-secondary);
+          padding: 3px 10px;
+          font-weight: 700;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          margin-bottom: 3px;
+          letter-spacing: 0.05em;
+        }
+
+        .quality-menu-item {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          background: transparent;
+          border: none;
+          color: var(--text-secondary);
+          padding: 5px 10px;
+          font-size: 0.7rem;
+          cursor: pointer;
+          text-align: left;
+          transition: all 0.15s ease;
+        }
+
+        .quality-menu-item:hover {
+          background: rgba(255, 255, 255, 0.08);
+          color: var(--text-primary);
+        }
+
+        .quality-menu-item.active {
+          color: var(--accent-blue) !important;
+          font-weight: 600;
+        }
+
+        .quality-menu-item .checkmark {
+          display: inline-block;
+          width: 12px;
+          font-size: 0.7rem;
+          color: var(--accent-blue);
+          margin-right: 4px;
         }
 
         .cell-volume-wrapper {
