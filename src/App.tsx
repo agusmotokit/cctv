@@ -98,9 +98,16 @@ export const App: React.FC = () => {
     const matchesCountry = selectedCountry === 'Semua Negara' || selectedCountry === 'Indonesia';
     const matchesProvince = selectedProvince === 'Semua Provinsi' || cctv.province === selectedProvince;
     const matchesCity = selectedCity === 'Semua Kota' || cctv.city === selectedCity;
-
     return matchesCountry && matchesSearch && matchesProvince && matchesCity;
   });
+
+  useEffect(() => {
+    console.log('[App DEBUG] Filter state:', {
+      selectedProvince,
+      selectedCity,
+      filteredCount: filteredCCTVs.length
+    });
+  }, [selectedProvince, selectedCity, filteredCCTVs.length]);
 
   // Statistics
   const totalCount = cctvs.length;
