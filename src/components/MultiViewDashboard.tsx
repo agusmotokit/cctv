@@ -980,7 +980,12 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
                 )}
               </div>
               <div className="cell-hud-right">
-                {availableLevels.length > 1 && (
+                {!isIframe && (
+                  <button className="cell-hud-btn" onClick={takeSnapshot} title="Ambil Foto">
+                    <Camera size={12} />
+                  </button>
+                )}
+                {availableLevels.length >= 1 && (
                   <div className="quality-control-wrapper" style={{ position: 'relative' }}>
                     <button
                       type="button"
@@ -1035,11 +1040,6 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
                       </div>
                     )}
                   </div>
-                )}
-                {!isIframe && (
-                  <button className="cell-hud-btn" onClick={takeSnapshot} title="Ambil Foto">
-                    <Camera size={12} />
-                  </button>
                 )}
                 <button className="cell-hud-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}>
                   <Maximize size={12} />

@@ -1596,7 +1596,28 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
               </div>
 
               <div className="controls-right">
-                {availableLevels.length > 1 && (
+                {!isIframe && (
+                  <button
+                    className="hud-btn snapshot-btn"
+                    onClick={takeSnapshot}
+                    title="Ambil Foto CCTV"
+                    aria-label="Ambil Foto CCTV"
+                  >
+                    <Camera size={14} />
+                    <span>Ambil Foto</span>
+                  </button>
+                )}
+                {isMobileDevice && (
+                  <button
+                    className={`hud-btn rotation-btn ${isRotated ? 'active' : ''}`}
+                    onClick={() => setIsRotated(!isRotated)}
+                    title={isRotated ? "Kembali ke Portrait" : "Putar ke Landscape"}
+                    aria-label={isRotated ? "Kembali ke Portrait" : "Putar ke Landscape"}
+                  >
+                    <RotateCw size={14} className={isRotated ? 'rotated-icon' : ''} />
+                  </button>
+                )}
+                {availableLevels.length >= 1 && (
                   <div className="quality-control-wrapper" style={{ position: 'relative' }}>
                     <button
                       className={`hud-btn quality-btn ${showQualityMenu ? 'active' : ''}`}
@@ -1650,27 +1671,6 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
                       </div>
                     )}
                   </div>
-                )}
-                {!isIframe && (
-                  <button
-                    className="hud-btn snapshot-btn"
-                    onClick={takeSnapshot}
-                    title="Ambil Foto CCTV"
-                    aria-label="Ambil Foto CCTV"
-                  >
-                    <Camera size={14} />
-                    <span>Ambil Foto</span>
-                  </button>
-                )}
-                {isMobileDevice && (
-                  <button
-                    className={`hud-btn rotation-btn ${isRotated ? 'active' : ''}`}
-                    onClick={() => setIsRotated(!isRotated)}
-                    title={isRotated ? "Kembali ke Portrait" : "Putar ke Landscape"}
-                    aria-label={isRotated ? "Kembali ke Portrait" : "Putar ke Landscape"}
-                  >
-                    <RotateCw size={14} className={isRotated ? 'rotated-icon' : ''} />
-                  </button>
                 )}
                 <button
                   className="hud-btn"
