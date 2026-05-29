@@ -900,6 +900,10 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         streamUrl = streamUrl.replace('http://36.66.208.101:5000/', '/surabaya-api/');
       } else if (streamUrl.startsWith('https://dishub.depok.go.id/')) {
         streamUrl = streamUrl.replace('https://dishub.depok.go.id/', '/depok-stream/');
+      } else if (streamUrl.startsWith('https://cctv-dishub.sukabumikab.go.id/')) {
+        streamUrl = streamUrl.replace('https://cctv-dishub.sukabumikab.go.id/', '/sukabumikab-stream/');
+      } else if (streamUrl.startsWith('https://cctv.pekalongankab.go.id/')) {
+        streamUrl = streamUrl.replace('https://cctv.pekalongankab.go.id/', '/pekalongankab-stream/');
       }
 
       if (isFlv) {
@@ -1681,7 +1685,15 @@ const cityCenters: Record<string, { lat: number; lng: number; zoom: number }> = 
   'Kab. Pemalang': { lat: -6.89, lng: 109.38, zoom: 12 },
   'Kota Surakarta': { lat: -7.568, lng: 110.821, zoom: 13 },
   'Kota Makassar': { lat: -5.14, lng: 119.44, zoom: 12 },
-  'Kota Depok': { lat: -6.4022, lng: 106.7928, zoom: 12 }
+  'Kota Depok': { lat: -6.4022, lng: 106.7928, zoom: 12 },
+  'Kab. Bandung': { lat: -7.02, lng: 107.54, zoom: 11 },
+  'Kab. Bogor': { lat: -6.48, lng: 106.85, zoom: 11 },
+  'Kab. Indramayu': { lat: -6.33, lng: 108.32, zoom: 11 },
+  'Kab. Sukabumi': { lat: -6.92, lng: 106.86, zoom: 11 },
+  'Kab. Tasikmalaya': { lat: -7.35, lng: 108.12, zoom: 11 },
+  'Kota Tasikmalaya': { lat: -7.33, lng: 108.22, zoom: 12 },
+  'Kota Magelang': { lat: -7.48, lng: 110.22, zoom: 13 },
+  'Kab. Pekalongan': { lat: -7.02, lng: 109.58, zoom: 11 }
 };
 
 const getCategoryLabel = (category: string) => {

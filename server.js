@@ -492,6 +492,8 @@ createCctvProxy('/tanahbumbu-stream', 'https://atcs.tanahbumbukab.go.id/hls');
 createCctvProxy('/kutim-hls', 'https://cctv.kutaitimurkab.go.id/hls');
 createCctvProxy('/tapin-stream', 'https://cctv.tapinkab.go.id');
 createCctvProxy('/depok-stream', 'https://dishub.depok.go.id');
+createCctvProxy('/sukabumikab-stream', 'https://cctv-dishub.sukabumikab.go.id');
+createCctvProxy('/pekalongankab-stream', 'https://cctv.pekalongankab.go.id');
 
 // Serve compiled static frontend assets in production mode
 const distPath = path.join(__dirname, 'dist');

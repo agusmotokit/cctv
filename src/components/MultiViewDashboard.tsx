@@ -361,6 +361,10 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
         streamUrl = streamUrl.replace('http://36.66.208.101:5000/', '/surabaya-api/');
       } else if (streamUrl.startsWith('https://dishub.depok.go.id/')) {
         streamUrl = streamUrl.replace('https://dishub.depok.go.id/', '/depok-stream/');
+      } else if (streamUrl.startsWith('https://cctv-dishub.sukabumikab.go.id/')) {
+        streamUrl = streamUrl.replace('https://cctv-dishub.sukabumikab.go.id/', '/sukabumikab-stream/');
+      } else if (streamUrl.startsWith('https://cctv.pekalongankab.go.id/')) {
+        streamUrl = streamUrl.replace('https://cctv.pekalongankab.go.id/', '/pekalongankab-stream/');
       }
 
       if (isFlv) {

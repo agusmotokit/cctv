@@ -151,6 +151,14 @@
       "dest": "api/index.js"
     },
     {
+      "src": "/sukabumikab-stream/(.*)",
+      "dest": "api/index.js"
+    },
+    {
+      "src": "/pekalongankab-stream/(.*)",
+      "dest": "api/index.js"
+    },
+    {
       "src": "/assets/(.*)",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
