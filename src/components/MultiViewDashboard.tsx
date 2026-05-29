@@ -359,6 +359,8 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
         streamUrl = streamUrl.replace('https://shinobi.bulelengkab.go.id/', '/buleleng-stream/');
       } else if (streamUrl.startsWith('http://36.66.208.101:5000/')) {
         streamUrl = streamUrl.replace('http://36.66.208.101:5000/', '/surabaya-api/');
+      } else if (streamUrl.startsWith('https://dishub.depok.go.id/')) {
+        streamUrl = streamUrl.replace('https://dishub.depok.go.id/', '/depok-stream/');
       }
 
       if (isFlv) {

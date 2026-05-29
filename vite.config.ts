@@ -27,7 +27,8 @@ const proxyTargets = [
   '/palembang-stream',
   '/buleleng-stream',
   '/kebumen-stream',
-  '/surabaya-api'
+  '/surabaya-api',
+  '/depok-stream'
 ];
 
 const proxyConfig: Record<string, any> = {};

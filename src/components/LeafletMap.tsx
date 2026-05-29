@@ -898,6 +898,8 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         streamUrl = streamUrl.replace('https://shinobi.bulelengkab.go.id/', '/buleleng-stream/');
       } else if (streamUrl.startsWith('http://36.66.208.101:5000/')) {
         streamUrl = streamUrl.replace('http://36.66.208.101:5000/', '/surabaya-api/');
+      } else if (streamUrl.startsWith('https://dishub.depok.go.id/')) {
+        streamUrl = streamUrl.replace('https://dishub.depok.go.id/', '/depok-stream/');
       }
 
       if (isFlv) {
@@ -1678,7 +1680,8 @@ const cityCenters: Record<string, { lat: number; lng: number; zoom: number }> = 
   'Kab. Tapin': { lat: -2.92, lng: 115.15, zoom: 12 },
   'Kab. Pemalang': { lat: -6.89, lng: 109.38, zoom: 12 },
   'Kota Surakarta': { lat: -7.568, lng: 110.821, zoom: 13 },
-  'Kota Makassar': { lat: -5.14, lng: 119.44, zoom: 12 }
+  'Kota Makassar': { lat: -5.14, lng: 119.44, zoom: 12 },
+  'Kota Depok': { lat: -6.4022, lng: 106.7928, zoom: 12 }
 };
 
 const getCategoryLabel = (category: string) => {
