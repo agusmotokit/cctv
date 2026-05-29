@@ -1,4 +1,4 @@
-import { defineConfig, ProxyOptions } from 'vite'
+import { defineConfig, type ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react'
 
 const proxyTargets = [
