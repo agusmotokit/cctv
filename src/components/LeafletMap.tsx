@@ -1611,6 +1611,7 @@ const provinceCenters: Record<string, { lat: number; lng: number; zoom: number }
   'Sumatera Barat': { lat: -0.7399, lng: 100.8000, zoom: 8.5 },
   'Riau': { lat: 0.5070, lng: 101.4478, zoom: 9 },
   'Kepulauan Riau': { lat: 1.1301, lng: 104.0531, zoom: 9 },
+  'Sulawesi Selatan': { lat: -5.14, lng: 119.44, zoom: 9 },
   'Semua Provinsi': { lat: -6.9908, lng: 110.4223, zoom: 12 }
 };
 
@@ -1676,7 +1677,8 @@ const cityCenters: Record<string, { lat: number; lng: number; zoom: number }> = 
   'Kota Bontang': { lat: 0.134, lng: 117.474, zoom: 13 },
   'Kab. Tapin': { lat: -2.92, lng: 115.15, zoom: 12 },
   'Kab. Pemalang': { lat: -6.89, lng: 109.38, zoom: 12 },
-  'Kota Surakarta': { lat: -7.568, lng: 110.821, zoom: 13 }
+  'Kota Surakarta': { lat: -7.568, lng: 110.821, zoom: 13 },
+  'Kota Makassar': { lat: -5.14, lng: 119.44, zoom: 12 }
 };
 
 const getCategoryLabel = (category: string) => {
