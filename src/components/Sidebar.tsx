@@ -41,8 +41,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleClearFilters = () => {
     setSelectedCountry('Indonesia');
-    setSelectedProvince('Semua Provinsi');
-    setSelectedCity('Semua Kota');
+    setSelectedProvince('Jawa Tengah');
+    setSelectedCity('Kota Semarang');
   };
 
   const availableCities = citiesByProvince[selectedProvince] || [];

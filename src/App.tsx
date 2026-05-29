@@ -27,8 +27,8 @@ export const App: React.FC = () => {
   // Search and Filter States
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCountry, setSelectedCountry] = useState<string>('Indonesia');
-  const [selectedProvince, setSelectedProvince] = useState<string>('DI Yogyakarta');
-  const [selectedCity, setSelectedCity] = useState<string>('Kab. Bantul');
+  const [selectedProvince, setSelectedProvince] = useState<string>('Semua Provinsi');
+  const [selectedCity, setSelectedCity] = useState<string>('Semua Kota');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(true);
   const [viewMode, setViewMode] = useState<'map' | 'multiview'>('map');
 
