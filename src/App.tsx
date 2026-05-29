@@ -7,6 +7,7 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth } from './firebase';
 import { AuthModal } from './components/AuthModal';
 import { AdminCctvModal } from './components/AdminCctvModal';
+import { fetchCctvDataSecure } from './utils/apiSecurity';
 
 const LeafletMap = lazy(() => import('./components/LeafletMap'));
 
@@ -48,15 +49,15 @@ export const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Fetch CCTV data on mount
+  // Fetch CCTV data on mount (with HMAC signature + obfuscated response)
   useEffect(() => {
-    fetch('/api/cctvs')
-      .then(res => res.json())
-      .then((data: CCTV[]) => {
-        setCctvs(data);
+    fetchCctvDataSecure('/api/cctvs')
+      .then((data) => {
+        const cctvList = data as CCTV[];
+        setCctvs(cctvList);
         setIsLoading(false);
         // Find default CCTV after data loads if nothing is playing yet
-        const defaultCam = data.find(c => c.id === 'bantul-14') || null;
+        const defaultCam = cctvList.find(c => c.id === 'bantul-14') || null;
         setPlayingCCTV(defaultCam);
       })
       .catch(err => {

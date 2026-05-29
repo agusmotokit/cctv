@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
 import jwksRsa from 'jwks-rsa';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,9 +21,131 @@ const PORT = process.env.PORT || 5000;
 // Enable Gzip/Brotli compression for performance optimization
 app.use(compression());
 
-// Enable CORS for frontend development
-app.use(cors());
+// ==============================
+// LAYER 4: CORS Whitelist & Security Headers
+// ==============================
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5000',
+  'http://localhost:4173',
+  /\.vercel\.app$/
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (server-to-server, curl in dev)
+    if (!origin) return callback(null, true);
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) return allowed.test(origin);
+      return allowed === origin;
+    });
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// Block direct access to raw database file
+app.use('/server/data', (req, res) => {
+  res.status(403).json({ message: 'Akses langsung ke database tidak diizinkan.' });
+});
+
+// ==============================
+// LAYER 1: HMAC Signature Validation
+// ==============================
+const API_SECRET = 'nusantara-cctv-api-key-2026';
+const SIGNATURE_MAX_AGE_SECONDS = 30;
+
+function validateApiSignature(req, res, next) {
+  const signature = req.headers['x-api-signature'];
+  const timestamp = req.headers['x-api-timestamp'];
+
+  if (!signature || !timestamp) {
+    console.warn(`[Security] Missing signature/timestamp from ${req.ip}`);
+    return res.status(403).json({ message: 'Akses ditolak. Signature diperlukan.' });
+  }
+
+  // Check timestamp freshness
+  const now = Math.floor(Date.now() / 1000);
+  const reqTime = parseInt(timestamp, 10);
+  if (isNaN(reqTime) || Math.abs(now - reqTime) > SIGNATURE_MAX_AGE_SECONDS) {
+    console.warn(`[Security] Expired timestamp from ${req.ip}: ${timestamp}`);
+    return res.status(403).json({ message: 'Akses ditolak. Timestamp kadaluwarsa.' });
+  }
+
+  // Validate HMAC
+  const message = `${timestamp}:${req.path}`;
+  const expectedSignature = crypto
+    .createHmac('sha256', API_SECRET)
+    .update(message)
+    .digest('hex');
+
+  if (signature !== expectedSignature) {
+    console.warn(`[Security] Invalid signature from ${req.ip}`);
+    return res.status(403).json({ message: 'Akses ditolak. Signature tidak valid.' });
+  }
+
+  next();
+}
+
+// ==============================
+// LAYER 2: Rate Limiting (In-Memory)
+// ==============================
+const rateLimitMap = new Map(); // IP -> { count, resetTime }
+const RATE_LIMIT_MAX = 10;       // max requests
+const RATE_LIMIT_WINDOW = 60000; // per 60 seconds
+
+function rateLimiter(req, res, next) {
+  const ip = req.headers['x-forwarded-for'] || req.ip || 'unknown';
+  const now = Date.now();
+  let entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetTime) {
+    entry = { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
+    rateLimitMap.set(ip, entry);
+  }
+
+  entry.count++;
+
+  if (entry.count > RATE_LIMIT_MAX) {
+    console.warn(`[Rate Limit] IP ${ip} exceeded ${RATE_LIMIT_MAX} requests/min`);
+    res.setHeader('Retry-After', Math.ceil((entry.resetTime - now) / 1000).toString());
+    return res.status(429).json({ message: 'Terlalu banyak permintaan. Coba lagi nanti.' });
+  }
+
+  next();
+}
+
+// Cleanup expired rate limit entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap) {
+    if (now > entry.resetTime) rateLimitMap.delete(ip);
+  }
+}, 5 * 60 * 1000);
+
+// ==============================
+// LAYER 3: Response Obfuscation Helper
+// ==============================
+function obfuscateResponse(data) {
+  const jsonStr = JSON.stringify(data);
+  const reversed = jsonStr.split('').reverse().join('');
+  const encoded = Buffer.from(reversed).toString('base64');
+  return { d: encoded };
+}
 
 // Load CCTV Database
 const dbPath = path.join(__dirname, 'server/data/cctvData.json');
@@ -160,9 +283,9 @@ function authenticateAdminToken(req, res, next) {
   });
 }
 
-// REST API Endpoints
-app.get('/api/cctvs', (req, res) => {
-  res.json(cctvData);
+// REST API Endpoints (Protected with signature + rate limiting + obfuscation)
+app.get('/api/cctvs', rateLimiter, validateApiSignature, (req, res) => {
+  res.json(obfuscateResponse(cctvData));
 });
 
 // Capture client-side debug logs in server output
