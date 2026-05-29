@@ -337,6 +337,13 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     isSwipe: false,
     gestureOccurred: false
   });
+  const mouseStateRef = useRef({
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    initialPan: { x: 0, y: 0 },
+    dragOccurred: false
+  });
 
   // Sync refs with state changes
   useEffect(() => {
@@ -591,6 +598,120 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       el.removeEventListener('touchmove', onTouchMove);
       el.removeEventListener('touchend', onTouchEnd);
       el.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, []);
+
+  // Mouse gestures for wheel zoom and drag panning
+  useEffect(() => {
+    const el = viewportContainerRef.current;
+    if (!el) return;
+
+    const state = mouseStateRef.current;
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const currentScale = zoomScaleRef.current;
+      const zoomFactor = 0.25;
+      const newScale = e.deltaY < 0
+        ? Math.min(currentScale + zoomFactor, 4)
+        : Math.max(currentScale - zoomFactor, 1);
+
+      if (newScale !== currentScale) {
+        setZoomScale(newScale);
+        if (newScale === 1) {
+          setPanOffset({ x: 0, y: 0 });
+        }
+      }
+    };
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return; // Left click only
+
+      const currentPan = panOffsetRef.current;
+
+      state.isDragging = true;
+      state.dragOccurred = false;
+      state.startX = e.clientX;
+      state.startY = e.clientY;
+      state.initialPan = { ...currentPan };
+
+      setIsTouching(true);
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!state.isDragging) return;
+
+      const currentScale = zoomScaleRef.current;
+      if (currentScale <= 1) return;
+
+      const dx = e.clientX - state.startX;
+      const dy = e.clientY - state.startY;
+
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+        state.dragOccurred = true;
+      }
+
+      if (!state.dragOccurred) return;
+
+      e.preventDefault();
+
+      const width = el.clientWidth;
+      const height = el.clientHeight;
+
+      const maxPanX = (width * (currentScale - 1)) / (2 * currentScale);
+      const maxPanY = (height * (currentScale - 1)) / (2 * currentScale);
+
+      let targetX: number;
+      let targetY: number;
+
+      if (isRotatedRef.current) {
+        // Rotated 90deg: screen X maps to local Y, screen Y maps to local X
+        targetX = state.initialPan.x + dy / currentScale;
+        targetY = state.initialPan.y - dx / currentScale;
+      } else {
+        targetX = state.initialPan.x + dx / currentScale;
+        targetY = state.initialPan.y + dy / currentScale;
+      }
+
+      const boundedX = Math.min(Math.max(targetX, -maxPanX), maxPanX);
+      const boundedY = Math.min(Math.max(targetY, -maxPanY), maxPanY);
+
+      setPanOffset({
+        x: boundedX,
+        y: boundedY
+      });
+    };
+
+    const onMouseUp = (e: MouseEvent) => {
+      if (!state.isDragging) return;
+      state.isDragging = false;
+      setIsTouching(false);
+
+      if (state.dragOccurred) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    const onMouseLeave = () => {
+      if (state.isDragging) {
+        state.isDragging = false;
+        setIsTouching(false);
+      }
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp, { capture: true });
+    el.addEventListener('mouseleave', onMouseLeave);
+
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp, { capture: true });
+      el.removeEventListener('mouseleave', onMouseLeave);
     };
   }, []);
 
