@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+     <style>
+        #map { 
+            height: 300px; 
+            height: 900px; 
+          }
+        .footer{
+          z-index: 999;
+          position: fixed;
+          height: 100px;
+          bottom: 0;
+          width: 100%;
+        }
+        .header{
+          z-index: 999;
+          width: 100%;
+          position: fixed;
+        }
+        .logo{
+          width: 80px;
+        }
+     </style>
+    <title>Atcs Dishub KBB</title>
+    <meta name="description" content="Web resmi pemantau cctv daerah kabupaten bandung barat, atcs dishub kbb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    
+</head>
+<body>
+  <div id="root">
+    <header class="bg-danger header">
+        <div class="">
+        <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+
+            <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+            <li><img class="logo nav-link px-2 text-secondary" src="https://atcs.bandungbaratkab.go.id/logo/logo-dishub.png" ></li>
+            <li>
+              <h5 class="text-light mt-3">ATCS DISHUB KBB</h5>
+              <h6 class="text-light">Pemantauan CCTV Daerah Kabupaten Bandung Barat</h6>
+            </li>
+            </ul>
+            <button class="btn btn-light btn-sm col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3">58 KAMERA AKTIF</button>
+            <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search">
+              <select name="" id="cari" class="form-control form-control-dark text-bg-ligth js-example-basic-single">
+                <option value="">Search...</option>
+                                  <option value="2">CIBURUY - CIPATAT</option>
+                                  <option value="3">CIBURUY - TAGOG</option>
+                                  <option value="5">CIKAMUNING - CIHALIWUNG</option>
+                                  <option value="6">CIKAMUNING - EXIT TOL</option>
+                                  <option value="8">CIKAMUNING - PURWAKARTA</option>
+                                  <option value="9">TAGOG PADALARANG - BANDUNG</option>
+                                  <option value="10">TAGOG PADALARANG - PURWAKARTA</option>
+                                  <option value="11">LEMBANG BETRIX - BANDUNG</option>
+                                  <option value="12">LEMBANG BETRIX - PARONGPONG</option>
+                                  <option value="13">CITUNJUNG - CIMAREME</option>
+                                  <option value="14">CITUNJUNG - BATUJAJAR</option>
+                                  <option value="16">LEMBANG BATAS - KOTA BDG</option>
+                                  <option value="17">FARMHOUSE - LEMBANG</option>
+                                  <option value="18">FARMHOUSE - BANDUNG</option>
+                                  <option value="22">LEMBANG DARUL HIKAM - SESPIM</option>
+                                  <option value="24">LEMBANG DARUL HIKAM - KAYU AMBON</option>
+                                  <option value="25">LEMBANG UNAI - CIHANJUANG</option>
+                                  <option value="26">LEMBANG UNAI - CISARUA</option>
+                                  <option value="27">ALUN ALUN CILILIN - BATUJAJAR</option>
+                                  <option value="28">ALUN ALUN CILILIN - SINDANGKERTA</option>
+                                  <option value="32">PADALARANG - GEDONG 5 BAWAH - STASION</option>
+                                  <option value="35">CIMAREME 1 - CIMAHI</option>
+                                  <option value="43">LEMBANG - GRAND HOTEL - BANDUNG</option>
+                                  <option value="45">LEMBANG - PARATAG - CIMAHI</option>
+                                  <option value="46">LEMBANG - PARATAG - LEMBANG</option>
+                                  <option value="48">LEMBANG - TOKO INTIMETAL - CIJERUK</option>
+                                  <option value="49">LEMBANG - PASAR  LEMBANG</option>
+                                  <option value="55">LEMBANG UNAI - LEMBANG</option>
+                                  <option value="56">PADALARANG - GEDONG 5 ATAS - CIHALIWUNG</option>
+                                  <option value="57">PADALARANG - GEDONG 5 ATAS - KERTAJAYA</option>
+                                  <option value="59">PADALARANG - GEDONG 5 BAWAH - TOL</option>
+                                  <option value="60">PADALARANG - GEDONG 5 ATAS - STASIUN</option>
+                                  <option value="61">PADALARANG - GIANT - TAGOG</option>
+                                  <option value="63">PADALARANG - JL. BARU KBP - TOL</option>
+                                  <option value="64">PADALARANG - JL. SUNDIAL KBP - KBP TAGOG</option>
+                                  <option value="65">PADALARANG - JL. SUNDIAL KBP - TOL</option>
+                                  <option value="66">PADALARANG - PURABAYA - CIPATAT</option>
+                                  <option value="67">PADALARANG - PURABAYA - KAVALERI</option>
+                                  <option value="68">PADALARANG - PURABAYA - TAGOG</option>
+                                  <option value="72">PADALARANG FLYOVER - CIMAREME</option>
+                                  <option value="73">PADALARANG FLYOVER - KBP</option>
+                                  <option value="74">PADALARANG FLYOVER (PINTU TOL KELUAR)</option>
+                                  <option value="75">PADALARANG GIANT - TOL</option>
+                                  <option value="80">CIMAREME 1 - PADALARANG</option>
+                                  <option value="81">PADALARANG - CIHALIWUNG - CIKALONG</option>
+                                  <option value="83">PADALARANG - CIHALIWUNG - STASIUN</option>
+                                  <option value="84">SIMPANG BBS - CILILIN</option>
+                                  <option value="85">SIMPANG BBS - CIPATIK</option>
+                                  <option value="86">LANGENSARI - CIBODAS</option>
+                                  <option value="87">LANGENSARI - SESPIM</option>
+                                  <option value="88">CIHAMPELAS - SAYURAN</option>
+                                  <option value="89">CIHAMPELAS - BBS</option>
+                                  <option value="91">CANGKORAH - LEUWIGAJAH</option>
+                                  <option value="92">CANGKORAH - CIMAREME</option>
+                                  <option value="93">CANGKORAH - BATUJAJAR</option>
+                                  <option value="94">WARUNG PULUS - CIMAREME</option>
+                                  <option value="96">LEMBANG ORCHID - BANDUNG</option>
+                                  <option value="99">LEMBANG ORCHID - SUBANG</option>
+                              </select>
+            </form>
+        </div>
+        </div>
+    </header>
+    <main class="">
+    <div class="rounded text-body-emphasis">
+        <div id="map"></div>
+    </div>
+</main>
+<script
+  src="https://code.jquery.com/jquery-3.7.1.js"
+  integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+  crossorigin="anonymous">
+</script>
+<script>
+    $(document).ready(function(){
+        var map = L.map('map', { zoomControl: false }).setView([-6.8700, 107.5056], 12);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+        var cctvIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/5695/5695718.png',
+    
+            iconSize:     [38, 50], // size of the icon
+            iconAnchor:   [10, 44], // point of the icon which will correspond to marker's location
+            popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
+        });
+        $.ajax({
+
+            url : '/get-cctv',
+            type : 'GET',
+            dataType:'json',
+            success : function(data) {              
+                for (let q = 0; q < data.data.length; q++) {
+                    let koordinat = data.data[q].koordinat
+                    let arrKoordinat = koordinat.split(",")
+                    let longitude = arrKoordinat[0]
+                    let latitude  = arrKoordinat[1]
+                    var cctv = L.marker([longitude,latitude], {icon: cctvIcon}).addTo(map);
+
+                    cctv.bindPopup(`<div class="modal-content rounded-4 shadow">
+                        <div class="modal-header border-bottom-0" style="text-align: center;">
+                        <h6 class="mt-3">`+data.data[q].nama_cctv+`</h6>
+                        </div>
+                        <div class="modal-body py-0">
+                            <iframe style="width:300px;" src="`+data.data[q].link+`" 
+                            frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
+                            </iframe>
+                        </div>
+                        </div>`,{
+                        maxWidth: 300
+                    });
+                }
+            },
+            error : function(request,error)
+            {
+                alert("Request: "+JSON.stringify(request));
+            }
+        });
+
+        $('.js-example-basic-single').select2();
+
+        $('.js-example-basic-single').on('change', function(){
+            $.ajax({
+            data: {id : $('.js-example-basic-single').val()},
+            url : '/set-cctv',
+            type : 'GET',
+            dataType:'json',
+            success : function(data) {              
+                let koordinat = data.data.koordinat
+                let arrKoordinat = koordinat.split(",")
+                let longitude = arrKoordinat[0]
+                let latitude  = arrKoordinat[1]
+                var cctv = L.marker([longitude,latitude], {icon: cctvIcon}).addTo(map);
+
+                cctv.bindPopup(`<div class="modal-content rounded-4 shadow">
+                    <div class="modal-header border-bottom-0" style="text-align: center;">
+                    <h6 class="mt-3">`+data.data.nama_cctv+`</h6>
+                    </div>
+                    <div class="modal-body py-0">
+                        <iframe style="width:300px;" src="`+data.data.link+`" 
+                        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
+                        </iframe>
+                    </div>
+                    </div>`,{
+                    maxWidth: 300
+                }).openPopup();
+            },
+            error : function(request,error)
+            {
+                alert("Request: "+JSON.stringify(request));
+            }
+            });
+        })
+    })
+    
+</script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-R082NC0SMK"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-R082NC0SMK');
+</script>
+    <div>
+      <footer class="bg-danger footer">
+        <div class="container-fluid">
+          <div class="row align-items-start">
+            <div class="col-lg-4 col-md-3 mt-3 info-kontak">
+              <div class="d-flex">
+                <img style="width:30%" src="https://atcs.bandungbaratkab.go.id/logo/pemkabbb.png" alt="ss" class="img-fluid">
+                <p class="text-light fw-bold text-uppercase mt-3">PEMERINTAHAN KABUPATEN BANDUNG BARAT</p>
+              </div>
+            </div>
+            <div class="col-lg-3 mt-3 col-md-3 sosial-media">
+              <p class="text-light fw-bold text-uppercase mb-3">Sosial Media</p><div class="row">
+                <div class="col-xl-4 d-flex align-items-center"><a href="https://www.instagram.com/dishubkbb/" target="_blank">
+                  <img src="https://atcs.bandungbaratkab.go.id/logo/instagram.png" alt="" style="width:30px;" class="img-fluid me-4"></a><a href="https://www.youtube.com/@dishub.kbb24" target="_blank">
+                  <img src="https://atcs.bandungbaratkab.go.id/logo/facebook.png" alt="" style="width:30px;" class="img-fluid me-4"></a><a href="https://www.facebook.com/dishubkbb/" target="_blank">
+                </div>
+              </div>
+            </div>
+        </footer>
+    </div>
+  </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+  </body>
+  <!-- author : Si_Uqi -->
+</body>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-R082NC0SMK"></script>
+<script type="application/ld+json">
+{
+  "@context": "http://atcs-dishubkbb.id/",
+  "@type": "Preview",
+  "headline": "Atcs Dishub KBB",
+  "description": "Web pemantau cctv dishub kbb, atcs dishub kbb",
+}
+</script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-R082NC0SMK');
+</script>
+<script>
+  
+</script>
+</html>

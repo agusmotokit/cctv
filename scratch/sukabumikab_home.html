@@ -1,0 +1,511 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CCTV DISHUB KAB SUKABUMI</title>
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Segoe UI;
+background:#fff;
+padding-bottom:60px;
+}
+
+/* HEADER */
+.header-banner{
+position:relative;
+}
+
+.header-banner img{
+width:100%;
+display:block;
+}
+
+.clock{
+position:absolute;
+top:15px;
+right:20px;
+background:rgba(0,0,0,0.6);
+color:#fff;
+padding:6px 12px;
+border-radius:6px;
+font-weight:bold;
+}
+
+.dashboard-info{
+position:absolute;
+top:15px;
+left:20px;
+background:rgba(0,0,0,0.6);
+color:#fff;
+padding:6px 12px;
+border-radius:6px;
+font-size:13px;
+}
+
+/* CONTROL */
+.control{
+background:#111;
+color:#fff;
+padding:10px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+select{
+padding:6px;
+}
+
+/* MAP */
+#map{
+height:85vh;
+}
+
+@media(max-width:768px){
+#map{
+height:88vh;
+}
+}
+
+/* MODAL VIDEO */
+.modal{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:#000;
+z-index:9999;
+}
+
+.modal video{
+width:100%;
+height:100%;
+object-fit:contain;
+}
+
+/* FOOTER */
+.footer{
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+text-align:center;
+padding:10px;
+font-weight:bold;
+background:rgba(255,255,255,0.95);
+z-index:9999;
+}
+
+/* BUTTON KOMENTAR */
+.comment-btn{
+position:fixed;
+right:20px;
+bottom:80px;
+background:#0066ff;
+color:#fff;
+padding:12px 14px;
+border-radius:50px;
+cursor:pointer;
+z-index:9999;
+font-size:14px;
+box-shadow:0 4px 10px rgba(0,0,0,.2);
+}
+
+/* BACKDROP GELAP */
+.comment-overlay{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.5);
+display:none;
+z-index:9998;
+}
+
+/* BOX KOMENTAR TENGAH */
+.comment-box{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+width:350px;
+max-width:90%;
+background:#fff;
+padding:15px;
+border-radius:12px;
+display:none;
+box-shadow:0 10px 30px rgba(0,0,0,.4);
+z-index:9999;
+box-sizing:border-box;
+}
+
+.comment-close{
+position:absolute;
+top:8px;
+right:10px;
+cursor:pointer;
+font-weight:bold;
+font-size:18px;
+}
+
+.comment-box input,
+.comment-box textarea,
+.comment-box button{
+width:100%;
+display:block;
+margin-bottom:8px;
+padding:10px;
+border:1px solid #ccc;
+border-radius:6px;
+font-size:14px;
+box-sizing:border-box;
+}
+
+.comment-box textarea{
+height:90px;
+resize:none;
+}
+
+.comment-box button{
+background:#0066ff;
+color:#fff;
+border:none;
+font-weight:bold;
+cursor:pointer;
+}
+
+.watermark{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%, -50%);
+color:rgba(255,255,255,0.6);
+font-weight:bold;
+pointer-events:none;
+text-align:center;
+text-shadow:2px 2px 6px rgba(0,0,0,0.8);
+z-index:10000;
+line-height:1.4;
+}
+
+.watermark .title{
+font-size:28px;
+}
+
+.watermark .sub{
+font-size:18px;
+opacity:0.9;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header-banner">
+<img src="assets/banner/Footer Streaming 3.png">
+
+<div class="clock" id="clock"></div>
+
+<div class="dashboard-info">
+<style>
+.label{
+display:inline-block;
+width:40px;   /* atur sesuai kebutuhan */
+}
+</style>
+
+<span class="label">Visitor</span> : <span id="totalVisitor">0</span><br>
+<span class="label">Today</span>   : <span id="visitorToday">0</span><br>
+<span class="label">Online</span>  : <span id="onlineViewer">0</span>
+</div>
+</div>
+
+<!-- CONTROL -->
+<div class="control">
+<div>CCTV DISHUB SUKABUMI</div>
+
+<select onchange="pilihCam(this.value)">
+<option value="">-- PILIH CCTV --</option>
+<option value="0">EXIT TOL BOCIMI</option>
+<option value="1">PASAR / TERMINAL CIBADAK</option>
+<option value="2">SIMPANG RATU CIBADAK</option>
+<option value="3">SIMPANG CIKEMBANG</option>
+<option value="4">SIMPANG CISAAT</option>
+<option value="5">SIMPANG SUKARAJA</option>
+<option value="6">TENJO AYU</option>
+<option value="7">LAMPU MERAH PL-RATU</option>
+<option value="8">SIMPANG PANGLESERAN</option>
+<option value="9">CICURUG</option>
+<option value="10">KARANG HAWU PL-RATU</option>
+<option value="11">SIMPANG JALUR CIBOLANG</option>
+<option value="12">SIMPANG KEBON PEDES</option>
+<option value="13">SIMPANG BATU SAPI</option>
+<option value="14">PASAR PARUNGKUDA</option>
+<option value="15">PASAR IKAN</option>
+<option value="16">SIMPANG KADUDAMPIT</option>
+<option value="17">EXIT TOL 1</option>
+<option value="18">SUKALARANG</option>
+</select>
+</div>
+
+<!-- MAP -->
+<div id="map"></div>
+
+<!-- FOOTER -->
+<div class="footer">
+© 2026 | Dishub Kab Sukabumi | dsm
+</div>
+
+<!-- KOMENTAR -->
+<div class="comment-btn" onclick="openComment()">💬 Saran & Masukan</div>
+
+<div class="comment-overlay" id="commentOverlay" onclick="closeComment()"></div>
+
+<div class="comment-box" id="commentBox">
+<div class="comment-close" onclick="closeComment()">✕</div>
+
+<h3 style="margin-top:0">Saran & Masukan</h3>
+
+<input id="nama" placeholder="Nama">
+<input id="hp" placeholder="No HP" maxlength="15">
+<textarea id="pesan" placeholder="Tulis saran..."></textarea>
+
+<button onclick="kirimKomentar()">Kirim</button>
+</div>
+
+<!-- MODAL VIDEO -->
+<div class="modal" id="modal">
+
+<button onclick="closeCam()" style="
+position:absolute;
+top:20px;
+left:20px;
+z-index:10001;
+
+background:transparent;
+border:none;
+
+color:#0b5fa5;
+
+font-size:150px;
+
+font-weight:bold;
+cursor:pointer;
+
+transform:scaleX(0.5);   /* 🔥 POTONG PANJANG */
+
+text-shadow:0 4px 15px rgba(0,0,0,0.7);
+">
+⬅
+</button>
+
+<video id="bigVideo" controls autoplay></video>
+
+<div class="watermark">
+<div class="title">PROPERTI DISHUB KAB SMI</div>
+<div class="sub">cctv-dishub.sukabumikab.go.id</div>
+
+</div>
+
+<script>
+
+const cams=[
+'/hls/exittol/stream.m3u8',
+'/hls/pasarcibadak/stream.m3u8',
+'/hls/masjidcibadak/stream.m3u8',
+'/hls/cikembang/stream.m3u8',
+'/hls/cisaat/stream.m3u8',
+'/hls/sukaraja/stream.m3u8',
+'/hls/tenjoayu/stream.m3u8',
+'/hls/lpmratu/stream.m3u8',
+'/hls/pangleseran/stream.m3u8',
+'/hls/cicurug/stream.m3u8',
+'/hls/karanghawu/stream.m3u8',
+'/hls/cibolang/stream.m3u8',
+'/hls/pedes/stream.m3u8',
+'/hls/batusapi/stream.m3u8',
+'/hls/parungkuda/stream.m3u8',
+'/hls/pasarikan/stream.m3u8',
+'/hls/kadudampit/stream.m3u8',
+'/hls/exittol_ai/stream.m3u8',
+'/hls/sukalarang/stream.m3u8'
+];
+
+let hls;
+
+function openCam(i){
+fetch("hit_camera.php?cam="+i);
+
+let video=document.getElementById("bigVideo");
+modal.style.display="block";
+
+history.pushState({cam:i}, "", location.pathname); // 🔥 WAJIB
+
+if(hls) hls.destroy();
+
+if(Hls.isSupported()){
+hls=new Hls();
+hls.loadSource(cams[i]+"?t="+Date.now());
+hls.attachMedia(video);
+}else{
+video.src=cams[i];
+}
+}
+
+window.addEventListener("popstate", function(){
+if(modal.style.display === "block"){
+closeCam();
+}
+});
+
+
+function closeCam(){
+modal.style.display="none";
+if(hls) hls.destroy();
+}
+
+function pilihCam(i){
+if(i==="")return;
+openCam(i);
+}
+
+/* MAP */
+var map = L.map('map');
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+var data = [
+{lat:-6.859893,lng:106.767408,i:0,n:"EXITTOL-BOCIMI"},
+{lat:-6.885323,lng:106.779085,i:1,n:"PASAR CIBADAK"},
+{lat:-6.893521,lng:106.784184,i:2,n:"MASJID CIBADAK"},
+{lat:-6.953456,lng:106.768002,i:3,n:"CIKEMBANG"},
+{lat:-6.907126,lng:106.890171,i:4,n:"CISAAT"},
+{lat:-6.917446,lng:106.973643,i:5,n:"SUKARAJA"},
+{lat:-6.772992,lng:106.791647,i:6,n:"TENJO AYU"},
+{lat:-6.989015,lng:106.552284,i:7,n:"LAMPU MERAH PL RATU"},
+{lat:-6.976632,lng:106.850618,i:8,n:"PANGLESERAN"},
+{lat:-6.784715,lng:106.781321,i:9,n:"CICURUG"},
+{lat:-6.954543,lng:106.459741,i:10,n:"KARANGHAWU"},
+{lat:-6.905640,lng:106.872581,i:11,n:"CIBOLANG"},
+{lat:-6.928234,lng:106.974332,i:12,n:"KEBON PEDES"},
+{lat:-6.997688,lng:106.556586,i:13,n:"BATU SAPI"},
+{lat:-6.848734,lng:106.762800,i:14,n:"PASAR PARUNGKUDA"},
+{lat:-6.987752,lng:106.544896,i:15,n:"PASAR IKAN"},
+{lat:-6.907664,lng:106.890893,i:16,n:"KADUDAMPIT"},
+{lat:-6.858958,lng:106.766829,i:17,n:"EXIT TOL-1"},
+{lat:-6.874246,lng:107.023882,i:18,n:"SUKALARANG"}
+];
+
+var group = L.featureGroup();
+
+data.forEach(c=>{
+let marker = L.marker([c.lat,c.lng])
+.addTo(map)
+.bindPopup("<b>"+c.n+"</b><br>Klik untuk lihat CCTV")
+.on('click',()=>openCam(c.i));
+
+group.addLayer(marker);
+});
+
+map.fitBounds(group.getBounds(),{padding:[50,50]});
+
+/* JAM */
+setInterval(()=>{
+let n=new Date();
+clock.innerHTML=
+n.toLocaleDateString('id-ID')+" "+
+n.toLocaleTimeString('id-ID');
+},1000);
+
+/* VISITOR */
+function loadVisitor(){
+fetch("/visitor.php")
+.then(r=>r.json())
+.then(d=>{
+totalVisitor.innerText=d.total||0;
+visitorToday.innerText=d.today||0;
+onlineViewer.innerText=d.online||0;
+});
+}
+setInterval(loadVisitor,2000);
+loadVisitor();
+
+/* KOMENTAR */
+function openComment(){
+commentOverlay.style.display="block";
+commentBox.style.display="block";
+}
+
+function closeComment(){
+commentOverlay.style.display="none";
+commentBox.style.display="none";
+}
+
+function kirimKomentar(){
+
+let n = nama.value.trim();
+let h = hp.value.trim();
+let p = pesan.value.trim();
+
+if(h === ""){
+alert("No HP belum diisi");
+hp.focus();
+return;
+}
+
+if(!/^[0-9]+$/.test(h)){
+alert("Masukan No HP dengan benar");
+hp.focus();
+return;
+}
+
+if(h.length < 10){
+alert("No HP minimal 10 digit");
+hp.focus();
+return;
+}
+
+if(p === ""){
+alert("Komentar masih kosong");
+pesan.focus();
+return;
+}
+
+fetch("komentar.php",{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"nama="+encodeURIComponent(n)+"&hp="+encodeURIComponent(h)+"&pesan="+encodeURIComponent(p)
+})
+.then(r=>r.text())
+.then(()=>{
+alert("Terkirim");
+closeComment();
+nama.value="";
+hp.value="";
+pesan.value="";
+});
+
+}
+
+</script>
+
+</body>
+</html>

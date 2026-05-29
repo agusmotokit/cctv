@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>CCTV Dashboard - Pemerintah Kabupaten Bandung</title>
+    <!-- Modern Font: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <style>
+        :root {
+            /* Light Theme Variables */
+            --bg-body: #f3f4f6;
+            --bg-surface: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --primary-accent: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --overlay-bg: rgba(255, 255, 255, 0.8);
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Variables */
+            --bg-body: #0f172a;
+            --bg-surface: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --primary-accent: #3b82f6;
+            --primary-hover: #60a5fa;
+            --danger-color: #f87171;
+            --success-color: #34d399;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+            --hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+            --overlay-bg: rgba(15, 23, 42, 0.8);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Styles */
+        .dashboard-header {
+            background-color: var(--bg-surface);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1001; /* Higher than leaflet controls */
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-icon {
+            background-color: var(--primary-accent);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+        }
+
+        .header-titles h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            letter-spacing: -0.5px;
+        }
+
+        .header-titles p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle-btn {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle-btn:hover {
+            background-color: var(--bg-body);
+            color: var(--primary-accent);
+        }
+
+        /* Main Content */
+        .dashboard-main {
+            flex: 1;
+            padding: 24px 32px;
+            max-width: 1440px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .dashboard-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .search-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 14px;
+            background-color: var(--bg-surface);
+            color: var(--text-primary);
+            box-shadow: var(--card-shadow);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            box-shadow: var(--card-shadow);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--success-color);
+            box-shadow: 0 0 8px var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(0.95); opacity: 1; }
+        }
+
+        /* Map Styles */
+        .map-container {
+            width: 100%;
+            height: 400px;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 32px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--card-shadow);
+            z-index: 10;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            background-color: #e5e5e5;
+        }
+
+        /* Dark Mode Map Filter */
+        [data-theme="dark"] .leaflet-layer,
+        [data-theme="dark"] .leaflet-control-zoom-in,
+        [data-theme="dark"] .leaflet-control-zoom-out,
+        [data-theme="dark"] .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        }
+
+        /* Custom Leaflet Marker */
+        .custom-map-icon {
+            background: transparent;
+            border: none;
+        }
+
+        .map-marker {
+            background-color: var(--primary-accent);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            border: 2px solid white;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .map-marker:hover {
+            transform: scale(1.15) translateY(-5px);
+            background-color: var(--danger-color);
+        }
+        
+        .leaflet-tooltip {
+            background-color: var(--bg-surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            padding: 8px 12px;
+        }
+
+        .leaflet-tooltip-top:before {
+            border-top-color: var(--border-color);
+        }
+
+        /* Section Title */
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* CCTV Grid */
+        .cctv-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .cctv-card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .cctv-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--hover-shadow);
+            border-color: var(--primary-accent);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background-color: #000;
+            overflow: hidden;
+        }
+
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.6) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .cctv-card:hover .video-overlay {
+            opacity: 1;
+        }
+
+        .cctv-status {
+            align-self: flex-start;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .cctv-status .live-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--danger-color);
+            border-radius: 50%;
+            box-shadow: 0 0 5px var(--danger-color);
+        }
+
+        .cctv-controls {
+            align-self: flex-end;
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            justify-content: flex-end;
+        }
+
+        .control-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background-color: var(--primary-accent);
+            border-color: var(--primary-accent);
+            transform: scale(1.05);
+        }
+
+        .video-info {
+            padding: 16px;
+        }
+
+        .cctv-name {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .cctv-code {
+            background-color: var(--primary-accent);
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .cctv-location {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cctv-location i {
+            color: var(--danger-color);
+            font-size: 14px;
+        }
+
+        .location-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .location-link:hover {
+            color: var(--primary-accent);
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 13px;
+            backdrop-filter: blur(2px);
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Footer */
+        .dashboard-footer {
+            background-color: var(--bg-surface);
+            color: var(--text-secondary);
+            padding: 20px 32px;
+            font-size: 13px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .footer-logo i {
+            color: var(--primary-accent);
+            font-size: 16px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 2000; /* Highest z-index */
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background-color: var(--bg-surface);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 900px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .modal-header {
+            background-color: var(--bg-surface);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .close-modal {
+            background-color: var(--bg-body);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .close-modal:hover {
+            background-color: var(--danger-color);
+            color: white;
+            border-color: var(--danger-color);
+        }
+
+        .modal-body {
+            padding: 0;
+        }
+
+        .modal-video-container {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background-color: #000;
+            position: relative;
+        }
+
+        .modal-video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .modal-info {
+            padding: 16px 24px;
+            background-color: var(--bg-surface);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                padding: 16px 20px;
+            }
+            .dashboard-main {
+                padding: 20px;
+            }
+            .search-wrapper {
+                max-width: 100%;
+            }
+            .cctv-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+                justify-content: center;
+            }
+            .map-container {
+                height: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cctv-grid {
+                grid-template-columns: 1fr;
+            }
+            .header-titles h1 {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="header-left">
+                <div class="header-icon">
+                    <i class="fas fa-video"></i>
+                </div>
+                <div class="header-titles">
+                    <h1>CCTV Dashboard</h1>
+                    <p>Pemerintah Kabupaten Bandung</p>
+                </div>
+            </div>
+            
+            <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Dark/Light Mode">
+                <i class="fas fa-moon"></i>
+            </button>
+        </header>
+        
+        <main class="dashboard-main">
+            <div class="dashboard-controls">
+                <div class="search-wrapper">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-input" placeholder="Cari lokasi CCTV...">
+                    </div>
+                </div>
+                <div class="status-badge" id="online-counter">
+                    <div class="status-dot"></div>
+                    <span>9 CCTV</span>
+                </div>
+            </div>
+            
+            <!-- Map Container -->
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            
+            <!-- Section Grid Title -->
+            <h2 class="section-title"><i class="fas fa-th-large"></i> Grid Live CCTV</h2>
+
+            <div class="cctv-grid" id="cctv-grid">
+                <!-- CCTV cards will be generated here by JavaScript -->
+            </div>
+        </main>
+        
+        <footer class="dashboard-footer">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <span><strong>SUPPORT BY</strong> Diskominfo x Dishub</span>
+                </div>
+                <div>
+                    <p><strong>KAB. BANDUNG</strong></p>
+                </div>
+                <div>
+                    <p>© 2026 CCTV Dashboard - All Rights Reserved</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Modal for fullscreen video -->
+    <div class="modal" id="video-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">CCTV View</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-video-container">
+                    <video id="modal-video" controls></video>
+                    <div class="loading-overlay" id="modal-loading">
+                        <div class="spinner"></div>
+                        <p>Memuat video resolusi tinggi...</p>
+                    </div>
+                </div>
+                <div class="modal-info">
+                    <p class="cctv-location" id="modal-location"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HLS for video stream -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script>
+        // CCTV data
+        const cctvData = [
+            { id: 1, name: "SP PEMDA", code: "SP", coordinates: [-7.024114, 107.530442], streamUrl: "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/kRTdYHeHLZ/s.m3u8" },
+            { id: 2, name: "TOL SOROJA", code: "SP", coordinates: [-7.019880, 107.528700], streamUrl: "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/vlWaaKJA8Y/s.m3u8" },
+            { id: 3, name: "GADING TUTUKA", code: "SP", coordinates: [-7.020165, 107.540506], streamUrl: "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/jkjOtg2aJB/s.m3u8" },
+            { id: 4, name: "DESA SOREANG", code: "SP", coordinates: [-7.029756, 107.528181], streamUrl: "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/Z1yMOD012l/s.m3u8" },
+            { id: 5, name: "KOPO SAYATI", code: "SP", coordinates: [-6.971602, 107.573615], streamUrl: "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/Xv2ERL1yXY/s.m3u8" },
+            { id: 6, name: "RANCAMANYAR", code: "SP", coordinates: [-6.985117, 107.593254], streamUrl: "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/MLhHQFNqih/s.m3u8" },
+            { id: 7, name: "CIPARAY", code: "SP", coordinates: [-7.035640, 107.713250], streamUrl: "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/s0BPNnOcMS/s.m3u8" },
+          { id: 9, name: "KATAPANG", code: "SP", coordinates: [-6.998971, 107.553782], streamUrl: "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/08fP29L14l/s.m3u8" },
+            { id: 8, name: "MAJALAYA", code: "SP", coordinates: [-7.050434, 107.758322], streamUrl: "http://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/BdBowldl4p/s.m3u8" },
+            
+        ];
+
+        // Global Variables
+        const hlsInstances = {};
+        let currentModalHls = null;
+        let map;
+        let markersLayer;
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup Theme
+            initTheme();
+
+            // Setup Map
+            initMap();
+
+            // Render Grids & Markers
+            renderCCTVGrid(cctvData);
+            updateMapMarkers(cctvData);
+            
+            // Search functionality
+            document.getElementById('search-input').addEventListener('input', function(e) {
+                const term = e.target.value.toLowerCase();
+                const filtered = cctvData.filter(cctv => 
+                    cctv.name.toLowerCase().includes(term)
+                );
+                renderCCTVGrid(filtered);
+                updateMapMarkers(filtered);
+                document.getElementById('online-counter').querySelector('span').textContent = `${filtered.length} CCTV Online`;
+            });
+            
+            // Modal close button
+            document.querySelector('.close-modal').addEventListener('click', closeModal);
+            
+            // Close modal when clicking outside
+            document.getElementById('video-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+        });
+
+        // Theme Toggle Logic
+        function initTheme() {
+            const themeBtn = document.getElementById('theme-toggle');
+            const icon = themeBtn.querySelector('i');
+            
+            // Check system preference
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                icon.className = 'fas fa-sun';
+            }
+
+            themeBtn.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                if (currentTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    icon.className = 'fas fa-moon';
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    icon.className = 'fas fa-sun';
+                }
+            });
+        }
+
+        // Initialize Leaflet Map
+        function initMap() {
+            // Set Initial View to Kabupaten Bandung
+            map = L.map('map').setView([-7.024114, 107.530442], 12);
+
+            // Add OpenStreetMap Tile Layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            // Layer group for markers to allow easy filtering
+            markersLayer = L.layerGroup().addTo(map);
+        }
+
+        // Update Map Markers based on Data
+        function updateMapMarkers(data) {
+            if (!markersLayer) return;
+            markersLayer.clearLayers();
+
+            data.forEach(cctv => {
+                // Custom DivIcon for Map
+                const customIcon = L.divIcon({
+                    className: 'custom-map-icon',
+                    html: '<div class="map-marker" title="Klik untuk putar stream CCTV"><i class="fas fa-video"></i></div>',
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 36], // Center point of icon bottom
+                    tooltipAnchor: [0, -40] // Tooltip above icon
+                });
+
+                const marker = L.marker(cctv.coordinates, { icon: customIcon }).addTo(markersLayer);
+                
+                // Add Tooltip with info
+                marker.bindTooltip(`
+                    <div style="text-align:center;">
+                        <strong>${cctv.name}</strong><br>
+                        <span style="font-size:11px; color:var(--text-secondary);">Klik marker untuk melihat</span>
+                    </div>
+                `, { direction: 'top' });
+
+                // Open Modal on click
+                marker.on('click', () => {
+                    openModal(cctv);
+                });
+            });
+
+            // Re-center map to fit all filtered markers if there are multiple
+            if (data.length > 0) {
+                const bounds = L.latLngBounds(data.map(c => c.coordinates));
+                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+            }
+        }
+
+        // Render CCTV grid
+        function renderCCTVGrid(data) {
+            const grid = document.getElementById('cctv-grid');
+            grid.innerHTML = '';
+            
+            if(data.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; color: var(--text-secondary);">CCTV tidak ditemukan.</div>`;
+                return;
+            }
+
+            data.forEach(cctv => {
+                const card = document.createElement('div');
+                card.className = 'cctv-card';
+                
+                // Create Google Maps URL
+                const mapsUrl = `https://www.google.com/maps?q=${cctv.coordinates[0]},${cctv.coordinates[1]}`;
+
+                card.innerHTML = `
+                    <div class="video-container">
+                        <video id="video-${cctv.id}" muted></video>
+                        <div class="video-overlay">
+                            <div class="cctv-status">
+                                <div class="live-dot"></div> LIVE
+                            </div>
+                            <div class="cctv-controls">
+                                <button class="control-btn sound-btn" data-id="${cctv.id}" title="Toggle Audio">
+                                    <i class="fas fa-volume-mute"></i>
+                                </button>
+                                <button class="control-btn expand-btn" data-id="${cctv.id}" title="Fullscreen">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="loading-overlay" id="loading-${cctv.id}">
+                            <div class="spinner"></div>
+                            <p>Menghubungkan...</p>
+                        </div>
+                    </div>
+                    <div class="video-info">
+                        <div class="cctv-name">
+                            <span>${cctv.name}</span>
+                            <span class="cctv-code">${cctv.code}</span>
+                        </div>
+                        <div class="cctv-location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <a href="${mapsUrl}" target="_blank" class="location-link" title="Buka di Google Maps">
+                                ${formatCoordinates(cctv.coordinates)}
+                            </a>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+                
+                // Initialize video stream
+                setupVideoStream(cctv.streamUrl, `video-${cctv.id}`, `loading-${cctv.id}`);
+                
+                // Add event listeners for control buttons
+                card.querySelector('.expand-btn').addEventListener('click', () => openModal(cctv));
+                card.querySelector('.sound-btn').addEventListener('click', toggleSound);
+            });
+        }
+
+        // Setup video stream
+        function setupVideoStream(streamUrl, videoId, loadingId) {
+            const video = document.getElementById(videoId);
+            const loading = document.getElementById(loadingId);
+            
+            if (Hls.isSupported()) {
+                const hls = new Hls({
+                    maxBufferLength: 10,
+                    maxMaxBufferLength: 30
+                });
+                hlsInstances[videoId] = hls;
+                
+                hls.loadSource(streamUrl);
+                hls.attachMedia(video);
+                
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    loading.style.display = 'none';
+                    video.play().catch(e => {
+                        console.log('Autoplay prevented:', e);
+                    });
+                });
+                
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                loading.innerHTML = '<i class="fas fa-video-slash" style="font-size:24px; margin-bottom:10px; color:#ef4444;"></i><p>Gangguan CCTV</p>';
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                loading.innerHTML = '<i class="fas fa-exclamation-triangle" style="font-size:24px; margin-bottom:10px; color:#ef4444;"></i><p>Error Tidak Diketahui</p>';
+                                break;
+                        }
+                    }
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // For Safari
+                video.src = streamUrl;
+                video.addEventListener('loadedmetadata', function() {
+                    loading.style.display = 'none';
+                    video.play().catch(e => {
+                        console.log('Autoplay prevented:', e);
+                    });
+                });
+            } else {
+                loading.innerHTML = '<p>Browser tidak mendukung pemutaran video</p>';
+            }
+        }
+
+        // Open modal with fullscreen video
+        function openModal(cctv) {
+            const modal = document.getElementById('video-modal');
+            const modalVideo = document.getElementById('modal-video');
+            const modalTitle = document.getElementById('modal-title');
+            const modalLocation = document.getElementById('modal-location');
+            const modalLoading = document.getElementById('modal-loading');
+            
+            modalTitle.textContent = cctv.name;
+            const mapsUrl = `https://www.google.com/maps?q=${cctv.coordinates[0]},${cctv.coordinates[1]}`;
+            modalLocation.innerHTML = `<i class="fas fa-map-marker-alt" style="color:var(--danger-color); margin-right:8px;"></i> Lokasi: <a href="${mapsUrl}" target="_blank" class="location-link">${formatCoordinates(cctv.coordinates)}</a>`;
+            
+            modalLoading.style.display = 'flex';
+            
+            // Setup modal video
+            if (Hls.isSupported()) {
+                if (currentModalHls) {
+                    currentModalHls.destroy();
+                }
+                
+                currentModalHls = new Hls();
+                currentModalHls.loadSource(cctv.streamUrl);
+                currentModalHls.attachMedia(modalVideo);
+                
+                currentModalHls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    modalLoading.style.display = 'none';
+                    modalVideo.play().catch(e => {
+                        console.log('Autoplay prevented in modal:', e);
+                    });
+                });
+            } else if (modalVideo.canPlayType('application/vnd.apple.mpegurl')) {
+                modalVideo.src = cctv.streamUrl;
+                modalVideo.addEventListener('loadedmetadata', function() {
+                    modalLoading.style.display = 'none';
+                    modalVideo.play().catch(e => {
+                        console.log('Autoplay prevented in modal:', e);
+                    });
+                });
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('video-modal');
+            const modalVideo = document.getElementById('modal-video');
+            
+            modal.style.display = 'none';
+            modalVideo.pause();
+            modalVideo.removeAttribute('src'); // Clear src to stop buffering
+            modalVideo.load();
+            
+            if (currentModalHls) {
+                currentModalHls.destroy();
+                currentModalHls = null;
+            }
+        }
+
+        // Toggle sound for a video
+        function toggleSound(e) {
+            const videoId = `video-${e.currentTarget.getAttribute('data-id')}`;
+            const video = document.getElementById(videoId);
+            const icon = e.currentTarget.querySelector('i');
+            
+            if (video.muted) {
+                video.muted = false;
+                icon.className = 'fas fa-volume-up';
+                e.currentTarget.style.backgroundColor = 'var(--primary-accent)';
+                e.currentTarget.style.borderColor = 'var(--primary-accent)';
+            } else {
+                video.muted = true;
+                icon.className = 'fas fa-volume-mute';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            }
+        }
+
+        // Format coordinates for display
+        function formatCoordinates(coords) {
+            return `${coords[0].toFixed(5)}, ${coords[1].toFixed(5)}`;
+        }
+    </script>
+</body>
+</html>

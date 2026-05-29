@@ -1,0 +1,178 @@
+[
+  {
+    "id": 1,
+    "nama": "CCTV Bojong – Kajen",
+    "alamat": "Ruas jalan Bojong – Kajen, Kabupaten Pekalongan",
+    "keterangan": "Ruas jalan Bojong – Kajen",
+    "kecamatan": "Bojong",
+    "latitude": "-6.95500635",
+    "longitude": "109.60766179",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/bojong-kajen",
+    "status": "aktif"
+  },
+  {
+    "id": 2,
+    "nama": "CCTV Bojong – Surobayan",
+    "alamat": "Ruas jalan Bojong – Surobayan, Kabupaten Pekalongan",
+    "keterangan": "Ruas jalan Bojong – Surobayan",
+    "kecamatan": "Bojong",
+    "latitude": "-6.95488300",
+    "longitude": "109.60771900",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/bojong-surobayan",
+    "status": "aktif"
+  },
+  {
+    "id": 3,
+    "nama": "CCTV Bojong – Wiradesa",
+    "alamat": "Ruas jalan Bojong – Wiradesa, Kabupaten Pekalongan",
+    "keterangan": "Ruas jalan Bojong – Wiradesa",
+    "kecamatan": "Bojong",
+    "latitude": "-6.95481929",
+    "longitude": "109.60772181",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/bojong-wiradesa",
+    "status": "aktif"
+  },
+  {
+    "id": 4,
+    "nama": "CCTV Sedayu – Bojong",
+    "alamat": "Ruas jalan Sedayu – Bojong, Kabupaten Pekalongan",
+    "keterangan": "Ruas jalan Sedayu – Bojong",
+    "kecamatan": "Bojong",
+    "latitude": "-6.97724070",
+    "longitude": "109.63424950",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/sedayu-bojong",
+    "status": "aktif"
+  },
+  {
+    "id": 5,
+    "nama": "CCTV Sedayu – Kajen",
+    "alamat": "Ruas jalan Sedayu – Kajen, Kabupaten Pekalongan",
+    "keterangan": "Ruas jalan Sedayu – Kajen",
+    "kecamatan": "Kajen",
+    "latitude": "-6.97731130",
+    "longitude": "109.63439290",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/sedayu-kajen",
+    "status": "aktif"
+  },
+  {
+    "id": 6,
+    "nama": "CCTV Sedayu – Kedungwuni",
+    "alamat": "Ruas jalan Sedayu – Kedungwuni, Kabupaten Pekalongan",
+    "keterangan": "Ruas jalan Sedayu – Kedungwuni",
+    "kecamatan": "Kedungwuni",
+    "latitude": "-6.97733700",
+    "longitude": "109.63429900",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/sedayu-kedungwuni",
+    "status": "aktif"
+  },
+  {
+    "id": 7,
+    "nama": "CCTV Titik Nol Kajen – Barat",
+    "alamat": "Titik Nol Kajen sisi Barat, dekat Simpang Empat Sibedug, Kabupaten Pekalongan",
+    "keterangan": "Titik Nol Kajen sisi Barat",
+    "kecamatan": "Kajen",
+    "latitude": "-7.02710000",
+    "longitude": "109.58090000",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/titiknolkajen-barat",
+    "status": "aktif"
+  },
+  {
+    "id": 8,
+    "nama": "CCTV Titik Nol Kajen – Selatan",
+    "alamat": "Titik Nol Kajen sisi Selatan, Kabupaten Pekalongan",
+    "keterangan": "Titik Nol Kajen sisi Selatan",
+    "kecamatan": "Kajen",
+    "latitude": "-7.02706400",
+    "longitude": "109.58102400",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/titiknolkajen-selatan",
+    "status": "aktif"
+  },
+  {
+    "id": 9,
+    "nama": "CCTV Titik Nol Kajen – Utara",
+    "alamat": "Titik Nol Kajen sisi Utara dekat Simpang Empat Sibedug, Kabupaten Pekalongan",
+    "keterangan": "Titik Nol Kajen sisi Utara dekat Simpang Empat Sibedug",
+    "kecamatan": "Kajen",
+    "latitude": "-7.02702600",
+    "longitude": "109.58125500",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/titiknolkajen-utara",
+    "status": "aktif"
+  },
+  {
+    "id": 10,
+    "nama": "CCTV Wiradesa – Barat",
+    "alamat": "Sisi barat kawasan Wiradesa, Kabupaten Pekalongan",
+    "keterangan": "Sisi barat kawasan Wiradesa",
+    "kecamatan": "Wiradesa",
+    "latitude": "-6.89139510",
+    "longitude": "109.61720051",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/wiradesa-barat",
+    "status": "aktif"
+  },
+  {
+    "id": 11,
+    "nama": "CCTV Wiradesa – Selatan",
+    "alamat": "Sisi selatan kawasan Wiradesa, Kabupaten Pekalongan",
+    "keterangan": "Sisi selatan kawasan Wiradesa",
+    "kecamatan": "Wiradesa",
+    "latitude": "-6.89159414",
+    "longitude": "109.61740302",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/wiradesa-selatan",
+    "status": "aktif"
+  },
+  {
+    "id": 12,
+    "nama": "CCTV Wiradesa – Timur",
+    "alamat": "Sisi timur kawasan Wiradesa, Kabupaten Pekalongan",
+    "keterangan": "Sisi timur kawasan Wiradesa",
+    "kecamatan": "Wiradesa",
+    "latitude": "-6.89149961",
+    "longitude": "109.61760620",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/wiradesa-timur",
+    "status": "aktif"
+  },
+  {
+    "id": 13,
+    "nama": "CCTV Wiradesa – Utara",
+    "alamat": "Sisi utara kawasan Wiradesa, Kabupaten Pekalongan",
+    "keterangan": "Sisi utara kawasan Wiradesa",
+    "kecamatan": "Wiradesa",
+    "latitude": "-6.89145102",
+    "longitude": "109.61742045",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/wiradesa-utara",
+    "status": "aktif"
+  },
+  {
+    "id": 14,
+    "nama": "CCTV Tuguduren Karanganyar 1",
+    "alamat": null,
+    "keterangan": null,
+    "kecamatan": "Karanganyar",
+    "latitude": "-7.03180000",
+    "longitude": "109.62516400",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/tuguduren-karanganyar-1",
+    "status": "aktif"
+  },
+  {
+    "id": 15,
+    "nama": "CCTV Tuguduren Karanganyar 2",
+    "alamat": null,
+    "keterangan": null,
+    "kecamatan": "Karanganyar",
+    "latitude": "-7.03182500",
+    "longitude": "109.62523400",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/tuguduren-karanganyar-2/",
+    "status": "aktif"
+  },
+  {
+    "id": 16,
+    "nama": "CCTV Tuguduren Karanganyar 3",
+    "alamat": null,
+    "keterangan": null,
+    "kecamatan": "Karanganyar",
+    "latitude": "-7.03179800",
+    "longitude": "109.62519500",
+    "stream_url": "https://cctv.pekalongankab.go.id/hls/tuguduren-karanganyar-3/",
+    "status": "aktif"
+  }
+]

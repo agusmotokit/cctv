@@ -1,0 +1,128 @@
+{
+  "statuscode": 200,
+  "message": "Success",
+  "Data": [
+    {
+      "id": "cam9",
+      "name": "POS TAPAL KUDA",
+      "Lokasi": "POS TAPAL KUDA",
+      "deskripsi": "KEC.SALAWU",
+      "location": "KEC.SALAWU",
+      "channel": "901",
+      "enabled": true,
+      "link": "https://cctv.tasikmalayakab.go.id/live/cam9/index.m3u8",
+      "stream": "https://cctv.tasikmalayakab.go.id/live/cam9/index.m3u8"
+    },
+    {
+      "id": "cam8",
+      "name": "JALAN KADIPATEN ARAH TASIK",
+      "Lokasi": "JALAN KADIPATEN ARAH TASIK",
+      "deskripsi": "KEC.KADIPATEN",
+      "location": "KEC.KADIPATEN",
+      "channel": "801",
+      "enabled": true,
+      "link": "https://cctv.tasikmalayakab.go.id/live/cam8/index.m3u8",
+      "stream": "https://cctv.tasikmalayakab.go.id/live/cam8/index.m3u8"
+    },
+    {
+      "id": "cam1",
+      "name": "SIMPANG CIPASUNG",
+      "Lokasi": "SIMPANG CIPASUNG",
+      "deskripsi": "CCTV SIMPANG CIPASUNG",
+      "location": "CIPASUNG",
+      "channel": "101",
+      "enabled": true,
+      "link": "https://cctv.tasikmalayakab.go.id/live/cam1/index.m3u8",
+      "stream": "https://cctv.tasikmalayakab.go.id/live/cam1/index.m3u8"
+    },
+    {
+      "id": "cam2",
+      "name": "SIMPANG PASAR SINGAPARNA",
+      "Lokasi": "SIMPANG PASAR SINGAPARNA",
+      "deskripsi": "CCTV SIMPANG PASAR SINGAPARNA",
+      "location": "SINGAPARNA",
+      "channel": "201",
+      "enabled": true,
+      "link": "https://cctv.tasikmalayakab.go.id/live/cam2/index.m3u8",
+      "stream": "https://cctv.tasikmalayakab.go.id/live/cam2/index.m3u8"
+    },
+    {
+      "id": "cam10",
+      "name": "JALAN RAYA KARANGNUNGGAL",
+      "Lokasi": "JALAN RAYA KARANGNUNGGAL",
+      "deskripsi": "KEC.KARANGNUNGGAL",
+      "location": "KEC.KARANGNUNGGAL",
+      "channel": "1001",
+      "enabled": true,
+      "link": "https://cctv.tasikmalayakab.go.id/live/cam10/index.m3u8",
+      "stream": "https://cctv.tasikmalayakab.go.id/live/cam10/index.m3u8"
+    },
+    {
+      "id": "cam6",
+      "name": "JALAN RAYA ALUN - ALUN MANONJAYA",
+      "Lokasi": "JALAN RAYA ALUN - ALUN MANONJAYA",
+      "deskripsi": "KEC.MANONJAYA",
+      "location": "KEC.MANONJAYA",
+      "channel": "601",
+      "enabled": true,
+      "link": "https://cctv.tasikmalayakab.go.id/live/cam6/index.m3u8",
+      "stream": "https://cctv.tasikmalayakab.go.id/live/cam6/index.m3u8"
+    },
+    {
+      "id": "cam7",
+      "name": "JALAN KECAMATAN CIPATUJAH",
+      "Lokasi": "JALAN KECAMATAN CIPATUJAH",
+      "deskripsi": "KEC.CIPATUJAH",
+      "location": "KEC.CIPATUJAH",
+      "channel": "701",
+      "enabled": true,
+      "link": "https://cctv.tasikmalayakab.go.id/live/cam7/index.m3u8",
+      "stream": "https://cctv.tasikmalayakab.go.id/live/cam7/index.m3u8"
+    },
+    {
+      "id": "cam4",
+      "name": " JALAN RAYA DEPAN DISHUBKOMINFO",
+      "Lokasi": " JALAN RAYA DEPAN DISHUBKOMINFO",
+      "deskripsi": "CINTARAJA",
+      "location": "CINTARAJA",
+      "channel": "401",
+      "enabled": true,
+      "link": "https://cctv.tasikmalayakab.go.id/live/cam4/index.m3u8",
+      "stream": "https://cctv.tasikmalayakab.go.id/live/cam4/index.m3u8"
+    },
+    {
+      "id": "cam3",
+      "name": "GERBANG PEMDA",
+      "Lokasi": "GERBANG PEMDA",
+      "deskripsi": "SINGAPARNA",
+      "location": "SINGAPARNA",
+      "channel": "301",
+      "enabled": true,
+      "link": "https://cctv.tasikmalayakab.go.id/live/cam3/index.m3u8",
+      "stream": "https://cctv.tasikmalayakab.go.id/live/cam3/index.m3u8"
+    },
+    {
+      "id": "cam11",
+      "name": "GERBANG BELAKANG PEMDA",
+      "Lokasi": "GERBANG BELAKANG PEMDA",
+      "deskripsi": "SINGAPARNA",
+      "location": "SINGAPARNA",
+      "channel": "1101",
+      "enabled": true,
+      "link": "https://cctv.tasikmalayakab.go.id/live/cam11/index.m3u8",
+      "stream": "https://cctv.tasikmalayakab.go.id/live/cam11/index.m3u8"
+    },
+    {
+      "id": "cam12",
+      "name": "RAJAPOLAH (DEPAN KAUM)",
+      "Lokasi": "RAJAPOLAH (DEPAN KAUM)",
+      "deskripsi": "KEC.RAJAPOLAH",
+      "location": "KEC.RAJAPOLAH",
+      "channel": "1201",
+      "enabled": true,
+      "link": "https://cctv.tasikmalayakab.go.id/live/cam12/index.m3u8",
+      "stream": "https://cctv.tasikmalayakab.go.id/live/cam12/index.m3u8"
+    }
+  ],
+  "hlsUrl": "https://cctv.tasikmalayakab.go.id/live"
+}

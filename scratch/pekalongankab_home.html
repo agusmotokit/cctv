@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="iqp1Xf8JRcGj9xaOnayqRr9A4kukaLAP6ThwI1wx">
+
+    <title>Daftar CCTV - Kabupaten Pekalongan</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700" rel="stylesheet" />
+
+    <!-- Styles -->
+            <link rel="preload" as="style" href="https://cctv.pekalongankab.go.id/build/assets/app-G9OSk1HB.css" /><link rel="modulepreload" as="script" href="https://cctv.pekalongankab.go.id/build/assets/app-CKl8NZMC.js" /><link rel="stylesheet" href="https://cctv.pekalongankab.go.id/build/assets/app-G9OSk1HB.css" /><script type="module" src="https://cctv.pekalongankab.go.id/build/assets/app-CKl8NZMC.js"></script>    
+        <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+            z-index: 0;
+        }
+
+        .map-container {
+            position: relative;
+            min-height: 400px;
+        }
+
+        @media (min-width: 640px) {
+            .map-container {
+                min-height: 500px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .map-container {
+                min-height: 600px;
+            }
+        }
+
+        /* Basic modal overlay (tidak tergantung Tailwind) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        @media (max-width: 640px) {
+            .modal-overlay {
+                padding: 0.5rem;
+            }
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-overlay.active .modal-content {
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-content {
+            transition: transform 0.3s ease;
+            width: auto;
+            max-width: 600px;
+            flex: 0 0 auto;
+            align-self: center;
+        }
+
+        @media (max-width: 640px) {
+            .modal-content {
+                width: 90%;
+                max-width: 90%;
+            }
+        }
+
+        /* Info Modal Specific Styles */
+        #info-modal .modal-content {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Search Modal Specific Styles */
+        #search-modal .modal-content {
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 640px) {
+            #search-modal .modal-content {
+                width: 90%;
+                max-width: 90%;
+            }
+        }
+
+        /* Search Results Modal Specific Styles */
+        #search-results-modal .modal-content {
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 640px) {
+            #search-results-modal .modal-content {
+                width: 90%;
+                max-width: 90%;
+            }
+        }
+
+        /* Scrollbar styling untuk modal hasil pencarian */
+        #search-results-modal .overflow-y-auto {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+        }
+
+        #search-results-modal .overflow-y-auto::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #search-results-modal .overflow-y-auto::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        #search-results-modal .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        #search-results-modal .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Stream Modal Styles */
+        .stream-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+        }
+
+        .stream-modal-overlay.active {
+            display: flex;
+        }
+
+        .stream-modal-box {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            width: 80%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+            overflow: hidden;
+        }
+
+        .stream-modal-header {
+            background: #f3f4f6;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid #e5e7eb;
+            position: relative;
+        }
+
+        .stream-modal-title {
+            font-weight: bold;
+            font-size: 16px;
+            color: #1f2937;
+            text-align: center;
+            flex: 1;
+        }
+
+        .stream-modal-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            color: #6b7280;
+            transition: color 0.2s;
+        }
+
+        .stream-modal-close:hover {
+            color: #1f2937;
+        }
+
+        .stream-modal-body {
+            background: #000;
+            width: 100%;
+            height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .stream-video-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .stream-video-container video,
+        .stream-video-container iframe {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .stream-loading {
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .stream-loading p {
+            margin-bottom: 16px;
+        }
+
+        body.modal-open {
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body><a href="https://cctv.pekalongankab.go.id/cdn-cgi/content?id=9XKBgw7ivJjzsTPkQ0UhS1uIsvdD.0Dkjo.1l7BBbzs-1780025595.9589224-1.0.1.1-3zyEgbBMorI9NvHQbDNNySeQTOUG33RbdHXZ7gooJCA" aria-hidden="true" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
+    <nav class="w-full absolute top-2.5" style="z-index: 9999;">
+        <div class="bg-white/70 backdrop-blur-xs shadow-sm border-b rounded-md border-gray-200 max-w-2xs md:max-w-4xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <!-- Logo tetap bisa navigasi ke /cctv -->
+                    <a href="https://cctv.pekalongankab.go.id/cctv"
+                        class="flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base lg:text-xl font-bold text-gray-900">
+                        <div class="flex flex-row gap-2 justify-center items-center">
+                            <img src="https://cctv.pekalongankab.go.id/images/dinas.png" alt="Logo" class="h-10 w-auto" width="50"
+                                height="50">
+                            <div class="flex flex-col">
+                                <div class="flex flex-row items-center">
+                                    
+                                    <div class="size-2 bg-red-500 rounded-full animate-pulse mr-2 mt-0.5"></div>
+                                    <span>LIVE CCTV</span>
+                                </div>
+                                <span class="text-xs text-gray-500 hidden md:flex">Kabupaten Pekalongan</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Desktop menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <button type="button" onclick="window.openCctvListModal && window.openCctvListModal()"
+                        class="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+                        Daftar CCTV
+                    </button>
+                    <button type="button" onclick="window.openInfoModal && window.openInfoModal()"
+                        class="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+                        <?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+                        <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 17V11" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round" />
+                            <circle cx="1" cy="1" r="1" transform="matrix(1 0 0 -1 11 9)"
+                                fill="#1C274C" />
+                            <path
+                                d="M7 3.33782C8.47087 2.48697 10.1786 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 10.1786 2.48697 8.47087 3.33782 7"
+                                stroke="#1C274C" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                    <button type="button" onclick="window.openSearchModal && window.openSearchModal()"
+                        class="text-gray-700 hover:text-blue-600 font-medium transition-colors mr-2">
+                        <?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+                        <svg fill="#000000" width="20px" height="20px" viewBox="0 -0.24 28.423 28.423"
+                            id="_02_-_Search_Button" data-name="02 - Search Button" xmlns="http://www.w3.org/2000/svg">
+                            <path id="Path_215" data-name="Path 215"
+                                d="M14.953,2.547A12.643,12.643,0,1,0,27.6,15.19,12.649,12.649,0,0,0,14.953,2.547Zm0,2A10.643,10.643,0,1,1,4.31,15.19,10.648,10.648,0,0,1,14.953,4.547Z"
+                                transform="translate(-2.31 -2.547)" fill-rule="evenodd" />
+                            <path id="Path_216" data-name="Path 216"
+                                d="M30.441,28.789l-6.276-6.276a1,1,0,1,0-1.414,1.414L29.027,30.2a1,1,0,1,0,1.414-1.414Z"
+                                transform="translate(-2.31 -2.547)" fill-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Mobile hamburger -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-button" type="button"
+                        class="text-gray-700 hover:text-blue-600 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile menu -->
+            <div id="mobile-menu" class="hidden md:hidden pb-4">
+                <div class="flex flex-col space-y-3 pt-2">
+                    <button type="button"
+                        onclick="window.openCctvListModal && window.openCctvListModal(); document.getElementById('mobile-menu')?.classList.add('hidden')"
+                        class="text-gray-700 hover:text-blue-600 font-medium transition-colors text-left">
+                        Daftar CCTV
+                    </button>
+                    <button type="button"
+                        onclick="window.openInfoModal && window.openInfoModal(); document.getElementById('mobile-menu')?.classList.add('hidden')"
+                        class="text-gray-700 hover:text-blue-600 font-medium transition-colors text-left">
+                        Info
+                    </button>
+                    <button type="button"
+                        onclick="window.openSearchModal && window.openSearchModal(); document.getElementById('mobile-menu')?.classList.add('hidden')"
+                        class="text-gray-700 hover:text-blue-600 font-medium transition-colors text-left">
+                        Pencarian
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    
+    
+    
+        <div id="map" class="w-full"></div>
+
+    <div id="search-modal" class="modal-overlay">
+        <div class="modal-content bg-white rounded-md shadow-lg flex flex-col overflow-hidden">
+            <div class="flex justify-between items-center px-4 py-3 bg-slate-800 rounded-t-md">
+                <h2 class="text-base font-bold text-gray-200">Pencarian</h2>
+                <button id="close-search-modal" type="button" class="stream-modal-close" style="color: white;">❌</button>
+            </div>
+            <form id="search-form" class="flex flex-row gap-2 p-4 bg-white rounded-b-md">
+                <input type="text" name="search" id="search-input" placeholder="Masukkan Nama Daerah"
+                    class="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm text-black">
+                <button type="submit" style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                    class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                    <span>Cari</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Daftar CCTV (tabel) -->
+    <div id="cctv-list-modal" class="modal-overlay">
+        <div
+            class="bg-white rounded-xl shadow-2xl w-full max-w-[95vw] sm:max-w-2xl lg:max-w-3xl max-h-[85vh] sm:max-h-[70vh] flex flex-col m-2 sm:m-0 overflow-hidden">
+            <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-slate-800 rounded-t-xl">
+                <h2 class="text-base sm:text-lg lg:text-xl font-semibold text-gray-200">Tabel Daftar CCTV</h2>
+                <button id="close-cctv-list-modal" type="button" class="stream-modal-close"
+                    style="color: white;">❌</button>
+            </div>
+
+            <div class="px-4 sm:px-6 pt-3 sm:pt-4 pb-2 border-b border-gray-200 bg-gray-50">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                    <div class="w-full sm:max-w-xs">
+                        <input id="cctv-list-search" type="text" placeholder="Pencarian"
+                            class="w-full rounded-lg border border-gray-300 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div class="text-xs sm:text-sm text-gray-600 whitespace-nowrap">
+                        Total: <span class="font-semibold text-blue-600">16</span> CCTV
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-auto bg-gray-50 pb-0">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-[10px] sm:text-xs lg:text-sm">
+                        <thead class="bg-gray-200 sticky top-0 z-10">
+                            <tr class="text-left text-gray-700 border-b border-gray-300">
+                                <th class="py-1.5 sm:py-2 px-2 sm:px-4 whitespace-nowrap">No</th>
+                                <th class="py-1.5 sm:py-2 px-2 sm:px-4 whitespace-nowrap">Nama</th>
+                                <th class="py-1.5 sm:py-2 px-2 sm:px-4 hidden sm:table-cell">Keterangan</th>
+                                <th class="py-1.5 sm:py-2 px-2 sm:px-4 whitespace-nowrap">Kecamatan</th>
+                                <th class="py-1.5 sm:py-2 px-2 sm:px-4 whitespace-nowrap">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cctv-list-tbody" class="divide-y divide-gray-200">
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        1</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Bojong – Kajen</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Ruas jalan Bojong – Kajen</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Bojong</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(1, -6.95500635, 109.60766179)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        2</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Bojong – Surobayan</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Ruas jalan Bojong – Surobayan</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Bojong</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(2, -6.95488300, 109.60771900)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        3</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Bojong – Wiradesa</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Ruas jalan Bojong – Wiradesa</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Bojong</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(3, -6.95481929, 109.60772181)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        4</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Sedayu – Bojong</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Ruas jalan Sedayu – Bojong</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Bojong</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(4, -6.97724070, 109.63424950)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        5</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Sedayu – Kajen</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Ruas jalan Sedayu – Kajen</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Kajen</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(5, -6.97731130, 109.63439290)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        6</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Sedayu – Kedungwuni</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Ruas jalan Sedayu – Kedungwuni</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Kedungwuni</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(6, -6.97733700, 109.63429900)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        7</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Titik Nol Kajen – Barat</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Titik Nol Kajen sisi Barat</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Kajen</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(7, -7.02710000, 109.58090000)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        8</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Titik Nol Kajen – Selatan</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Titik Nol Kajen sisi Selatan</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Kajen</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(8, -7.02706400, 109.58102400)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        9</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Titik Nol Kajen – Utara</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Titik Nol Kajen sisi Utara dekat Simpang Empat Sibedug</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Kajen</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(9, -7.02702600, 109.58125500)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        10</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Tuguduren Karanganyar 1</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        -</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Karanganyar</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(14, -7.03180000, 109.62516400)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        11</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Tuguduren Karanganyar 2</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        -</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Karanganyar</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(15, -7.03182500, 109.62523400)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        12</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Tuguduren Karanganyar 3</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        -</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Karanganyar</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(16, -7.03179800, 109.62519500)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        13</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Wiradesa – Barat</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Sisi barat kawasan Wiradesa</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Wiradesa</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(10, -6.89139510, 109.61720051)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        14</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Wiradesa – Selatan</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Sisi selatan kawasan Wiradesa</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Wiradesa</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(11, -6.89159414, 109.61740302)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        15</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Wiradesa – Timur</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Sisi timur kawasan Wiradesa</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Wiradesa</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(12, -6.89149961, 109.61760620)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                            <tr class="cctv-row hover:bg-gray-100 transition-colors">
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        16</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 font-medium text-gray-900 bg-white">
+                                        CCTV Wiradesa – Utara</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white hidden sm:table-cell">
+                                        Sisi utara kawasan Wiradesa</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 text-gray-700 bg-white whitespace-nowrap">
+                                        Wiradesa</td>
+                                    <td class="py-1.5 sm:py-2 px-2 sm:px-4 bg-white whitespace-nowrap">
+                                                                                    <button type="button"
+                                                onclick="goToCctvLocation(13, -6.89145102, 109.61742045)"
+                                                style="background-color: #1f2937; color: white; border: 1px solid #111827;"
+                                                class="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer hover:bg-gray-800">
+                                                <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2.5">
+                                                    <circle cx="12" cy="12" r="10" stroke="currentColor"
+                                                        fill="none" opacity="0.4" />
+                                                    <circle cx="12" cy="12" r="6" stroke="currentColor"
+                                                        fill="none" opacity="0.6" />
+                                                    <circle cx="12" cy="12" r="2" fill="currentColor" />
+                                                </svg>
+                                                <span>Lihat</span>
+                                            </button>
+                                                                            </td>
+                                </tr>
+                                                    </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="px-3 sm:px-6 py-2 sm:py-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between text-[10px] sm:text-xs lg:text-sm gap-2"
+                style="border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; overflow: hidden;">
+                <button id="cctv-list-prev" type="button"
+                    class="px-2 sm:px-3 py-1 rounded-md border border-gray-300 text-gray-300 hover:bg-gray-800 bg-[#1f2937] whitespace-nowrap text-[10px] sm:text-xs">
+                    ‹ Sebelumnya
+                </button>
+                <div id="cctv-list-page-info" class="text-gray-600 text-center text-[10px] sm:text-xs"></div>
+                <button id="cctv-list-next" type="button"
+                    class="px-2 sm:px-3 py-1 rounded-md border border-gray-300 text-gray-300 hover:bg-gray-800 bg-[#1f2937] whitespace-nowrap text-[10px] sm:text-xs">
+                    Berikutnya ›
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Beranda (ringkasan) -->
+    <div id="home-modal" class="modal-overlay">
+        <div
+            class="bg-white rounded-xl shadow-2xl w-full max-w-[95vw] sm:max-w-md max-h-[85vh] sm:max-h-[60vh] flex flex-col m-2 sm:m-0">
+            <div class="flex items-center justify-between px-4 sm:px-5 py-3 bg-slate-800 rounded-t-xl">
+                <h2 class="text-base sm:text-lg font-semibold text-white">Ringkasan CCTV</h2>
+                <button id="close-home-modal" type="button" class="text-white hover:text-gray-300 transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-4 sm:p-5 text-xs sm:text-sm text-gray-800 space-y-2 bg-gray-50 rounded-b-xl">
+                <p>Total CCTV: <span class="font-semibold text-blue-600">16</span></p>
+                <p>Semua CCTV saat ini berstatus <span class="font-semibold text-green-600">Aktif</span> (data seeder).</p>
+                <p class="text-[10px] sm:text-xs text-gray-500">Ringkasan ini bisa disesuaikan dengan statistik real (per
+                    kecamatan, status, dll).</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Info -->
+    <div id="info-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="info-modal-title"
+        aria-describedby="info-modal-content">
+        <div class="modal-content bg-white rounded-lg shadow-sm max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 bg-slate-800 rounded-t-lg relative">
+                <h2 id="info-modal-title" class="text-base font-bold text-gray-200">
+                    Tentang CCTV Kabupaten Pekalongan</h2>
+                <button id="close-info-modal" type="button" class="stream-modal-close" style="color: white;">❌</button>
+            </div>
+            <div id="info-modal-content" class="p-4 text-sm text-gray-800 space-y-3 overflow-auto bg-white rounded-b-lg"
+                style="line-height: 1.6;">
+                Website ini merupakan media resmi penyedia layanan relay streaming CCTV yang menampilkan tayangan langsung dari kamera pengawas (CCTV) yang telah terhubung ke sistem kami. Seluruh tayangan ditujukan untuk mendukung keterbukaan informasi, pemantauan kondisi lingkungan, serta meningkatkan kenyamanan dan keamanan masyarakat.<br />
+<br />
+Perlu diketahui bahwa kualitas gambar dan kelancaran tayangan sangat bergantung pada pengaturan, perangkat, serta jaringan dari pengelola CCTV di masing-masing lokasi. Website ini hanya berfungsi sebagai perantara (relay streaming) dan tidak melakukan pengolahan atau perubahan terhadap kualitas video yang ditampilkan.<br />
+<br />
+Bagi warga Kabupaten Pekalongan, instansi, atau pihak terkait yang ingin berpartisipasi dalam penyediaan layanan live streaming CCTV, baik untuk kepentingan publik maupun pemantauan lingkungan, dapat menghubungi Dinas Komunikasi dan Informatika (Kominfo) Kabupaten Pekalongan untuk informasi dan prosedur lebih lanjut.<br />
+<br />
+Kami berharap kehadiran layanan ini dapat memberikan manfaat bagi masyarakat serta mendukung terciptanya Kabupaten Pekalongan yang lebih informatif, aman, dan transparan.
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Streaming CCTV -->
+    <div id="stream-modal" class="stream-modal-overlay">
+        <div class="stream-modal-box">
+            <div class="stream-modal-header">
+                <div class="stream-modal-title" id="stream-title">-</div>
+                <button id="close-stream-modal" type="button" class="stream-modal-close">❌</button>
+            </div>
+            <div class="stream-modal-body">
+                <div id="stream-container" class="stream-video-container">
+                    <div class="stream-loading">
+                        <p>Memuat streaming...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        let map;
+        let markers = [];
+
+        function getMarkerColor(status) {
+            switch (status) {
+                case 'aktif':
+                    return '#10b981';
+                case 'nonaktif':
+                    return '#ef4444';
+                case 'maintenance':
+                    return '#f59e0b';
+                default:
+                    return '#6b7280';
+            }
+        }
+
+        function createCameraIcon(color) {
+            return L.divIcon({
+                className: 'custom-camera-marker',
+                html: `
+                <div style="
+                    background-color: ${color};
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 50%;
+                    border: 3px solid white;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                ">
+                    <span style="font-size: 16px; color: white;">📹</span>
+                </div>
+            `,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                popupAnchor: [0, -15]
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Center on KM 0 Kajen
+            map = L.map('map').setView([-7.02676, 109.58065], 11);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            loadCctvMarkers();
+
+            // Search popup (pencarian)
+            const closeBtn = document.getElementById('close-search-modal');
+            const modal = document.getElementById('search-modal');
+            const input = document.getElementById('search-input');
+            const searchForm = document.getElementById('search-form');
+
+            window.openSearchModal = function() {
+                if (!modal) return;
+                showModal(modal);
+                document.body.classList.add('modal-open');
+                setTimeout(() => {
+                    if (input) input.focus();
+                }, 100);
+            };
+
+            window.closeSearchModal = function() {
+                if (!modal) return;
+                hideModal(modal);
+                document.body.classList.remove('modal-open');
+            };
+
+            // Fungsi untuk mencari CCTV dan mengarahkan ke lokasinya
+            function searchAndGoToCctv(keyword) {
+                if (!keyword || keyword.trim() === '') {
+                    alert('Masukkan kata pencarian terlebih dahulu');
+                    return;
+                }
+
+                // Ambil data CCTV dari API
+                fetch('https://cctv.pekalongankab.go.id/cctv-json')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Cari semua CCTV yang namanya mengandung keyword (case insensitive)
+                        const keywordLower = keyword.toLowerCase().trim();
+                        const foundCctvs = data.filter(cctv => {
+                            const namaLower = (cctv.nama || '').toLowerCase();
+                            const alamatLower = (cctv.alamat || '').toLowerCase();
+                            const kecamatanLower = (cctv.kecamatan || '').toLowerCase();
+                            return namaLower.includes(keywordLower) ||
+                                alamatLower.includes(keywordLower) ||
+                                kecamatanLower.includes(keywordLower);
+                        });
+
+                        if (foundCctvs.length === 0) {
+                            showNotFoundModal();
+                        } else if (foundCctvs.length === 1) {
+                            // Jika hanya 1 hasil, langsung redirect
+                            const foundCctv = foundCctvs[0];
+                            window.closeSearchModal();
+                            if (foundCctv.latitude && foundCctv.longitude) {
+                                window.goToCctvLocation(foundCctv.id, foundCctv.latitude, foundCctv.longitude);
+                            } else {
+                                alert('CCTV ditemukan tetapi tidak memiliki koordinat');
+                            }
+                        } else {
+                            // Jika lebih dari 1 hasil, tampilkan daftar
+                            showSearchResults(foundCctvs);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error searching CCTV:', error);
+                        alert('Terjadi kesalahan saat mencari CCTV');
+                    });
+            }
+
+            // Fungsi untuk menampilkan hasil pencarian (tabel + pagination)
+            function showSearchResults(cctvs) {
+                // Tutup modal pencarian
+                window.closeSearchModal();
+
+                // Buat modal hasil pencarian
+                const resultsModal = document.createElement('div');
+                resultsModal.id = 'search-results-modal';
+                resultsModal.className = 'modal-overlay';
+
+                const pageSize = 5;
+                const totalItems = Array.isArray(cctvs) ? cctvs.length : 0;
+                const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+                resultsModal.innerHTML = `
+                <div class="modal-content bg-white rounded-md shadow-lg flex flex-col overflow-hidden relative">
+                    <button
+                        id="close-results-modal-x"
+                        type="button"
+                        aria-label="Tutup modal"
+                        class="absolute top-2 right-2 text-gray-700 hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 rounded"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <div class="flex justify-between items-center px-4 py-3 bg-gray-100 border-b border-gray-200 rounded-t-md">
+                        <h2 class="text-base font-bold text-black">Hasil Pencarian (${totalItems})</h2>
+                        <button id="close-results-modal" type="button" class="text-gray-700 hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 rounded" aria-label="Tutup modal">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="p-4 bg-white">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-3 py-2">Nama CCTV</th>
+                                        <th scope="col" class="px-3 py-2">Alamat</th>
+                                        <th scope="col" class="px-3 py-2">Kecamatan</th>
+                                        <th scope="col" class="px-3 py-2">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="search-results-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="px-4 pb-4 bg-white">
+                        <div class="flex items-center justify-between gap-3">
+                            <button
+                                id="search-results-prev"
+                                type="button"
+                                style="background-color: #111827; color: #ffffff; border: 1px solid #111827;"
+                                class="px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Prev
+                            </button>
+                            <div id="search-results-pageinfo" class="text-xs text-gray-700 font-medium text-center flex-1"></div>
+                            <button
+                                id="search-results-next"
+                                type="button"
+                                style="background-color: #111827; color: #ffffff; border: 1px solid #111827;"
+                                class="px-3 py-2 rounded-lg text-xs font-semibold hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+                document.body.appendChild(resultsModal);
+                showModal(resultsModal);
+                document.body.classList.add('modal-open');
+
+                const tbody = resultsModal.querySelector('#search-results-tbody');
+                const prevBtn = resultsModal.querySelector('#search-results-prev');
+                const nextBtn = resultsModal.querySelector('#search-results-next');
+                const pageInfo = resultsModal.querySelector('#search-results-pageinfo');
+
+                let currentPage = 1;
+
+                function renderPage(page) {
+                    currentPage = Math.max(1, Math.min(page, totalPages));
+
+                    const start = (currentPage - 1) * pageSize;
+                    const end = start + pageSize;
+                    const pageItems = (Array.isArray(cctvs) ? cctvs : []).slice(start, end);
+
+                    if (tbody) {
+                        tbody.innerHTML = pageItems.map(cctv => `
+                        <tr class="bg-white border-b hover:bg-gray-50">
+                            <td class="px-3 py-2 font-medium text-gray-900">${cctv.nama || '-'}</td>
+                            <td class="px-3 py-2 text-gray-600">${cctv.alamat || '-'}</td>
+                            <td class="px-3 py-2 text-gray-600">${cctv.kecamatan || '-'}</td>
+                            <td class="px-3 py-2">
+                                <button
+                                    type="button"
+                                    onclick="selectSearchResult(${cctv.id}, ${cctv.latitude}, ${cctv.longitude})"
+                                    style="background-color: #111827; color: #ffffff; border: 1px solid #111827;"
+                                    class="px-3 py-1.5 rounded-lg hover:bg-gray-900 transition-colors text-xs font-semibold"
+                                >
+                                    Lihat
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                    }
+
+                    if (pageInfo) pageInfo.textContent = `Halaman ${currentPage} / ${totalPages}`;
+                    if (prevBtn) prevBtn.disabled = currentPage <= 1;
+                    if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+                }
+
+                if (prevBtn) prevBtn.addEventListener('click', () => renderPage(currentPage - 1));
+                if (nextBtn) nextBtn.addEventListener('click', () => renderPage(currentPage + 1));
+
+                renderPage(1);
+
+                // Close button handlers
+                const closeResults = function() {
+                    if (document.body.contains(resultsModal)) {
+                        document.body.removeChild(resultsModal);
+                    }
+                    document.body.classList.remove('modal-open');
+                };
+
+                const closeBtn = document.getElementById('close-results-modal');
+                if (closeBtn) closeBtn.addEventListener('click', closeResults);
+
+                const closeBtnX = document.getElementById('close-results-modal-x');
+                if (closeBtnX) closeBtnX.addEventListener('click', closeResults);
+
+                // Click outside to close
+                resultsModal.addEventListener('click', function(e) {
+                    if (e.target === resultsModal) {
+                        closeResults();
+                    }
+                });
+
+                // Escape key handler
+                const escapeHandler = function(e) {
+                    if (e.key === 'Escape' && resultsModal.classList.contains('active')) {
+                        closeResults();
+                        document.removeEventListener('keydown', escapeHandler);
+                    }
+                };
+                document.addEventListener('keydown', escapeHandler);
+            }
+
+            // Fungsi untuk memilih hasil pencarian
+            window.selectSearchResult = function(cctvId, latitude, longitude) {
+                // Hapus modal hasil pencarian
+                const resultsModal = document.getElementById('search-results-modal');
+                if (resultsModal) {
+                    document.body.removeChild(resultsModal);
+                    document.body.classList.remove('modal-open');
+                }
+
+                // Arahkan ke lokasi CCTV dan buka streaming modal
+                if (latitude && longitude) {
+                    window.goToCctvLocation(cctvId, latitude, longitude);
+                }
+            };
+
+            // Fungsi untuk menampilkan modal "tidak ditemukan"
+            function showNotFoundModal() {
+                // Tutup modal pencarian
+                window.closeSearchModal();
+
+                // Buat modal not found
+                const notFoundModal = document.createElement('div');
+                notFoundModal.id = 'not-found-modal';
+                notFoundModal.className = 'modal-overlay';
+                notFoundModal.innerHTML = `
+                <div class="modal-content bg-white rounded-lg shadow-lg flex flex-col overflow-hidden relative" style="max-width: 400px;">
+                    <button
+                        id="close-not-found-modal-x"
+                        type="button"
+                        aria-label="Tutup modal"
+                        class="absolute top-2 right-2 text-gray-700 hover:text-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 rounded"
+                    >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <div class="flex flex-col items-center justify-center p-6">
+                        <div class="mb-4">
+                            <svg class="w-16 h-16 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Pencarian tidak ditemukan</h3>
+                        <button
+                            id="close-not-found-modal"
+                            type="button"
+                            style="background-color: #111827; color: #ffffff; border: 1px solid #111827;"
+                            class="px-6 py-2 rounded-lg hover:bg-gray-900 transition-colors font-medium"
+                        >
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            `;
+
+                document.body.appendChild(notFoundModal);
+                showModal(notFoundModal);
+                document.body.classList.add('modal-open');
+
+                // Close button handler
+                const closeNotFound = function() {
+                    if (document.body.contains(notFoundModal)) {
+                        document.body.removeChild(notFoundModal);
+                    }
+                    document.body.classList.remove('modal-open');
+                };
+
+                const closeBtn = document.getElementById('close-not-found-modal');
+                if (closeBtn) closeBtn.addEventListener('click', closeNotFound);
+
+                const closeBtnX = document.getElementById('close-not-found-modal-x');
+                if (closeBtnX) closeBtnX.addEventListener('click', closeNotFound);
+
+                // Click outside to close
+                notFoundModal.addEventListener('click', function(e) {
+                    if (e.target === notFoundModal) {
+                        closeNotFound();
+                    }
+                });
+
+                // Escape key handler
+                const escapeHandler = function(e) {
+                    if (e.key === 'Escape' && notFoundModal.classList.contains('active')) {
+                        closeNotFound();
+                        document.removeEventListener('keydown', escapeHandler);
+                    }
+                };
+                document.addEventListener('keydown', escapeHandler);
+            }
+
+            // Handle form submit
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const keyword = input ? input.value : '';
+                    searchAndGoToCctv(keyword);
+                });
+            }
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', window.closeSearchModal);
+            }
+
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        window.closeSearchModal();
+                    }
+                });
+            }
+
+            // Modal daftar CCTV (tabel)
+            const listModal = document.getElementById('cctv-list-modal');
+            const closeListBtn = document.getElementById('close-cctv-list-modal');
+            // Modal beranda & info
+            const homeModal = document.getElementById('home-modal');
+            const closeHomeBtn = document.getElementById('close-home-modal');
+            const infoModal = document.getElementById('info-modal');
+            const closeInfoBtn = document.getElementById('close-info-modal');
+
+            function showModal(el) {
+                if (!el) return;
+                el.classList.add('active');
+                document.body.classList.add('modal-open');
+            }
+
+            function hideModal(el) {
+                if (!el) return;
+                el.classList.remove('active');
+                document.body.classList.remove('modal-open');
+            }
+            const listSearch = document.getElementById('cctv-list-search');
+            const rows = Array.from(document.querySelectorAll('#cctv-list-tbody .cctv-row'));
+            const prevBtn = document.getElementById('cctv-list-prev');
+            const nextBtn = document.getElementById('cctv-list-next');
+            const pageInfo = document.getElementById('cctv-list-page-info');
+            const pageSize = 5;
+            let currentPage = 1;
+
+            function applyPagination() {
+                // Hitung pagination berdasarkan row yang match filter (bukan berdasarkan display current page)
+                const matchedRows = rows.filter(row => row.dataset.filtered !== '0');
+                const total = matchedRows.length;
+                const totalPages = Math.max(1, Math.ceil(total / pageSize));
+                currentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+                // Hide semua dulu
+                rows.forEach(row => {
+                    row.style.display = 'none';
+                });
+
+                // Tampilkan hanya row di halaman aktif
+                matchedRows.forEach((row, index) => {
+                    const pageIndex = Math.floor(index / pageSize) + 1;
+                    if (pageIndex === currentPage) {
+                        row.style.display = '';
+                    }
+                });
+
+                if (pageInfo) {
+                    pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages}`;
+                }
+                if (prevBtn) prevBtn.disabled = (currentPage === 1);
+                if (nextBtn) nextBtn.disabled = (currentPage === totalPages);
+            }
+
+            window.openCctvListModal = function() {
+                if (!listModal) return;
+                showModal(listModal);
+                setTimeout(() => listSearch && listSearch.focus(), 50);
+                applyPagination();
+            };
+
+            window.closeCctvListModal = function() {
+                hideModal(listModal);
+            };
+
+            closeListBtn && closeListBtn.addEventListener('click', window.closeCctvListModal);
+
+            listModal && listModal.addEventListener('click', function(e) {
+                if (e.target === listModal) window.closeCctvListModal();
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (modal && modal.classList.contains('active')) {
+                        window.closeSearchModal();
+                    }
+                    if (listModal && listModal.classList.contains('active')) {
+                        window.closeCctvListModal();
+                    }
+                    if (homeModal && homeModal.classList.contains('active')) {
+                        hideModal(homeModal);
+                    }
+                    if (infoModal && infoModal.classList.contains('active')) {
+                        closeInfoModal();
+                    }
+                }
+            });
+
+            // Filter di modal daftar CCTV (client-side)
+            if (listSearch) {
+                listSearch.addEventListener('input', function() {
+                    const term = this.value.toLowerCase().trim();
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        const match = term === '' || text.includes(term);
+                        row.dataset.filtered = match ? '1' : '0';
+                    });
+                    currentPage = 1;
+                    applyPagination();
+                });
+            }
+
+            // Beranda modal
+            window.openHomeModal = function() {
+                showModal(homeModal);
+            };
+            closeHomeBtn && closeHomeBtn.addEventListener('click', function() {
+                hideModal(homeModal);
+            });
+            homeModal && homeModal.addEventListener('click', function(e) {
+                if (e.target === homeModal) hideModal(homeModal);
+            });
+
+            // Info modal
+            window.openInfoModal = function() {
+                if (!infoModal) return;
+                showModal(infoModal);
+                // Fokus ke tombol close untuk aksesibilitas
+                setTimeout(() => {
+                    if (closeInfoBtn) closeInfoBtn.focus();
+                }, 100);
+            };
+
+            function closeInfoModal() {
+                if (!infoModal) return;
+                hideModal(infoModal);
+            }
+
+            if (closeInfoBtn) {
+                closeInfoBtn.addEventListener('click', closeInfoModal);
+            }
+
+            if (infoModal) {
+                infoModal.addEventListener('click', function(e) {
+                    if (e.target === infoModal) {
+                        closeInfoModal();
+                    }
+                });
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function() {
+                    currentPage = Math.max(1, currentPage - 1);
+                    applyPagination();
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function() {
+                    currentPage = currentPage + 1;
+                    applyPagination();
+                });
+            }
+        });
+
+        function loadCctvMarkers() {
+            fetch('https://cctv.pekalongankab.go.id/cctv-json')
+                .then(r => r.json())
+                .then(data => {
+                    markers.forEach(m => map.removeLayer(m));
+                    markers = [];
+
+                    const bounds = [];
+                    data.forEach(cctv => {
+                        if (!cctv.latitude || !cctv.longitude) return;
+
+                        const color = getMarkerColor(cctv.status);
+                        const icon = createCameraIcon(color);
+                        const marker = L.marker([parseFloat(cctv.latitude), parseFloat(cctv.longitude)], {
+                            icon
+                        }).addTo(map);
+
+                        // Simpan ID CCTV ke marker untuk pencarian
+                        marker.cctvId = cctv.id;
+
+                        const statusBadge = cctv.status === 'aktif' ?
+                            '<span style="background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">Aktif</span>' :
+                            cctv.status === 'nonaktif' ?
+                            '<span style="background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">Nonaktif</span>' :
+                            '<span style="background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">Maintenance</span>';
+
+                        // Event click marker untuk membuka modal streaming
+                        marker.on('click', function() {
+                            openStreamModal(cctv);
+                        });
+
+                        markers.push(marker);
+                        bounds.push([parseFloat(cctv.latitude), parseFloat(cctv.longitude)]);
+                    });
+
+                    if (bounds.length > 0) {
+                        map.fitBounds(L.latLngBounds(bounds), {
+                            padding: [50, 50]
+                        });
+                        if (bounds.length === 1) map.setZoom(15);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading CCTV data:', err);
+                    const el = document.getElementById('map');
+                    if (el) el.innerHTML =
+                        '<div class="flex items-center justify-center h-full text-red-500">⚠️ Error memuat data CCTV. Silakan refresh halaman.</div>';
+                });
+        }
+
+        // Fungsi untuk membuka modal streaming CCTV
+        function openStreamModal(cctv) {
+            const streamModal = document.getElementById('stream-modal');
+            const streamContainer = document.getElementById('stream-container');
+            const streamTitle = document.getElementById('stream-title');
+
+            if (!streamModal) return;
+
+            // Set title (gunakan nama CCTV atau alamat)
+            streamTitle.textContent = cctv.nama || cctv.alamat || '-';
+
+            // Clear container dan tampilkan loading
+            streamContainer.innerHTML = '<div class="stream-loading"><p>Memuat streaming...</p></div>';
+
+            // Disable scroll body
+            document.body.classList.add('modal-open');
+
+            // Buka modal
+            streamModal.classList.add('active');
+
+            // Load streaming jika ada stream_url
+            if (cctv.stream_url) {
+                // Gunakan iframe untuk HLS stream atau direct video
+                const iframe = document.createElement('iframe');
+                iframe.src = cctv.stream_url;
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.allowFullscreen = true;
+                iframe.allow = 'autoplay; fullscreen';
+
+                iframe.onload = function() {
+                    // Streaming loaded
+                };
+
+                iframe.onerror = function() {
+                    streamContainer.innerHTML = `
+                    <div class="stream-loading">
+                        <p>⚠️ Gagal memuat streaming</p>
+                        <p style="font-size: 12px; color: #9ca3af;">Stream mungkin tidak tersedia saat ini</p>
+                        <a href="${cctv.stream_url}" target="_blank" style="display: inline-block; margin-top: 12px; padding: 8px 16px; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px;">
+                            Buka di Tab Baru
+                        </a>
+                    </div>
+                `;
+                };
+
+                streamContainer.innerHTML = '';
+                streamContainer.appendChild(iframe);
+            } else {
+                streamContainer.innerHTML = `
+                <div class="stream-loading">
+                    <p>⚠️ Stream URL tidak tersedia</p>
+                    <p style="font-size: 12px; color: #9ca3af;">CCTV ini belum memiliki URL streaming</p>
+                </div>
+            `;
+            }
+        }
+
+        function closeStreamModal() {
+            const streamModal = document.getElementById('stream-modal');
+            const streamContainer = document.getElementById('stream-container');
+
+            if (streamModal) {
+                streamModal.classList.remove('active');
+                document.body.classList.remove('modal-open');
+                if (streamContainer) {
+                    streamContainer.innerHTML = '';
+                }
+            }
+        }
+
+        // Event handler untuk close modal streaming
+        document.addEventListener('DOMContentLoaded', function() {
+            const streamModal = document.getElementById('stream-modal');
+            const closeStreamBtn = document.getElementById('close-stream-modal');
+
+            if (closeStreamBtn) {
+                closeStreamBtn.addEventListener('click', closeStreamModal);
+            }
+
+            if (streamModal) {
+                streamModal.addEventListener('click', function(e) {
+                    if (e.target === streamModal) {
+                        closeStreamModal();
+                    }
+                });
+            }
+
+            // Close dengan Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (streamModal && streamModal.classList.contains('active')) {
+                        closeStreamModal();
+                    }
+                }
+            });
+        });
+
+        // Fungsi untuk mengarahkan map ke lokasi CCTV dan menutup modal
+        window.goToCctvLocation = function(cctvId, latitude, longitude) {
+            // Tutup modal tabel
+            if (window.closeCctvListModal) {
+                window.closeCctvListModal();
+            }
+
+            // Cari marker berdasarkan ID
+            const targetMarker = markers.find(m => m.cctvId === cctvId);
+
+            if (targetMarker) {
+                // Zoom dan pan ke lokasi marker
+                map.setView([parseFloat(latitude), parseFloat(longitude)], 16, {
+                    animate: true,
+                    duration: 0.5
+                });
+
+                // Buka modal streaming setelah animasi selesai
+                setTimeout(() => {
+                    // Cari data CCTV dari markers
+                    fetch('https://cctv.pekalongankab.go.id/cctv-json')
+                        .then(r => r.json())
+                        .then(data => {
+                            const cctv = data.find(c => c.id === cctvId);
+                            if (cctv) {
+                                openStreamModal(cctv);
+                            }
+                        });
+                }, 600);
+            } else if (latitude && longitude) {
+                // Jika marker tidak ditemukan, langsung zoom ke koordinat
+                map.setView([parseFloat(latitude), parseFloat(longitude)], 16, {
+                    animate: true,
+                    duration: 0.5
+                });
+            }
+        };
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('mobile-menu-button');
+            const menu = document.getElementById('mobile-menu');
+            if (!btn || !menu) return;
+            btn.addEventListener('click', function() {
+                menu.classList.toggle('hidden');
+            });
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a0326fc6bc173d86',t:'MTc4MDAyNTU5NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"265c024ceb7c4b73bf982a015463dc16","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+
+</html>

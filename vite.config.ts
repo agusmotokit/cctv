@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react'
 
 const proxyTargets = [
@@ -33,7 +33,7 @@ const proxyTargets = [
   '/pekalongankab-stream'
 ];
 
-const proxyConfig: Record<string, any> = {};
+const proxyConfig: Record<string, ProxyOptions> = {};
 proxyTargets.forEach(path => {
   proxyConfig[path] = {
     target: 'http://localhost:5000',

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <title>CCTV Indramayu</title>
+        <meta content="width=device-width, initial-scale=1.0" name="viewport">
+        <meta name="csrf-token" content="vMwL36sjxwtZehxaCOOdmh8TEAWTR6Exkwgl9Ghe">
+        <meta content="" name="keywords">
+        <meta content="Website Restreaming CCTV Berbasis Kewilayahan Kabupaten Indramayu" name="description">
+
+        <!-- Favicon -->
+        <link rel="icon" type="image/x-icon" href="https://cctv.indramayukab.go.id/storage/logos/5JaWmQx83iUQzgTIqpSbLRBI5ImIvdS573luDtiH.png">
+        <link rel="shortcut icon" type="image/x-icon" href="https://cctv.indramayukab.go.id/storage/logos/5JaWmQx83iUQzgTIqpSbLRBI5ImIvdS573luDtiH.png">
+        <link rel="apple-touch-icon" href="https://cctv.indramayukab.go.id/storage/logos/5JaWmQx83iUQzgTIqpSbLRBI5ImIvdS573luDtiH.png">
+
+        <!-- Open Graph Meta Tags -->
+        <meta property="og:title" content="CCTV Indramayu">
+        <meta property="og:description" content="Website Restreaming CCTV Berbasis Kewilayahan Kabupaten Indramayu">
+        <meta property="og:image" content="https://cctv.indramayukab.go.id/storage/logos/5JaWmQx83iUQzgTIqpSbLRBI5ImIvdS573luDtiH.png">
+        <meta property="og:url" content="https://cctv.indramayukab.go.id">
+        <meta property="og:type" content="website">
+
+        <!-- Google Web Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Saira:wght@500;600;700&display=swap" rel="stylesheet"> 
+
+        <!-- Icon Font Stylesheet -->
+		<link href="https://cctv.indramayukab.go.id/assets/pptr/css/all.min.css" rel="stylesheet">
+		<link href="https://cctv.indramayukab.go.id/assets/pptr/css/bootstrap-icons.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+        
+
+        <!-- Libraries Stylesheet -->
+        <link href="https://cctv.indramayukab.go.id/assets/pptr/lib/animate/animate.min.css" rel="stylesheet">
+
+
+        <!-- Customized Bootstrap Stylesheet -->
+        <link href="https://cctv.indramayukab.go.id/assets/pptr/css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Template Stylesheet -->
+        <link href="https://cctv.indramayukab.go.id/assets/pptr/css/style.css" rel="stylesheet">
+        
+        <!-- Video.js CSS -->
+        <link href="https://cctv.indramayukab.go.id/assets/css/video-js.css" rel="stylesheet" />
+        <link href="https://players.brightcove.net/videojs-overlay/3/videojs-overlay.css" rel='stylesheet'>
+		<link href="https://cctv.indramayukab.go.id/assets/pptr/css/index.css" rel="stylesheet">
+        
+        
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        .map-wrapper { display: flex; height: calc(100vh - 100px); min-height: 600px; }
+        #sidebar { width: 320px; background: #ffffff; overflow-y: auto; box-shadow: 2px 0 10px rgba(0,0,0,0.1); transition: left 0.3s ease; display: flex; flex-direction: column; }
+        #map-container { flex: 1; display: flex; flex-direction: column; position: relative; }
+        #map { flex: 1; height: 100%; }
+        #sidebar .header { background-color: #2c3e50; color: white; padding: 15px 20px; border-bottom: 4px solid #3498db; text-align: center; perspective: 1000px; }
+        #sidebar .header h1, #sidebar .header h2 { margin: 0; }
+        @keyframes spin-3d { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+        .sidebar-logo-animated { animation: spin-3d 10s infinite linear; }
+        .search-box { padding: 15px 20px; background: #ecf0f1; border-bottom: 1px solid #ddd; }
+        .search-box input { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #bdc3c7; border-radius: 4px; }
+        .cctv-list { flex-grow: 1; overflow-y: auto; padding: 10px 0; }
+        .cctv-item { padding: 12px 20px; border-bottom: 1px solid #ecf0f1; cursor: pointer; transition: background 0.2s; }
+        .cctv-item:hover { background: #e8f4fc; }
+        .cctv-item.active { background: #d4e6f7; border-left: 4px solid #3498db; }
+        
+        .marker-icon i { line-height: 30px !important; }
+        .marker-icon .fa-times { position: absolute !important; top: -5px !important; right: -5px !important; color: red !important; font-size: 14px !important; background: white !important; border-radius: 50% !important; padding: 2px !important; }
+        .map-legend { position: absolute; bottom: 20px; right: 20px; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); z-index: 1000; }
+        .legend-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 8px 12px; background-color: #f8f9fa; border-bottom: 1px solid #ddd; }
+        .legend-header h5 { margin: 0; font-size: 1em; font-weight: bold; }
+        .map-legend.minimized .legend-content { display: none; }
+        .map-legend.minimized { padding: 0; }
+        .legend-item { display: flex; align-items: center; margin: 5px 0; font-size: 0.9em; }
+        .legend-color { width: 20px; height: 20px; border-radius: 50%; margin-right: 8px; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.2); }
+        .legend-section { margin-top: 10px; }
+        .legend-section:first-child { margin-top: 0; }
+        .legend-section h6 { font-size: 0.9em; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+        .legend-status { display: flex; align-items: center; margin-bottom: 5px; font-size: 0.9em; }
+        .legend-status-icon { width: 35px; display: inline-block; text-align: center; position: relative; }
+        .legend-status-icon .fa-video { color: #2c3e50; font-size: 1.2em; }
+        .legend-status-icon .fa-times { font-size: 14px; color: red; position: absolute; top: -5px; right: 0px; background: white; border-radius: 50%; padding: 1px; }
+
+        @media (max-width: 768px) {
+            #sidebar {
+                display: none;
+            }
+        }
+      .marker-icon { 
+        box-sizing: border-box !important;
+        width: 30px !important; 
+        height: 30px !important; 
+        line-height: 30px !important;
+        
+        border-radius: 50% !important; 
+        color: white !important; 
+        font-size: 16px !important; 
+        box-shadow: 0 0 10px rgba(0,0,0,0.3) !important; 
+        border: 2px solid white !important; 
+      }
+      
+
+    </style>
+        
+        <style>
+            .carousel .carousel-item {
+                height: 65vh;
+                min-height: 300px;
+            }
+            .carousel .carousel-item img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                object-position: center;
+            }
+
+            /* Custom styles for the player modal */
+            #playerModal .modal-dialog {
+                max-width: 50vw; /* Default width for larger screens */
+            }
+
+            @media (max-width: 767px) {
+                #playerModal .modal-dialog {
+                    max-width: 95vw; /* Full-width on smaller screens */
+                }
+            }
+
+            #playerModal .modal-header {
+                cursor: move; /* Change cursor to 'move' on the header */
+            }
+
+            /* Custom styles for the resize handle */
+            #playerModal .modal-content {
+                position: relative; /* Needed for positioning the handle */
+                overflow: visible; /* Ensure handle is not clipped */
+            }
+            .resize-handle {
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                width: 20px;
+                height: 20px;
+                cursor: nwse-resize;
+                z-index: 10;
+            }
+
+            /* Custom navbar styles */
+            .navbar-nav {
+                margin-left: 2rem !important;
+            }
+            .nav-item {
+                padding: 0.5rem 1rem;
+            }
+            .nav-link {
+                font-weight: 500;
+            }
+            .nav-link.active {
+                font-weight: 600;
+                position: relative;
+            }
+            .nav-link.active:after {
+                content: '';
+                position: absolute;
+                bottom: -2px;
+                left: 0;
+                width: 100%;
+                height: 2px;
+                background-color: #fff;
+            }
+
+            /* --- Custom Watermark/Overlay Styles --- */
+            /* Remove the default background from the overlay container */
+            .vjs-overlay {
+                background-color: transparent !important;
+                padding: 15px !important;
+            }
+
+            /* New rules for our custom centering approach */
+            .vjs-overlay.vjs-overlay-fullscreen {
+                width: 100%;
+                height: 100%;
+                top: 0 !important;
+                left: 0 !important;
+                padding: 0 !important;
+            }
+
+            .watermark-center-wrapper {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            /* Constrain the watermark image size and maintain aspect ratio */
+            .vjs-overlay img {
+                max-width: 150px;
+                height: auto;
+                display: block;
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- Spinner Start -->
+        <div id="spinner" class="show position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+            <div class="spinner-grow text-primary" role="status"></div>
+        </div>
+        <!-- Spinner End -->
+
+        <!-- Topbar Start -->
+        <!--<div class="container-fluid bg-dark py-2 d-none d-md-flex">
+            <div class="container">
+                <div class="d-flex justify-content-between topbar">
+                    <div class="top-info">
+                        <small class="me-3 text-white-50"><a href="#"><i class="fas fa-map-marker-alt me-2 text-secondary"></i></a>Jalan Raya R.A. Kartini No. 1</small>
+                        <small class="me-3 text-white-50"><a href="mailto:diskominfo@indramayukab.go.id"><i class="fas fa-envelope me-2 text-secondary"></i></a>diskominfo@indramayukab.go.id</small>
+                    </div>
+                    <div id="note" class="text-secondary d-none d-xl-flex"><small>Note : CCTV Live Streaming</small></div>
+                    <div class="top-link">
+                        <a href="https://facebook.com/indramyukab" class="bg-light nav-fill btn btn-sm-square rounded-circle"><i class="fab fa-facebook-f text-primary"></i></a>
+                        <a href="https://x.com/indramayukab" class="bg-light nav-fill btn btn-sm-square rounded-circle"><i class="fab fa-twitter text-primary"></i></a>
+                        <a href="https://instagram.com/@indramayukab" class="bg-light nav-fill btn btn-sm-square rounded-circle"><i class="fab fa-instagram text-primary"></i></a>
+                        <a href="https://youtube.com/indramayukab" class="bg-light nav-fill btn btn-sm-square rounded-circle me-0"><i class="fab fa-youtube text-primary"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>-->
+        <!-- Topbar End -->
+
+        <!-- Navbar Start -->
+        <div class="container-fluid bg-primary">
+            <div class="container">
+                <nav class="navbar navbar-dark navbar-expand-lg py-0">
+                    <a href="https://cctv.indramayukab.go.id" class="navbar-brand d-flex align-items-center">
+                                                    <img src="https://cctv.indramayukab.go.id/storage/logos/5JaWmQx83iUQzgTIqpSbLRBI5ImIvdS573luDtiH.png" alt="Logo" style="height: 45px;">
+                            <span class="text-white fw-bold ms-2" style="font-size: 1.25rem;">CCTV Indramayu</span>
+                                            </a>
+                    <button type="button" class="navbar-toggler me-0" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse bg-transparent" id="navbarCollapse">
+                        <div class="navbar-nav ms-auto mx-xl-auto p-0">
+                            <a href="https://cctv.indramayukab.go.id" class="nav-item nav-link active">Home</a>
+                            <a href="https://cctv.indramayukab.go.id/playlist" class="nav-item nav-link ">Playlist</a>
+                            <a href="https://cctv.indramayukab.go.id/permohonan" class="nav-item nav-link ">Permohonan</a>
+                            <a href="https://cctv.indramayukab.go.id/kontak" class="nav-item nav-link ">Kontak</a>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+        </div>
+        <!-- Navbar End -->
+
+        <div class="map-wrapper">
+    <div id="sidebar">
+        <div class="header">
+		<img src="https://cctv.indramayukab.go.id/assets/pptr/img/indramayukab.png" alt="Kabupaten Indramayu" class="sidebar-logo-animated" style="max-width: 50%; height: auto;">
+        </div>
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Cari CCTV...">
+        </div>
+        <div class="cctv-list" id="cctv-list">
+             <div class="text-center p-5">Memuat data...</div>
+        </div>
+    </div>
+    <div id="map-container">
+        <div id="map"></div>
+        <div class="map-legend" id="map-legend">
+            <div class="legend-header" id="legend-header">
+                <h5>Legenda Peta</h5>
+                <button id="toggle-legend-btn" class="btn btn-sm btn-light p-0" style="width: 24px; height: 24px;">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+            <div class="legend-content" id="legend-content">
+                <div class="legend-section">
+                    <h6>Kelompok CCTV</h6>
+                    <div id="legend-items"></div>
+                </div>
+                <div class="legend-section">
+                    <h6>Status CCTV</h6>
+                    <div class="legend-status">
+                        <div class="legend-status-icon">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <span>Aktif</span>
+                    </div>
+                    <div class="legend-status">
+                         <div class="legend-status-icon">
+                            <i class="fas fa-video"></i>
+                            <i class="fas fa-times"></i>
+                        </div>
+                        <span>Offline/Error</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="playerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content" style="background-color: #000;">
+        <div class="modal-header" style="border-bottom: 1px solid #444;">
+            <div>
+                <h5 class="modal-title text-white" id="stream-name"></h5>
+                <small class="text-muted" id="stream-group"></small>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0">
+            <div id="player-container"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+        <!-- Footer Start -->
+        <div class="container-fluid footer bg-dark wow fadeIn" data-wow-delay=".3s">
+            <div class="container py-4">
+                <div class="row">
+                    <div class="col-md-12 text-center text-light">
+                                                    Dinas Komunikasi dan Informatika Kabupten Indramayu © 2025 All rights reserved.
+                                            </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer End -->
+
+
+        <!-- Back to Top -->
+        <a href="#" class="btn btn-primary btn-lg-square back-to-top"><i class="fa fa-arrow-up"></i></a>
+
+        
+        <!-- JavaScript Libraries -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <script src="https://cctv.indramayukab.go.id/assets/pptr/lib/wow/wow.min.js"></script>
+        <script src="https://cctv.indramayukab.go.id/assets/pptr/lib/easing/easing.min.js"></script>
+        <script src="https://cctv.indramayukab.go.id/assets/pptr/lib/waypoints/waypoints.min.js"></script>
+        <script src="https://cctv.indramayukab.go.id/assets/pptr/lib/owlcarousel/owl.carousel.min.js"></script>
+
+        <!-- Template Javascript -->
+        <script src="https://cctv.indramayukab.go.id/assets/pptr/js/main.js"></script>
+        
+        <!-- Video.js -->
+        <script src="https://vjs.zencdn.net/8.12.0/video.min.js"></script>
+        <script src="https://cctv.indramayukab.go.id/assets/js/videojs-http-streaming.min.js"></script>
+        <script src="https://players.brightcove.net/videojs-overlay/3/videojs-overlay.min.js"></script>
+
+        <script>
+            // Define a global function to apply overlays (watermarks).
+            window.applyWatermark = function(player) {
+                const watermarkSettings = {"watermark_enabled":true,"watermark_type":"image","watermark_text":"KOMDIGI","watermark_image":"\/storage\/watermarks\/qfg9vOohLndQP1NElSlZBeAMX3aQsMcHFKAWpU9y.png","watermark_position":"top-right","watermark_opacity":"0.5"};
+
+                if (player && watermarkSettings && watermarkSettings.watermark_enabled) {
+                    // videojs-overlay can handle multiple overlays, but we'll add just one.
+                    // First, ensure any previous overlay is removed to prevent duplicates on re-init.
+                    if (player.overlay) {
+                        try {
+                           player.overlay.remove();
+                        } catch(e) { 
+                           console.warn('Could not remove previous overlay, maybe it was not there.');
+                        }
+                    }
+
+                    let overlayContent = '';
+                    const opacityStyle = `opacity: ${parseFloat(watermarkSettings.watermark_opacity) || 0.7};`;
+
+                    if (watermarkSettings.watermark_type === 'text' && watermarkSettings.watermark_text) {
+                        overlayContent = `<div style="padding: 10px; font-size: 1.2em; color: white; background: rgba(0,0,0,0.2); ${opacityStyle}"><strong>${watermarkSettings.watermark_text}</strong></div>`;
+                    } else if (watermarkSettings.watermark_type === 'image' && watermarkSettings.watermark_image) {
+                        overlayContent = `<img src="${watermarkSettings.watermark_image}" style="${opacityStyle}" alt="Watermark">`;
+                    } else {
+                        return; // No valid content to display
+                    }
+
+                    let alignPosition = watermarkSettings.watermark_position || 'bottom-right';
+                    let customClass = ''; // For special positioning
+
+                    if (alignPosition === 'center') {
+                        // For centering, we wrap the content in a flex container
+                        // and make the main overlay container fill the player.
+                        overlayContent = `<div class="watermark-center-wrapper">${overlayContent}</div>`;
+                        alignPosition = 'top-left'; // Set a base alignment for the plugin
+                        customClass = ' vjs-overlay-fullscreen'; // Add our custom class
+                    }
+
+                    player.overlay({
+                        content: overlayContent,
+                        overlays: [{
+                            content: overlayContent,
+                            start: 'playing',
+                            end: 'ended',
+                            align: alignPosition,
+                            class: customClass
+                        }]
+                    });
+                }
+            };
+
+            // Add a global hook to apply the watermark to ANY player created on the page.
+            videojs.hook('setup', function(player) {
+                // The 'ready' event is the safest moment to interact with the player.
+                player.ready(function() {
+                    const thisPlayer = this;
+                    // Use a timeout to push this to the end of the execution queue,
+                    // ensuring the player's DOM is fully available.
+                    setTimeout(function() {
+                        window.applyWatermark(thisPlayer);
+                    }, 0);
+                });
+            });
+        </script>
+        
+        <script>
+            // Make the player modal draggable and resizable
+            document.addEventListener('DOMContentLoaded', function () {
+                const modal = document.getElementById('playerModal');
+                if (!modal) return;
+    
+                const modalDialog = modal.querySelector('.modal-dialog');
+                const modalContent = modal.querySelector('.modal-content');
+                const modalHeader = modal.querySelector('.modal-header');
+                
+                let isDragging = false;
+                let offset = { x: 0, y: 0 };
+    
+                if (modalHeader) {
+                    modalHeader.addEventListener('mousedown', function (e) {
+                        if (e.target.closest('button')) return;
+                        
+                        isDragging = true;
+                        
+                        const rect = modalDialog.getBoundingClientRect();
+                        offset = {
+                            x: e.clientX - rect.left,
+                            y: e.clientY - rect.top
+                        };
+                        
+                        modalDialog.style.width = `${rect.width}px`;
+                        modalDialog.classList.remove('modal-dialog-centered');
+                        modalDialog.style.margin = '0';
+                    });
+                }
+    
+                const resizeHandle = document.createElement('div');
+                resizeHandle.className = 'resize-handle';
+                modalContent.appendChild(resizeHandle);
+    
+                let isResizing = false;
+                let originalMouseX = 0;
+                let originalWidth = 0;
+    
+                resizeHandle.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isResizing = true;
+                    originalMouseX = e.clientX;
+                    originalWidth = modalDialog.getBoundingClientRect().width;
+                });
+    
+                document.addEventListener('mousemove', function (e) {
+                    if (isDragging) {
+                        e.preventDefault();
+                        const newX = e.clientX - offset.x;
+                        const newY = e.clientY - offset.y;
+                        modalDialog.style.position = 'absolute';
+                        modalDialog.style.left = `${newX}px`;
+                        modalDialog.style.top = `${newY}px`;
+                    }
+    
+                    if (isResizing) {
+                        const dx = e.clientX - originalMouseX;
+                        const newWidth = originalWidth + dx;
+                        if (newWidth > 320) { // Minimum width
+                            modalDialog.style.width = `${newWidth}px`;
+                        }
+                    }
+                });
+    
+                document.addEventListener('mouseup', function () {
+                    isDragging = false;
+                    isResizing = false;
+                });
+    
+                modal.addEventListener('hidden.bs.modal', function () {
+                    modalDialog.classList.add('modal-dialog-centered');
+                    modalDialog.style.position = '';
+                    modalDialog.style.left = '';
+                    modalDialog.style.top = '';
+                    modalDialog.style.width = '';
+                    modalDialog.style.margin = '';
+                });
+            });
+        </script>
+        
+        <script>
+            window.siteSettings = {
+                watermark_image_url: "/storage/watermarks/qfg9vOohLndQP1NElSlZBeAMX3aQsMcHFKAWpU9y.png",
+                watermark_position: "top-right",
+                watermark_opacity: "0.5"
+            };
+        </script>
+
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const map = L.map('map').setView([-6.34, 108.32], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+    
+    const videoModalElement = document.getElementById('playerModal');
+    const modal = new bootstrap.Modal(videoModalElement);
+    let player = null;
+    let allCctvData = [];
+    const markers = {};
+    const groups = new Map();
+
+    window.showPlayerModal = (stream) => {
+        if (player) {
+            player.dispose();
+            player = null;
+        }
+        document.getElementById('stream-name').textContent = stream.name;
+        document.getElementById('stream-group').textContent = stream.group ? stream.group.name : 'Uncategorized';
+        const playerContainer = document.getElementById('player-container');
+        // Clear previous player
+        playerContainer.innerHTML = ''; 
+        // Create new video element
+        const videoEl = document.createElement('video-js');
+        videoEl.id = 'cctv-player';
+        videoEl.className = 'vjs-fluid';
+        videoEl.setAttribute('controls', '');
+        videoEl.setAttribute('autoplay', '');
+        videoEl.setAttribute('muted', '');
+        videoEl.setAttribute('playsinline', '');
+        playerContainer.appendChild(videoEl);
+
+        player = videojs(videoEl, { 
+            html5: { vhs: { overrideNative: true } }, 
+            liveui: true,
+            responsive: true, 
+            fill: true,
+            sources: [{ src: stream.hls_url, type: 'application/x-mpegURL' }]
+        });
+
+        player.on('error', function() {
+            const errorMarker = markers[stream.id];
+            if (errorMarker) {
+                // Gunakan warna grup yang ada untuk ikon error
+                const groupColor = allCctvData.find(cctv => cctv.id === stream.id)?.group?.color || '#808080';
+                errorMarker.setIcon(createCustomIcon(groupColor, 'error'));
+            }
+            // Tutup modal dan tampilkan peringatan
+            modal.hide();
+            setTimeout(() => {
+                alert(`Stream untuk "${stream.name}" tidak dapat diputar atau sedang offline.`);
+            }, 200); // Timeout untuk mencegah alert memblokir animasi tutup modal
+        });
+
+        player.ready(function() {
+            const a_player = this;
+            // Use a timeout to ensure the DOM is fully painted before applying the watermark
+            setTimeout(function() {
+                if (window.applyWatermark) {
+                    window.applyWatermark(a_player);
+                }
+            }, 0);
+            
+            this.play().catch(e => console.error("Autoplay error:", e));
+        });
+
+        modal.show();
+        setActiveListItem(stream.id);
+    };
+
+    videoModalElement.addEventListener('hidden.bs.modal', function () {
+        if (player) {
+            player.dispose();
+            player = null;
+        }
+    });
+
+    function createCustomIcon(color, status) {
+      let iconHtml = '<i class="fas fa-video"></i>';
+      if (status !== 'active') {
+          iconHtml += '<i class="fas fa-times"></i>';
+      }
+
+      const randomClass = 'marker-' + Math.random().toString(36).substr(2, 9);
+
+      const style = document.createElement('style');
+      style.textContent = `
+          .${randomClass} {
+              background-color: ${color} !important;
+              width: 30px !important;
+              height: 30px !important;
+              line-height: 30px !important;
+              text-align: center !important;
+              font-size: 16px !important;
+          }
+      `;
+      document.head.appendChild(style);
+
+      return L.divIcon({
+          className: `marker-icon ${randomClass}`,
+          html: iconHtml,
+          iconSize: [30, 30],
+          iconAnchor: [15, 15], // pastikan ini titik tengah visual
+          popupAnchor: [0, -15]
+      });
+  }
+
+
+    function updateLegend() {
+        const legendContainer = document.getElementById('legend-items');
+        legendContainer.innerHTML = '';
+        if (groups.size === 0) return;
+        
+        const sortedGroups = Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name));
+        sortedGroups.forEach(group => {
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            item.innerHTML = `<div class="legend-color" style="background-color: ${group.color}"></div><span>${group.name}</span>`;
+            legendContainer.appendChild(item);
+        });
+    }
+
+    function setActiveListItem(cctvId) {
+        document.querySelectorAll('.cctv-item').forEach(item => item.classList.remove('active'));
+        const activeItem = document.querySelector(`.cctv-item[data-id='${cctvId}']`);
+        if (activeItem) {
+            activeItem.classList.add('active');
+            activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    function renderCCTVList(data) {
+        const cctvList = document.getElementById('cctv-list');
+        cctvList.innerHTML = '';
+        if (!data.length) { cctvList.innerHTML = '<div class="text-center p-5">Tidak ada data ditemukan.</div>'; return; }
+        data.forEach(cctv => {
+            const item = document.createElement('div');
+            item.className = 'cctv-item';
+            item.dataset.id = cctv.id;
+            item.innerHTML = `<div class="cctv-name">${cctv.name}</div>`;
+            item.addEventListener('click', () => {
+                if (cctv.status === 'active' && cctv.hls_url) {
+                    window.showPlayerModal(cctv);
+                } else {
+                    alert('CCTV sedang tidak aktif atau tidak memiliki stream.');
+                }
+            });
+            cctvList.appendChild(item);
+        });
+    }
+
+    fetch('https://cctv.indramayukab.go.id/api/streams')
+        .then(response => response.json())
+        .then(data => {
+            allCctvData = data;
+                data.forEach(cctv => {
+                    if (cctv.latitude && cctv.longitude && cctv.group) {
+                    if (!groups.has(cctv.group.id)) { groups.set(cctv.group.id, { name: cctv.group.name, color: cctv.group.color }); }
+                        const markerIcon = createCustomIcon(cctv.group.color, cctv.status);
+                    const marker = L.marker([cctv.latitude, cctv.longitude], { icon: markerIcon }).addTo(map);
+                    marker.bindTooltip(cctv.name, { permanent: false, direction: 'top', offset: [0, -15], sticky: true });
+                        markers[cctv.id] = marker;
+                        if (cctv.hls_url && cctv.status === 'active') {
+                        marker.on('click', () => window.showPlayerModal(cctv));
+                    }
+                }
+            });
+                updateLegend();
+            renderCCTVList(allCctvData);
+        }).catch(error => {
+            console.error('Error fetching CCTV data:', error);
+            document.getElementById('cctv-list').innerHTML = '<div class="text-center p-5 text-danger">Gagal memuat data CCTV.</div>';
+        });
+
+    document.getElementById('search-input').addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        renderCCTVList(allCctvData.filter(cctv => cctv.name.toLowerCase().includes(term)));
+    });
+    
+    document.getElementById('toggle-legend-btn').addEventListener('click', (e) => {
+        const icon = e.currentTarget.querySelector('i');
+        const legend = document.getElementById('map-legend');
+        legend.classList.toggle('minimized');
+        icon.className = legend.classList.contains('minimized') ? 'fas fa-plus' : 'fas fa-minus';
+    });
+});
+</script>
+    </body>
+
+</html> 

@@ -1,0 +1,110 @@
+[
+  {
+    "id": "jbr-bandungkab-simpang-pemda-1",
+    "name": "Simpang Pemda",
+    "city": "Kab. Bandung",
+    "province": "Jawa Barat",
+    "lat": -7.024114,
+    "lng": 107.530442,
+    "streamUrl": "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/kRTdYHeHLZ/s.m3u8",
+    "category": "traffic",
+    "status": "online",
+    "description": "Pantauan CCTV Lalu Lintas di Simpang Pemda, Kabupaten Bandung."
+  },
+  {
+    "id": "jbr-bandungkab-tol-soroja-2",
+    "name": "Tol Soroja",
+    "city": "Kab. Bandung",
+    "province": "Jawa Barat",
+    "lat": -7.01988,
+    "lng": 107.5287,
+    "streamUrl": "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/vlWaaKJA8Y/s.m3u8",
+    "category": "traffic",
+    "status": "online",
+    "description": "Pantauan CCTV Lalu Lintas di Tol Soroja, Kabupaten Bandung."
+  },
+  {
+    "id": "jbr-bandungkab-gading-tutuka-3",
+    "name": "Gading Tutuka",
+    "city": "Kab. Bandung",
+    "province": "Jawa Barat",
+    "lat": -7.020165,
+    "lng": 107.540506,
+    "streamUrl": "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/jkjOtg2aJB/s.m3u8",
+    "category": "traffic",
+    "status": "online",
+    "description": "Pantauan CCTV Lalu Lintas di Gading Tutuka, Kabupaten Bandung."
+  },
+  {
+    "id": "jbr-bandungkab-desa-soreang-4",
+    "name": "Desa Soreang",
+    "city": "Kab. Bandung",
+    "province": "Jawa Barat",
+    "lat": -7.029756,
+    "lng": 107.528181,
+    "streamUrl": "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/Z1yMOD012l/s.m3u8",
+    "category": "traffic",
+    "status": "online",
+    "description": "Pantauan CCTV Lalu Lintas di Desa Soreang, Kabupaten Bandung."
+  },
+  {
+    "id": "jbr-bandungkab-kopo-sayati-5",
+    "name": "Kopo Sayati",
+    "city": "Kab. Bandung",
+    "province": "Jawa Barat",
+    "lat": -6.971602,
+    "lng": 107.573615,
+    "streamUrl": "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/Xv2ERL1yXY/s.m3u8",
+    "category": "traffic",
+    "status": "online",
+    "description": "Pantauan CCTV Lalu Lintas di Kopo Sayati, Kabupaten Bandung."
+  },
+  {
+    "id": "jbr-bandungkab-rancamanyar-6",
+    "name": "Rancamanyar",
+    "city": "Kab. Bandung",
+    "province": "Jawa Barat",
+    "lat": -6.985117,
+    "lng": 107.593254,
+    "streamUrl": "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/MLhHQFNqih/s.m3u8",
+    "category": "traffic",
+    "status": "online",
+    "description": "Pantauan CCTV Lalu Lintas di Rancamanyar, Kabupaten Bandung."
+  },
+  {
+    "id": "jbr-bandungkab-ciparay-7",
+    "name": "Ciparay",
+    "city": "Kab. Bandung",
+    "province": "Jawa Barat",
+    "lat": -7.03564,
+    "lng": 107.71325,
+    "streamUrl": "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/s0BPNnOcMS/s.m3u8",
+    "category": "traffic",
+    "status": "online",
+    "description": "Pantauan CCTV Lalu Lintas di Ciparay, Kabupaten Bandung."
+  },
+  {
+    "id": "jbr-bandungkab-katapang-9",
+    "name": "Katapang",
+    "city": "Kab. Bandung",
+    "province": "Jawa Barat",
+    "lat": -6.998971,
+    "lng": 107.553782,
+    "streamUrl": "https://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/08fP29L14l/s.m3u8",
+    "category": "traffic",
+    "status": "online",
+    "description": "Pantauan CCTV Lalu Lintas di Katapang, Kabupaten Bandung."
+  },
+  {
+    "id": "jbr-bandungkab-majalaya-8",
+    "name": "Majalaya",
+    "city": "Kab. Bandung",
+    "province": "Jawa Barat",
+    "lat": -7.050434,
+    "lng": 107.758322,
+    "streamUrl": "http://cctv.bandungkab.go.id/e6a89f9987693937d35abb96271464a8/hls/dishub01/BdBowldl4p/s.m3u8",
+    "category": "traffic",
+    "status": "online",
+    "description": "Pantauan CCTV Lalu Lintas di Majalaya, Kabupaten Bandung."
+  }
+]

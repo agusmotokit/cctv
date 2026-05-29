@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/PEMKABTASIK - LOGO.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="CCTV PUBLIK - Real-time camera monitoring dashboard with WebRTC streaming" />
+  <meta name="theme-color" content="#f8fafc" />
+
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <title>CCTV PUBLIK - Kab. Tasikmalaya</title>
+
+  <style>
+    /* Prevent FOUC */
+    html {
+      visibility: hidden;
+    }
+
+    html.loaded {
+      visibility: visible;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/index-D1yzcvXd.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CRYHHRxw.css">
+</head>
+
+<body>
+  <div id="root"></div>
+  <script>
+    // Apply theme immediately to prevent flash
+    (function () {
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.documentElement.classList.add('loaded');
+    })();
+  </script>
+</body>
+
+</html>
