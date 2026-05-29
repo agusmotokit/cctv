@@ -1073,35 +1073,37 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
         )}
 
         {/* HUD Controls overlay */}
-        {isLoaded && !hasError && (
+        {isLoaded && !hasError && (!isMobileDevice || availableLevels.length >= 1) && (
           <div className={`cell-hud ${showControls || !isPlaying ? 'active' : ''}`}>
             <div className="cell-hud-bar">
-              <div className="cell-hud-left">
-                {!isMjpeg && !isIframe && !isJsmpeg && (
-                  <button className="cell-hud-btn" onClick={togglePlay} title={isPlaying ? 'Jeda' : 'Putar'}>
-                    {isPlaying ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
-                  </button>
-                )}
-                {!isMjpeg && !isIframe && !isJsmpeg && (
-                  <div className="cell-volume-wrapper">
-                    <button className="cell-hud-btn" onClick={toggleMute} title={isMuted ? 'Bunyikan' : 'Bisukan'}>
-                      {isMuted ? <VolumeX size={12} /> : <Volume2 size={12} />}
+              {!isMobileDevice && (
+                <div className="cell-hud-left">
+                  {!isMjpeg && !isIframe && !isJsmpeg && (
+                    <button className="cell-hud-btn" onClick={togglePlay} title={isPlaying ? 'Jeda' : 'Putar'}>
+                      {isPlaying ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
                     </button>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={volume}
-                      onChange={handleVolumeChange}
-                      className="cell-volume-slider"
-                      title="Volume"
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="cell-hud-right">
-                {!isIframe && (
+                  )}
+                  {!isMjpeg && !isIframe && !isJsmpeg && (
+                    <div className="cell-volume-wrapper">
+                      <button className="cell-hud-btn" onClick={toggleMute} title={isMuted ? 'Bunyikan' : 'Bisukan'}>
+                        {isMuted ? <VolumeX size={12} /> : <Volume2 size={12} />}
+                      </button>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        className="cell-volume-slider"
+                        title="Volume"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="cell-hud-right" style={isMobileDevice ? { width: 'auto', justifyContent: 'center' } : {}}>
+                {!isMobileDevice && !isIframe && (
                   <button className="cell-hud-btn" onClick={takeSnapshot} title="Ambil Foto">
                     <Camera size={12} />
                   </button>
@@ -1162,9 +1164,11 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
                     )}
                   </div>
                 )}
-                <button className="cell-hud-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}>
-                  <Maximize size={12} />
-                </button>
+                {!isMobileDevice && (
+                  <button className="cell-hud-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}>
+                    <Maximize size={12} />
+                  </button>
+                )}
               </div>
             </div>
           </div>

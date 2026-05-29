@@ -48,7 +48,7 @@ class PlaylistLoader extends XhrLoader {
 import flvjs from 'flv.js';
 import JSMpeg from '@cycjimmy/jsmpeg-player';
 import type { CCTV } from '../data/cctvData';
-import { Play, Pause, Volume2, VolumeX, Maximize, Camera, MapPin, Tag, X, Radio, Heart, RotateCw, Settings } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Camera, MapPin, Tag, X, Radio, Heart, Settings } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
 const isMobileDevice = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -1676,48 +1676,50 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         )}
 
         {/* Floating controls HUD that appears on hover */}
-        {isLoaded && !hasError && (
+        {isLoaded && !hasError && (!isMobileDevice || availableLevels.length >= 1) && (
           <div className={`map-video-hud ${showControls || !isPlaying ? 'active' : ''}`}>
             <div className="map-hud-controls-bar">
-              <div className="controls-left">
-                {!isMjpeg && !isIframe && (
-                  <button
-                    className="hud-btn"
-                    onClick={togglePlay}
-                    title={isPlaying ? "Jeda" : "Putar"}
-                    aria-label={isPlaying ? "Jeda" : "Putar"}
-                  >
-                    {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
-                  </button>
-                )}
-
-                {!isMjpeg && !isIframe && (
-                  <div className="volume-control-wrapper">
+              {!isMobileDevice && (
+                <div className="controls-left">
+                  {!isMjpeg && !isIframe && (
                     <button
                       className="hud-btn"
-                      onClick={toggleMute}
-                      title={isMuted ? "Bunyikan" : "Bisukan"}
-                      aria-label={isMuted ? "Bunyikan" : "Bisukan"}
+                      onClick={togglePlay}
+                      title={isPlaying ? "Jeda" : "Putar"}
+                      aria-label={isPlaying ? "Jeda" : "Putar"}
                     >
-                      {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                      {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
                     </button>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={volume}
-                      onChange={handleVolumeChange}
-                      className="volume-slider"
-                      title="Volume"
-                      aria-label="Volume"
-                    />
-                  </div>
-                )}
-              </div>
+                  )}
 
-              <div className="controls-right">
-                {!isIframe && (
+                  {!isMjpeg && !isIframe && (
+                    <div className="volume-control-wrapper">
+                      <button
+                        className="hud-btn"
+                        onClick={toggleMute}
+                        title={isMuted ? "Bunyikan" : "Bisukan"}
+                        aria-label={isMuted ? "Bunyikan" : "Bisukan"}
+                      >
+                        {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                      </button>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        className="volume-slider"
+                        title="Volume"
+                        aria-label="Volume"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="controls-right" style={isMobileDevice ? { width: 'auto', justifyContent: 'center' } : {}}>
+                {!isMobileDevice && !isIframe && (
                   <button
                     className="hud-btn snapshot-btn"
                     onClick={takeSnapshot}
@@ -1726,16 +1728,6 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
                   >
                     <Camera size={14} />
                     <span>Ambil Foto</span>
-                  </button>
-                )}
-                {isMobileDevice && (
-                  <button
-                    className={`hud-btn rotation-btn ${isRotated ? 'active' : ''}`}
-                    onClick={() => setIsRotated(!isRotated)}
-                    title={isRotated ? "Kembali ke Portrait" : "Putar ke Landscape"}
-                    aria-label={isRotated ? "Kembali ke Portrait" : "Putar ke Landscape"}
-                  >
-                    <RotateCw size={14} className={isRotated ? 'rotated-icon' : ''} />
                   </button>
                 )}
                 {availableLevels.length >= 1 && (
@@ -1793,14 +1785,16 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
                     )}
                   </div>
                 )}
-                <button
-                  className="hud-btn"
-                  onClick={toggleFullscreen}
-                  title={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
-                  aria-label={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
-                >
-                  <Maximize size={14} />
-                </button>
+                {!isMobileDevice && (
+                  <button
+                    className="hud-btn"
+                    onClick={toggleFullscreen}
+                    title={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
+                    aria-label={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
+                  >
+                    <Maximize size={14} />
+                  </button>
+                )}
               </div>
             </div>
           </div>
