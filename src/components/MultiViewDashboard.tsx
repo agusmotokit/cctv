@@ -424,13 +424,28 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
             enableWorker: true,
             lowLatencyMode: true,
             capLevelToPlayerSize: false,
-            maxBufferLength: isShortWindow ? 3 : 15,
-            liveSyncDurationCount: 2,
-            liveMaxLatencyDurationCount: 5
+            startFragPrefetch: true,
+            backBufferLength: 10,
+            maxBufferLength: isShortWindow ? 3 : 10,
+            maxMaxBufferLength: isShortWindow ? 5 : 20,
+            maxBufferHole: 0.5,
+            maxStarvationDelay: 1,
+            liveSyncDurationCount: isShortWindow ? 1 : 2,
+            liveMaxLatencyDurationCount: isShortWindow ? 2 : 4
           });
           hls.loadSource(streamUrl);
           hls.attachMedia(video);
 
+          // Play as early as possible — on first buffered fragment
+          let hasStartedPlay = false;
+          const startPlay = () => {
+            if (hasStartedPlay || !active) return;
+            hasStartedPlay = true;
+            setIsLoaded(true);
+            video.play().catch(() => {});
+          };
+
+          hls.on(Hls.Events.FRAG_BUFFERED, startPlay);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             if (hls && hls.levels && hls.levels.length > 0) {
               const highestLevel = hls.levels.length - 1;
@@ -438,7 +453,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
               hls.currentLevel = highestLevel;
               hls.loadLevel = highestLevel;
             }
-            if (active) video.play().catch(() => {});
+            startPlay();
           });
 
           hls.on(Hls.Events.ERROR, (_, data) => {
@@ -867,6 +882,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
             <video
               ref={videoRef}
               autoPlay
+              preload="auto"
               muted={isMuted}
               playsInline
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}

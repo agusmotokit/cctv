@@ -997,57 +997,59 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
             enableWorker: true,
             lowLatencyMode: true,
             capLevelToPlayerSize: false,
-            backBufferLength: 30,
-            maxBufferLength: isShortWindowStream ? 4 : 30,
-            maxMaxBufferLength: isShortWindowStream ? 6 : 45,
-            maxStarvationDelay: 2.5,
-            liveSyncDurationCount: isShortWindowStream ? 1.5 : 10,
-            liveMaxLatencyDurationCount: isShortWindowStream ? 2.5 : 15,
+            startFragPrefetch: true,
+            backBufferLength: 10,
+            maxBufferLength: isShortWindowStream ? 4 : 10,
+            maxMaxBufferLength: isShortWindowStream ? 6 : 30,
+            maxBufferHole: 0.5,
+            maxStarvationDelay: 1,
+            liveSyncDurationCount: isShortWindowStream ? 1 : 2,
+            liveMaxLatencyDurationCount: isShortWindowStream ? 2 : 4,
             manifestLoadPolicy: {
               default: {
-                maxTimeToFirstByteMs: 8000,
-                maxLoadTimeMs: 20000,
+                maxTimeToFirstByteMs: 4000,
+                maxLoadTimeMs: 8000,
                 errorRetry: {
-                  maxNumRetry: 15,
-                  retryDelayMs: 800,
-                  maxRetryDelayMs: 4000
+                  maxNumRetry: 8,
+                  retryDelayMs: 500,
+                  maxRetryDelayMs: 2000
                 },
                 timeoutRetry: {
-                  maxNumRetry: 4,
-                  retryDelayMs: 1000,
-                  maxRetryDelayMs: 8000
+                  maxNumRetry: 3,
+                  retryDelayMs: 500,
+                  maxRetryDelayMs: 4000
                 }
               }
             },
             playlistLoadPolicy: {
               default: {
-                maxTimeToFirstByteMs: 8000,
-                maxLoadTimeMs: 20000,
+                maxTimeToFirstByteMs: 4000,
+                maxLoadTimeMs: 8000,
                 errorRetry: {
-                  maxNumRetry: 15,
-                  retryDelayMs: 800,
-                  maxRetryDelayMs: 4000
+                  maxNumRetry: 8,
+                  retryDelayMs: 500,
+                  maxRetryDelayMs: 2000
                 },
                 timeoutRetry: {
-                  maxNumRetry: 4,
-                  retryDelayMs: 1000,
-                  maxRetryDelayMs: 8000
+                  maxNumRetry: 3,
+                  retryDelayMs: 500,
+                  maxRetryDelayMs: 4000
                 }
               }
             },
             fragLoadPolicy: {
               default: {
-                maxTimeToFirstByteMs: 8000,
-                maxLoadTimeMs: 20000,
+                maxTimeToFirstByteMs: 4000,
+                maxLoadTimeMs: 8000,
                 errorRetry: {
-                  maxNumRetry: 10,
-                  retryDelayMs: 1000,
-                  maxRetryDelayMs: 8000
+                  maxNumRetry: 6,
+                  retryDelayMs: 500,
+                  maxRetryDelayMs: 4000
                 },
                 timeoutRetry: {
-                  maxNumRetry: 4,
-                  retryDelayMs: 1000,
-                  maxRetryDelayMs: 8000
+                  maxNumRetry: 3,
+                  retryDelayMs: 500,
+                  maxRetryDelayMs: 4000
                 }
               }
             },
@@ -1057,6 +1059,19 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           hls.loadSource(streamUrl);
           hls.attachMedia(video);
 
+          // Play as early as possible — on first buffered fragment
+          let hasStartedPlay = false;
+          const startPlay = () => {
+            if (hasStartedPlay || !active) return;
+            hasStartedPlay = true;
+            video.play().catch(() => {
+              setIsPlaying(false);
+            });
+            setIsLoaded(true);
+            setIsPlaying(true);
+          };
+
+          hls.on(Hls.Events.FRAG_BUFFERED, startPlay);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             if (hls && hls.levels && hls.levels.length > 0) {
               const highestLevel = hls.levels.length - 1;
@@ -1064,12 +1079,8 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
               hls.currentLevel = highestLevel;
               hls.loadLevel = highestLevel;
             }
-            if (!active) return;
-            video.play().catch(() => {
-              setIsPlaying(false);
-            });
-            setIsLoaded(true);
-            setIsPlaying(true);
+            // Fallback: if FRAG_BUFFERED didn't fire yet, try playing on MANIFEST_PARSED
+            startPlay();
           });
 
           hls.on(Hls.Events.ERROR, (_, data) => {
@@ -1475,6 +1486,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
             <video
               ref={videoRef}
               autoPlay
+              preload="auto"
               muted={isMuted}
               playsInline
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
