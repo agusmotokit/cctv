@@ -2,7 +2,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Tooltip, ZoomControl } from 'react-leaflet';
 import * as L from 'leaflet';
-import Hls, { XhrLoader } from 'hls.js';
+import Hls, { XhrLoader, Level } from 'hls.js';
 import { type User } from 'firebase/auth';
 
 class PlaylistLoader extends XhrLoader {
@@ -300,7 +300,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
   const jsmpegPlayerRef = useRef<any>(null);
   
   const hlsRef = useRef<Hls | null>(null);
-  const [availableLevels, setAvailableLevels] = useState<Hls.Level[]>([]);
+  const [availableLevels, setAvailableLevels] = useState<Level[]>([]);
   const [currentLevelIndex, setCurrentLevelIndex] = useState<number>(-1); // -1 is Auto
   const [activePlayLevelIndex, setActivePlayLevelIndex] = useState<number>(-1);
   const [showQualityMenu, setShowQualityMenu] = useState(false);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import Hls from 'hls.js';
+import Hls, { Level } from 'hls.js';
 import flvjs from 'flv.js';
 import JSMpeg from '@cycjimmy/jsmpeg-player';
 import { type CCTV } from '../data/cctvData';
@@ -31,7 +31,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
   const isInitiallyOffline = cctv.status === 'offline' || (isIframe && (cctv.streamUrl === 'https://www.youtube.com/embed/' || cctv.streamUrl.endsWith('/embed/') || cctv.streamUrl === ''));
 
   const hlsRef = useRef<Hls | null>(null);
-  const [availableLevels, setAvailableLevels] = useState<Hls.Level[]>([]);
+  const [availableLevels, setAvailableLevels] = useState<Level[]>([]);
   const [currentLevelIndex, setCurrentLevelIndex] = useState<number>(-1);
   const [activePlayLevelIndex, setActivePlayLevelIndex] = useState<number>(-1);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
