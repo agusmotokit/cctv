@@ -79,6 +79,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
 
   // Reset rotation, zoom and pan when CCTV changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset on prop change, batched by React
     setIsRotated(false);
     setZoomScale(1);
     setPanOffset({ x: 0, y: 0 });
@@ -86,6 +87,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
 
   // Reset zoom and pan when fullscreen or orientation changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset, batched by React
     setZoomScale(1);
     setPanOffset({ x: 0, y: 0 });
   }, [isFullscreen, isRotated]);
@@ -172,6 +174,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
         };
       } catch (e) {
         console.error('Failed to init JSMpeg player inside MultiView:', e);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- error handling in catch, not main effect body
         setHasError(true);
         setIsLoaded(true);
         return;
@@ -978,6 +981,7 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
 
   // Auto-populate empty slots with unassigned favorites
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional slot population on prop change
     setSlotAssignments(prev => {
       const newAssignments = { ...prev };
       const assignedIds = Object.values(newAssignments);

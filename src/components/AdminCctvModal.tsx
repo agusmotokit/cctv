@@ -29,6 +29,7 @@ export const AdminCctvModal: React.FC<AdminCctvModalProps> = ({
 
   // Load existing CCTV data for editing
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- intentional form reset on prop change, batched by React */
     if (cctvToEdit) {
       setName(cctvToEdit.name);
       setProvince(cctvToEdit.province);
@@ -52,17 +53,19 @@ export const AdminCctvModal: React.FC<AdminCctvModalProps> = ({
       setDescription('');
     }
     setError('');
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [cctvToEdit, isOpen]);
 
   // Adjust city if province changes
   const filteredProvinces = provinces.filter(p => p !== 'Semua Provinsi');
-  const availableCities = citiesByProvince[province] || [];
+  const availableCities = React.useMemo(() => citiesByProvince[province] || [], [province]);
 
   useEffect(() => {
     if (!cctvToEdit && availableCities.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional city auto-select on province change
       setCity(availableCities[0]);
     }
-  }, [province, cctvToEdit]);
+  }, [province, cctvToEdit, availableCities]);
 
   if (!isOpen) return null;
 
@@ -101,9 +104,9 @@ export const AdminCctvModal: React.FC<AdminCctvModalProps> = ({
         description: description.trim()
       });
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to save CCTV:', err);
-      setError(err.message || 'Gagal menyimpan data CCTV.');
+      setError(err instanceof Error ? err.message : 'Gagal menyimpan data CCTV.');
     } finally {
       setLoading(false);
     }
@@ -235,7 +238,7 @@ export const AdminCctvModal: React.FC<AdminCctvModalProps> = ({
               <select
                 id="cctv-category"
                 value={category}
-                onChange={(e) => setCategory(e.target.value as any)}
+                onChange={(e) => setCategory(e.target.value as 'traffic' | 'public' | 'tourism')}
                 className="input-field select-input"
               >
                 <option value="traffic">Lalu Lintas</option>
@@ -249,7 +252,7 @@ export const AdminCctvModal: React.FC<AdminCctvModalProps> = ({
               <select
                 id="cctv-status"
                 value={status}
-                onChange={(e) => setStatus(e.target.value as any)}
+                onChange={(e) => setStatus(e.target.value as 'online' | 'offline')}
                 className="input-field select-input"
               >
                 <option value="online">Online</option>
