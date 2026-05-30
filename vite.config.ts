@@ -30,7 +30,8 @@ const proxyTargets = [
   '/surabaya-api',
   '/depok-stream',
   '/sukabumikab-stream',
-  '/pekalongankab-stream'
+  '/pekalongankab-stream',
+  '/bandung-pelindung-stream'
 ];
 
 const proxyConfig: Record<string, ProxyOptions> = {};

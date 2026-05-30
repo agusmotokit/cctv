@@ -26,6 +26,9 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
   const isIframe = isYoutube || cctv.streamUrl.includes('smartcctv.wonogirikab.go.id') || cctv.streamUrl.includes('.html');
   const isMp4 = cctv.streamUrl.includes('.mp4');
   const isPurwakarta = cctv.id.startsWith('purwakarta-');
+  const isRtsp = cctv.streamUrl.startsWith('rtsp://');
+  const uniqueVideoIdRef = useRef(`video-player-${cctv.id}-${Math.floor(Math.random() * 1000000)}`);
+  const uniqueVideoId = uniqueVideoIdRef.current;
 
   // Compute initial error/loaded state synchronously (not inside useEffect)
   const isInitiallyOffline = cctv.status === 'offline' || (isIframe && (cctv.streamUrl === 'https://www.youtube.com/embed/' || cctv.streamUrl.endsWith('/embed/') || cctv.streamUrl === ''));
@@ -387,7 +390,53 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
         streamUrl = streamUrl.replace('https://cctv.pekalongankab.go.id/', '/pekalongankab-stream/');
       }
 
-      if (isFlv) {
+      if (isRtsp) {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((window as any).Streamedian) {
+              resolve();
+              return;
+            }
+            const script = document.createElement('script');
+            script.src = '/js/streamedian.min.js';
+            script.async = true;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Failed to load Streamedian script'));
+            document.body.appendChild(script);
+          });
+
+          if (!active) return;
+
+          setTimeout(() => {
+            if (!active) return;
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const player = (window as any).Streamedian.player(uniqueVideoId, {
+                socket: 'wss://specforge.com/ws/'
+              });
+              setIsLoaded(true);
+              setIsPlaying(true);
+
+              cleanups.push(() => {
+                try {
+                  if (player && player.destroy) {
+                    player.destroy();
+                  }
+                } catch (e) {
+                  console.error('Error destroying Streamedian player:', e);
+                }
+              });
+            } catch (e) {
+              console.error('Failed to init Streamedian player:', e);
+              setHasError(true);
+            }
+          }, 100);
+        } catch (err) {
+          console.error(err);
+          setHasError(true);
+        }
+      } else if (isFlv) {
         if (flvjs.isSupported()) {
           try {
             flvPlayer = flvjs.createPlayer({
@@ -527,7 +576,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       }
       if (video) video.src = '';
     };
-  }, [cctv, isFlv, isIframe, isInitiallyOffline, isJsmpeg, isMjpeg, isMp4, isPurwakarta]);
+  }, [cctv, isFlv, isIframe, isInitiallyOffline, isJsmpeg, isMjpeg, isMp4, isPurwakarta, isRtsp, uniqueVideoId]);
 
   // Play/Pause
   const togglePlay = useCallback(() => {
@@ -1047,6 +1096,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
           ) : (
             <video
               ref={videoRef}
+              id={uniqueVideoId}
               autoPlay
               preload="auto"
               muted={isMuted}
@@ -1060,7 +1110,9 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
                   setShowControls((prev) => !prev);
                 }
               }}
-            />
+            >
+              {isRtsp && <source src={cctv.streamUrl} type="application/x-rtsp" />}
+            </video>
           )}
         </div>
 
@@ -1302,7 +1354,7 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
         <div className={`multiview-grid grid-${gridSize}x${gridSize}`}>
           {Array.from({ length: totalSlots }).map((_, index) => {
             const assignedId = slotAssignments[index];
-            const assignedCCTV = assignedId ? favoritedCCTVs.find(c => c.id === assignedId) : null;
+            const assignedCCTV = assignedId ? favoritedCCTVs.find((c: CCTV) => c.id === assignedId) : null;
 
             return (
               <div key={index} className="multiview-grid-cell">
@@ -1323,8 +1375,8 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
                     >
                       <option value="" disabled>Pilih CCTV Favorit...</option>
                       {favoritedCCTVs
-                        .filter(c => !Object.values(slotAssignments).includes(c.id))
-                        .map(c => (
+                        .filter((c: CCTV) => !Object.values(slotAssignments).includes(c.id))
+                        .map((c: CCTV) => (
                           <option key={c.id} value={c.id}>
                             {c.name} ({c.city})
                           </option>

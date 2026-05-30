@@ -617,6 +617,7 @@ createCctvProxy('/tapin-stream', 'https://cctv.tapinkab.go.id');
 createCctvProxy('/depok-stream', 'https://dishub.depok.go.id');
 createCctvProxy('/sukabumikab-stream', 'https://cctv-dishub.sukabumikab.go.id');
 createCctvProxy('/pekalongankab-stream', 'https://cctv.pekalongankab.go.id');
+createCctvProxy('/bandung-pelindung-stream', 'https://pelindung.bandung.go.id:3443');
 
 // Serve compiled static frontend assets in production mode
 const distPath = path.join(__dirname, 'dist');

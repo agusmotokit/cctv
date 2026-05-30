@@ -159,6 +159,10 @@
       "dest": "api/index.js"
     },
     {
+      "src": "/bandung-pelindung-stream/(.*)",
+      "dest": "api/index.js"
+    },
+    {
       "src": "/assets/(.*)",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
