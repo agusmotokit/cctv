@@ -1,11 +1,31 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import Hls, { Level } from 'hls.js';
-import flvjs from 'flv.js';
-import JSMpeg from '@cycjimmy/jsmpeg-player';
-import { type CCTV } from '../data/cctvData';
-import { Heart, Map, Volume2, VolumeX, X, AlertTriangle, Play, Pause, Camera, Maximize, Settings } from 'lucide-react';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
+import Hls, { Level } from "hls.js";
+import flvjs from "flv.js";
+import JSMpeg from "@cycjimmy/jsmpeg-player";
+import { type CCTV } from "../data/cctvData";
+import {
+  Heart,
+  Map,
+  Volume2,
+  VolumeX,
+  X,
+  AlertTriangle,
+  Play,
+  Pause,
+  Camera,
+  Maximize,
+  Settings,
+} from "lucide-react";
 
-const isMobileDevice = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+const isMobileDevice =
+  typeof window !== "undefined" &&
+  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 // Lightweight player component for a single grid slot
 interface MultiVideoCellPlayerProps {
@@ -13,25 +33,49 @@ interface MultiVideoCellPlayerProps {
   onClear: () => void;
 }
 
-const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onClear }) => {
+const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({
+  cctv,
+  onClear,
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const jsmpegCanvasRef = useRef<HTMLDivElement>(null);
   const cellContainerRef = useRef<HTMLDivElement>(null);
   const jsmpegPlayerRef = useRef<{ destroy?: () => void } | null>(null);
 
-  const isMjpeg = cctv.streamUrl.includes('nph-zms') || cctv.streamUrl.includes('cgi-bin/nph-zms') || cctv.streamUrl.includes('jombangkab.go.id');
-  const isJsmpeg = cctv.streamUrl.includes('streamer-jsmpeg') || cctv.streamUrl.includes('villabs.id/streamer');
-  const isFlv = !isJsmpeg && (cctv.streamUrl.startsWith('wss://') || cctv.streamUrl.startsWith('ws://') || cctv.streamUrl.endsWith('.flv'));
-  const isYoutube = cctv.streamUrl.includes('youtube.com') || cctv.streamUrl.includes('youtu.be');
-  const isIframe = isYoutube || cctv.streamUrl.includes('smartcctv.wonogirikab.go.id') || cctv.streamUrl.includes('.html');
-  const isMp4 = cctv.streamUrl.includes('.mp4');
-  const isPurwakarta = cctv.id.startsWith('purwakarta-');
-  const isRtsp = cctv.streamUrl.startsWith('rtsp://');
-  const uniqueVideoIdRef = useRef(`video-player-${cctv.id}-${Math.floor(Math.random() * 1000000)}`);
+  const isMjpeg =
+    cctv.streamUrl.includes("nph-zms") ||
+    cctv.streamUrl.includes("cgi-bin/nph-zms") ||
+    cctv.streamUrl.includes("jombangkab.go.id");
+  const isJsmpeg =
+    cctv.streamUrl.includes("streamer-jsmpeg") ||
+    cctv.streamUrl.includes("villabs.id/streamer");
+  const isFlv =
+    !isJsmpeg &&
+    (cctv.streamUrl.startsWith("wss://") ||
+      cctv.streamUrl.startsWith("ws://") ||
+      cctv.streamUrl.endsWith(".flv"));
+  const isYoutube =
+    cctv.streamUrl.includes("youtube.com") ||
+    cctv.streamUrl.includes("youtu.be");
+  const isIframe =
+    isYoutube ||
+    cctv.streamUrl.includes("smartcctv.wonogirikab.go.id") ||
+    cctv.streamUrl.includes(".html");
+  const isMp4 = cctv.streamUrl.includes(".mp4");
+  const isPurwakarta = cctv.id.startsWith("purwakarta-");
+  const isRtsp = cctv.streamUrl.startsWith("rtsp://");
+  const uniqueVideoIdRef = useRef(
+    `video-player-${cctv.id}-${Math.floor(Math.random() * 1000000)}`,
+  );
   const uniqueVideoId = uniqueVideoIdRef.current;
 
   // Compute initial error/loaded state synchronously (not inside useEffect)
-  const isInitiallyOffline = cctv.status === 'offline' || (isIframe && (cctv.streamUrl === 'https://www.youtube.com/embed/' || cctv.streamUrl.endsWith('/embed/') || cctv.streamUrl === ''));
+  const isInitiallyOffline =
+    cctv.status === "offline" ||
+    (isIframe &&
+      (cctv.streamUrl === "https://www.youtube.com/embed/" ||
+        cctv.streamUrl.endsWith("/embed/") ||
+        cctv.streamUrl === ""));
 
   const hlsRef = useRef<Hls | null>(null);
   const [availableLevels, setAvailableLevels] = useState<Level[]>([]);
@@ -54,7 +98,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
 
   const viewportContainerRef = useRef<HTMLDivElement>(null);
   const togglePlayRef = useRef<() => void>(() => {});
-  
+
   const zoomScaleRef = useRef(1);
   const panOffsetRef = useRef({ x: 0, y: 0 });
   const isRotatedRef = useRef(false);
@@ -70,14 +114,14 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
     currentX: 0,
     currentY: 0,
     isSwipe: false,
-    gestureOccurred: false
+    gestureOccurred: false,
   });
   const mouseStateRef = useRef({
     isDragging: false,
     startX: 0,
     startY: 0,
     initialPan: { x: 0, y: 0 },
-    dragOccurred: false
+    dragOccurred: false,
   });
 
   // Sync refs with state changes
@@ -119,14 +163,14 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
 
     const width = el.clientWidth;
     const height = el.clientHeight;
-    
+
     const maxPanX = (width * (zoomScale - 1)) / (2 * zoomScale);
     const maxPanY = (height * (zoomScale - 1)) / (2 * zoomScale);
 
-    setPanOffset(prev => {
+    setPanOffset((prev) => {
       const clampedX = Math.min(Math.max(prev.x, -maxPanX), maxPanX);
       const clampedY = Math.min(Math.max(prev.y, -maxPanY), maxPanY);
-      
+
       if (clampedX !== prev.x || clampedY !== prev.y) {
         return { x: clampedX, y: clampedY };
       }
@@ -149,32 +193,36 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
     if (isJsmpeg) {
       const wrapper = jsmpegCanvasRef.current;
       if (!wrapper) return;
-      wrapper.innerHTML = '';
+      wrapper.innerHTML = "";
 
       try {
-        const player = new (JSMpeg as unknown as { VideoElement: new (...args: unknown[]) => { destroy?: () => void } }).VideoElement(
+        const player = new (
+          JSMpeg as unknown as {
+            VideoElement: new (...args: unknown[]) => { destroy?: () => void };
+          }
+        ).VideoElement(
           wrapper,
           cctv.streamUrl,
           {
-            canvas: '',
+            canvas: "",
             autoplay: true,
             control: false,
             loop: false,
             decodeFirstFrame: true,
-            poster: '',
+            poster: "",
             hooks: {
               load: () => {
                 if (active) {
                   setIsLoaded(true);
                 }
-              }
-            }
+              },
+            },
           },
           {
             video: { preserveDrawingBuffer: true },
             audio: false,
-            disableWebAssembly: false
-          }
+            disableWebAssembly: false,
+          },
         );
         jsmpegPlayerRef.current = player;
 
@@ -193,7 +241,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
           jsmpegPlayerRef.current = null;
         };
       } catch (e) {
-        console.error('Failed to init JSMpeg player inside MultiView:', e);
+        console.error("Failed to init JSMpeg player inside MultiView:", e);
         // eslint-disable-next-line react-hooks/set-state-in-effect -- error handling in catch, not main effect body
         setHasError(true);
         setIsLoaded(true);
@@ -205,7 +253,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       const video = videoRef.current;
       if (!video) return;
 
-      const camId = cctv.id.replace('purwakarta-', '');
+      const camId = cctv.id.replace("purwakarta-", "");
       const wsUrl = `wss://cctv.purwakartakab.go.id/go2rtc/api/ws?src=${camId}`;
 
       let ws: WebSocket | null = null;
@@ -216,9 +264,22 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       const buffer = new Uint8Array(2 * 1024 * 1024);
       let bufferLength = 0;
 
-      const codecs = ["avc1.640029", "avc1.64002A", "avc1.640033", "hvc1.1.6.L153.B0", "mp4a.40.2", "mp4a.40.5", "flac", "opus"];
+      const codecs = [
+        "avc1.640029",
+        "avc1.64002A",
+        "avc1.640033",
+        "hvc1.1.6.L153.B0",
+        "mp4a.40.2",
+        "mp4a.40.5",
+        "flac",
+        "opus",
+      ];
       const getSupportedCodecs = () => {
-        return codecs.filter(codec => MediaSource.isTypeSupported(`video/mp4; codecs="${codec}"`)).join(',');
+        return codecs
+          .filter((codec) =>
+            MediaSource.isTypeSupported(`video/mp4; codecs="${codec}"`),
+          )
+          .join(",");
       };
 
       const cleanup = () => {
@@ -236,9 +297,11 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
         ms = null;
         sb = null;
         try {
-          video.src = '';
+          video.src = "";
           video.srcObject = null;
-        } catch { /* ignore cleanup errors */ }
+        } catch {
+          /* ignore cleanup errors */
+        }
       };
 
       const connect = () => {
@@ -247,73 +310,91 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
         ms = new MediaSource();
         video.src = URL.createObjectURL(ms);
 
-        ms.addEventListener('sourceopen', () => {
-          if (!active || !ms) return;
-          URL.revokeObjectURL(video.src);
-
-          ws = new WebSocket(wsUrl);
-          ws.binaryType = 'arraybuffer';
-
-          ws.onopen = () => {
-            if (!active || !ws) return;
-            ws.send(JSON.stringify({ type: 'mse', value: getSupportedCodecs() }));
-          };
-
-          ws.onmessage = (event) => {
+        ms.addEventListener(
+          "sourceopen",
+          () => {
             if (!active || !ms) return;
-            if (typeof event.data === 'string') {
-              const msg = JSON.parse(event.data);
-              if (msg.type === 'mse' && msg.value && ms.readyState === 'open') {
-                try {
-                  sb = ms.addSourceBuffer(msg.value);
-                  sb.mode = 'segments';
-                  sb.addEventListener('updateend', () => {
-                    if (!active || !sb || !ms || ms.readyState !== 'open') return;
-                    if (!sb.updating && bufferLength > 0) {
-                      try {
-                        sb.appendBuffer(buffer.slice(0, bufferLength));
-                        bufferLength = 0;
-                      } catch (e) {
-                        console.warn('[PurwakartaPlayer] appendBuffer error:', e);
+            URL.revokeObjectURL(video.src);
+
+            ws = new WebSocket(wsUrl);
+            ws.binaryType = "arraybuffer";
+
+            ws.onopen = () => {
+              if (!active || !ws) return;
+              ws.send(
+                JSON.stringify({ type: "mse", value: getSupportedCodecs() }),
+              );
+            };
+
+            ws.onmessage = (event) => {
+              if (!active || !ms) return;
+              if (typeof event.data === "string") {
+                const msg = JSON.parse(event.data);
+                if (
+                  msg.type === "mse" &&
+                  msg.value &&
+                  ms.readyState === "open"
+                ) {
+                  try {
+                    sb = ms.addSourceBuffer(msg.value);
+                    sb.mode = "segments";
+                    sb.addEventListener("updateend", () => {
+                      if (!active || !sb || !ms || ms.readyState !== "open")
+                        return;
+                      if (!sb.updating && bufferLength > 0) {
+                        try {
+                          sb.appendBuffer(buffer.slice(0, bufferLength));
+                          bufferLength = 0;
+                        } catch (e) {
+                          console.warn(
+                            "[PurwakartaPlayer] appendBuffer error:",
+                            e,
+                          );
+                        }
                       }
-                    }
+                    });
+                  } catch {
+                    /* ignore addSourceBuffer errors */
+                  }
+                }
+              } else if (sb) {
+                if (!isPlayingStarted) {
+                  isPlayingStarted = true;
+                  video.play().catch(() => {
+                    video.muted = true;
+                    video.play().catch(() => {});
                   });
-                } catch { /* ignore addSourceBuffer errors */ }
+                }
+                if (sb.updating || bufferLength > 0) {
+                  const data = new Uint8Array(event.data);
+                  buffer.set(data, bufferLength);
+                  bufferLength += data.byteLength;
+                } else {
+                  try {
+                    sb.appendBuffer(event.data);
+                  } catch {
+                    /* ignore appendBuffer errors */
+                  }
+                }
               }
-            } else if (sb) {
-              if (!isPlayingStarted) {
-                isPlayingStarted = true;
-                video.play().catch(() => {
-                  video.muted = true;
-                  video.play().catch(() => {});
-                });
-              }
-              if (sb.updating || bufferLength > 0) {
-                const data = new Uint8Array(event.data);
-                buffer.set(data, bufferLength);
-                bufferLength += data.byteLength;
-              } else {
-                try {
-                  sb.appendBuffer(event.data);
-                } catch { /* ignore appendBuffer errors */ }
-              }
-            }
-          };
+            };
 
-          ws.onclose = () => {
-            if (!active) return;
-            reconnectTID = setTimeout(() => {
-              cleanup();
-              connect();
-            }, 3000);
-          };
+            ws.onclose = () => {
+              if (!active) return;
+              reconnectTID = setTimeout(() => {
+                cleanup();
+                connect();
+              }, 3000);
+            };
 
-          ws.onerror = () => {
-            if (active) {
-              setHasError(true);
-            }
-          };
-        }, { once: true });
+            ws.onerror = () => {
+              if (active) {
+                setHasError(true);
+              }
+            };
+          },
+          { once: true },
+        );
       };
 
       connect();
@@ -326,68 +407,133 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
     const handlePlaying = () => {
       if (active) setIsLoaded(true);
     };
-    video.addEventListener('playing', handlePlaying);
-    cleanups.push(() => video.removeEventListener('playing', handlePlaying));
+    video.addEventListener("playing", handlePlaying);
+    cleanups.push(() => video.removeEventListener("playing", handlePlaying));
 
     let hls: Hls | null = null;
     let flvPlayer: flvjs.Player | null = null;
 
     const initPlayer = async () => {
       let streamUrl = cctv.streamUrl;
-      
+
       // Gresik & Surabaya stream starters
-      if (cctv.id.startsWith('gresik-')) {
-        const rawId = cctv.id.replace('gresik-', '');
-        fetch('/gresik-api/rpc/cctv/startStreamById', {
-          method: 'POST',
+      if (cctv.id.startsWith("gresik-")) {
+        const rawId = cctv.id.replace("gresik-", "");
+        fetch("/gresik-api/rpc/cctv/startStreamById", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer default-token'
+            "Content-Type": "application/json",
+            Authorization: "Bearer default-token",
           },
-          body: JSON.stringify({ json: { id: rawId } })
+          body: JSON.stringify({ json: { id: rawId } }),
         }).catch(() => {});
       }
 
-      if (cctv.id.startsWith('surabaya-')) {
-        const rawId = cctv.id.replace('surabaya-', '');
-        fetch(`/surabaya-api/api/start_stream/${rawId}`, { method: 'POST' }).catch(() => {});
+      if (cctv.id.startsWith("surabaya-")) {
+        const rawId = cctv.id.replace("surabaya-", "");
+        fetch(`/surabaya-api/api/start_stream/${rawId}`, {
+          method: "POST",
+        }).catch(() => {});
       }
 
       // Proxy mappings
-      if (streamUrl.startsWith('https://testing-apicctv.gresikkab.go.id')) {
-        streamUrl = streamUrl.replace('https://testing-apicctv.gresikkab.go.id', '/gresik-api');
-      } else if (streamUrl.startsWith('https://live.banyuwangikab.go.id/hls/')) {
-        streamUrl = streamUrl.replace('https://live.banyuwangikab.go.id/hls/', '/bwi-hls/');
-      } else if (streamUrl.startsWith('https://atcs.banjarmasinkota.go.id/stream/')) {
-        streamUrl = streamUrl.replace('https://atcs.banjarmasinkota.go.id/stream/', '/bjm-stream/');
-      } else if (streamUrl.startsWith('https://streaming.patikab.go.id/memfs/')) {
-        streamUrl = streamUrl.replace('https://streaming.patikab.go.id/memfs/', '/pati-stream/memfs/');
-      } else if (streamUrl.startsWith('https://dishub.cradnu.com/memfs/')) {
-        streamUrl = streamUrl.replace('https://dishub.cradnu.com/memfs/', '/grobogan-cradnu/memfs/');
-      } else if (streamUrl.startsWith('https://stream.dishub.grobogan.go.id/memfs/')) {
-        streamUrl = streamUrl.replace('https://stream.dishub.grobogan.go.id/memfs/', '/grobogan-stream/memfs/');
-      } else if (streamUrl.startsWith('https://cctv.kotawaringinbaratkab.go.id/storage/')) {
-        streamUrl = streamUrl.replace('https://cctv.kotawaringinbaratkab.go.id/storage/', '/kobar-stream/storage/');
-      } else if (streamUrl.startsWith('https://cctv.malangkota.go.id/')) {
-        streamUrl = streamUrl.replace('https://cctv.malangkota.go.id/', '/malang-stream/');
-      } else if (streamUrl.startsWith('https://cctv.cirebonkota.go.id/')) {
-        streamUrl = streamUrl.replace('https://cctv.cirebonkota.go.id/', '/cirebon-stream/');
-      } else if (streamUrl.startsWith('https://cctv.purwakartakab.go.id/')) {
-        streamUrl = streamUrl.replace('https://cctv.purwakartakab.go.id/', '/purwakarta-stream/');
-      } else if (streamUrl.startsWith('https://cctv.tubankab.go.id/')) {
-        streamUrl = streamUrl.replace('https://cctv.tubankab.go.id/', '/tuban-stream/');
-      } else if (streamUrl.startsWith('https://stream.palembang.go.id/')) {
-        streamUrl = streamUrl.replace('https://stream.palembang.go.id/', '/palembang-stream/');
-      } else if (streamUrl.startsWith('https://shinobi.bulelengkab.go.id/')) {
-        streamUrl = streamUrl.replace('https://shinobi.bulelengkab.go.id/', '/buleleng-stream/');
-      } else if (streamUrl.startsWith('http://36.66.208.101:5000/')) {
-        streamUrl = streamUrl.replace('http://36.66.208.101:5000/', '/surabaya-api/');
-      } else if (streamUrl.startsWith('https://dishub.depok.go.id/')) {
-        streamUrl = streamUrl.replace('https://dishub.depok.go.id/', '/depok-stream/');
-      } else if (streamUrl.startsWith('https://cctv-dishub.sukabumikab.go.id/')) {
-        streamUrl = streamUrl.replace('https://cctv-dishub.sukabumikab.go.id/', '/sukabumikab-stream/');
-      } else if (streamUrl.startsWith('https://cctv.pekalongankab.go.id/')) {
-        streamUrl = streamUrl.replace('https://cctv.pekalongankab.go.id/', '/pekalongankab-stream/');
+      if (streamUrl.startsWith("https://testing-apicctv.gresikkab.go.id")) {
+        streamUrl = streamUrl.replace(
+          "https://testing-apicctv.gresikkab.go.id",
+          "/gresik-api",
+        );
+      } else if (
+        streamUrl.startsWith("https://live.banyuwangikab.go.id/hls/")
+      ) {
+        streamUrl = streamUrl.replace(
+          "https://live.banyuwangikab.go.id/hls/",
+          "/bwi-hls/",
+        );
+      } else if (
+        streamUrl.startsWith("https://atcs.banjarmasinkota.go.id/stream/")
+      ) {
+        streamUrl = streamUrl.replace(
+          "https://atcs.banjarmasinkota.go.id/stream/",
+          "/bjm-stream/",
+        );
+      } else if (
+        streamUrl.startsWith("https://streaming.patikab.go.id/memfs/")
+      ) {
+        streamUrl = streamUrl.replace(
+          "https://streaming.patikab.go.id/memfs/",
+          "/pati-stream/memfs/",
+        );
+      } else if (streamUrl.startsWith("https://dishub.cradnu.com/memfs/")) {
+        streamUrl = streamUrl.replace(
+          "https://dishub.cradnu.com/memfs/",
+          "/grobogan-cradnu/memfs/",
+        );
+      } else if (
+        streamUrl.startsWith("https://stream.dishub.grobogan.go.id/memfs/")
+      ) {
+        streamUrl = streamUrl.replace(
+          "https://stream.dishub.grobogan.go.id/memfs/",
+          "/grobogan-stream/memfs/",
+        );
+      } else if (
+        streamUrl.startsWith("https://cctv.kotawaringinbaratkab.go.id/storage/")
+      ) {
+        streamUrl = streamUrl.replace(
+          "https://cctv.kotawaringinbaratkab.go.id/storage/",
+          "/kobar-stream/storage/",
+        );
+      } else if (streamUrl.startsWith("https://cctv.malangkota.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://cctv.malangkota.go.id/",
+          "/malang-stream/",
+        );
+      } else if (streamUrl.startsWith("https://cctv.cirebonkota.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://cctv.cirebonkota.go.id/",
+          "/cirebon-stream/",
+        );
+      } else if (streamUrl.startsWith("https://cctv.purwakartakab.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://cctv.purwakartakab.go.id/",
+          "/purwakarta-stream/",
+        );
+      } else if (streamUrl.startsWith("https://cctv.tubankab.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://cctv.tubankab.go.id/",
+          "/tuban-stream/",
+        );
+      } else if (streamUrl.startsWith("https://stream.palembang.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://stream.palembang.go.id/",
+          "/palembang-stream/",
+        );
+      } else if (streamUrl.startsWith("https://shinobi.bulelengkab.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://shinobi.bulelengkab.go.id/",
+          "/buleleng-stream/",
+        );
+      } else if (streamUrl.startsWith("http://36.66.208.101:5000/")) {
+        streamUrl = streamUrl.replace(
+          "http://36.66.208.101:5000/",
+          "/surabaya-api/",
+        );
+      } else if (streamUrl.startsWith("https://dishub.depok.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://dishub.depok.go.id/",
+          "/depok-stream/",
+        );
+      } else if (
+        streamUrl.startsWith("https://cctv-dishub.sukabumikab.go.id/")
+      ) {
+        streamUrl = streamUrl.replace(
+          "https://cctv-dishub.sukabumikab.go.id/",
+          "/sukabumikab-stream/",
+        );
+      } else if (streamUrl.startsWith("https://cctv.pekalongankab.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://cctv.pekalongankab.go.id/",
+          "/pekalongankab-stream/",
+        );
       }
 
       if (isRtsp) {
@@ -398,11 +544,12 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
               resolve();
               return;
             }
-            const script = document.createElement('script');
-            script.src = '/js/streamedian.min.js';
+            const script = document.createElement("script");
+            script.src = "/js/streamedian.min.js";
             script.async = true;
             script.onload = () => resolve();
-            script.onerror = () => reject(new Error('Failed to load Streamedian script'));
+            script.onerror = () =>
+              reject(new Error("Failed to load Streamedian script"));
             document.body.appendChild(script);
           });
 
@@ -413,7 +560,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
             try {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const player = (window as any).Streamedian.player(uniqueVideoId, {
-                socket: 'wss://specforge.com/ws/'
+                socket: "wss://specforge.com/ws/",
               });
               setIsLoaded(true);
               setIsPlaying(true);
@@ -424,11 +571,11 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
                     player.destroy();
                   }
                 } catch (e) {
-                  console.error('Error destroying Streamedian player:', e);
+                  console.error("Error destroying Streamedian player:", e);
                 }
               });
             } catch (e) {
-              console.error('Failed to init Streamedian player:', e);
+              console.error("Failed to init Streamedian player:", e);
               setHasError(true);
             }
           }, 100);
@@ -439,17 +586,20 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       } else if (isFlv) {
         if (flvjs.isSupported()) {
           try {
-            flvPlayer = flvjs.createPlayer({
-              type: 'flv',
-              url: streamUrl,
-              isLive: true,
-              hasAudio: false
-            }, {
-              enableStashBuffer: false
-            });
+            flvPlayer = flvjs.createPlayer(
+              {
+                type: "flv",
+                url: streamUrl,
+                isLive: true,
+                hasAudio: false,
+              },
+              {
+                enableStashBuffer: false,
+              },
+            );
             flvPlayer.attachMediaElement(video);
             flvPlayer.load();
-            
+
             flvPlayer.on(flvjs.Events.ERROR, () => {
               if (active) {
                 setHasError(true);
@@ -460,8 +610,10 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
             const handleCanPlay = () => {
               if (active) video.play().catch(() => {});
             };
-            video.addEventListener('canplay', handleCanPlay);
-            cleanups.push(() => video.removeEventListener('canplay', handleCanPlay));
+            video.addEventListener("canplay", handleCanPlay);
+            cleanups.push(() =>
+              video.removeEventListener("canplay", handleCanPlay),
+            );
           } catch {
             setHasError(true);
           }
@@ -476,16 +628,17 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
         const handleError = () => {
           if (active) setHasError(true);
         };
-        video.addEventListener('canplay', handleCanPlay);
-        video.addEventListener('error', handleError);
+        video.addEventListener("canplay", handleCanPlay);
+        video.addEventListener("error", handleError);
         cleanups.push(() => {
-          video.removeEventListener('canplay', handleCanPlay);
-          video.removeEventListener('error', handleError);
+          video.removeEventListener("canplay", handleCanPlay);
+          video.removeEventListener("error", handleError);
         });
       } else {
         // HLS Player
         if (Hls.isSupported()) {
-          const isShortWindow = streamUrl.includes('bwi-hls') || streamUrl.includes('surabaya-api');
+          const isShortWindow =
+            streamUrl.includes("bwi-hls") || streamUrl.includes("surabaya-api");
           hls = new Hls({
             enableWorker: true,
             lowLatencyMode: true,
@@ -497,7 +650,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
             maxBufferHole: 0.5,
             maxStarvationDelay: 1,
             liveSyncDurationCount: isShortWindow ? 1 : 2,
-            liveMaxLatencyDurationCount: isShortWindow ? 2 : 4
+            liveMaxLatencyDurationCount: isShortWindow ? 2 : 4,
           });
           hlsRef.current = hls;
 
@@ -547,13 +700,15 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
               }
             }
           });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
           video.src = streamUrl;
           const handleLoadedMetadata = () => {
             if (active) video.play().catch(() => {});
           };
-          video.addEventListener('loadedmetadata', handleLoadedMetadata);
-          cleanups.push(() => video.removeEventListener('loadedmetadata', handleLoadedMetadata));
+          video.addEventListener("loadedmetadata", handleLoadedMetadata);
+          cleanups.push(() =>
+            video.removeEventListener("loadedmetadata", handleLoadedMetadata),
+          );
         } else {
           setHasError(true);
         }
@@ -572,11 +727,24 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
           flvPlayer.unload();
           flvPlayer.detachMediaElement();
           flvPlayer.destroy();
-        } catch { /* ignore flv cleanup errors */ }
+        } catch {
+          /* ignore flv cleanup errors */
+        }
       }
-      if (video) video.src = '';
+      if (video) video.src = "";
     };
-  }, [cctv, isFlv, isIframe, isInitiallyOffline, isJsmpeg, isMjpeg, isMp4, isPurwakarta, isRtsp, uniqueVideoId]);
+  }, [
+    cctv,
+    isFlv,
+    isIframe,
+    isInitiallyOffline,
+    isJsmpeg,
+    isMjpeg,
+    isMp4,
+    isPurwakarta,
+    isRtsp,
+    uniqueVideoId,
+  ]);
 
   // Play/Pause
   const togglePlay = useCallback(() => {
@@ -587,7 +755,9 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       video.pause();
       setIsPlaying(false);
     } else {
-      video.play().catch(() => { /* autoplay blocked */ });
+      video.play().catch(() => {
+        /* autoplay blocked */
+      });
       setIsPlaying(true);
     }
   }, [isMjpeg, isIframe, isJsmpeg, isLoaded, isPlaying]);
@@ -614,28 +784,36 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
   }, [isMjpeg, isIframe, isJsmpeg, isMuted]);
 
   // Volume slider
-  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isMjpeg || isIframe || isJsmpeg) return;
-    const video = videoRef.current;
-    if (!video) return;
-    const val = parseFloat(e.target.value);
-    video.volume = val;
-    setVolume(val);
-    if (val === 0) {
-      video.muted = true;
-      setIsMuted(true);
-    } else {
-      video.muted = false;
-      setIsMuted(false);
-    }
-  }, [isMjpeg, isIframe, isJsmpeg]);
+  const handleVolumeChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (isMjpeg || isIframe || isJsmpeg) return;
+      const video = videoRef.current;
+      if (!video) return;
+      const val = parseFloat(e.target.value);
+      video.volume = val;
+      setVolume(val);
+      if (val === 0) {
+        video.muted = true;
+        setIsMuted(true);
+      } else {
+        video.muted = false;
+        setIsMuted(false);
+      }
+    },
+    [isMjpeg, isIframe, isJsmpeg],
+  );
 
   // Fullscreen
   const toggleFullscreen = useCallback(() => {
     const container = cellContainerRef.current;
     if (!container) return;
     if (!document.fullscreenElement) {
-      container.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => { /* fullscreen denied */ });
+      container
+        .requestFullscreen()
+        .then(() => setIsFullscreen(true))
+        .catch(() => {
+          /* fullscreen denied */
+        });
     } else {
       document.exitFullscreen().then(() => setIsFullscreen(false));
     }
@@ -665,8 +843,8 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
 
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', handler);
-    return () => document.removeEventListener('fullscreenchange', handler);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
   // Auto-hide controls
@@ -680,15 +858,15 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
   useEffect(() => {
     if (!isRotated) return;
 
-    window.history.pushState({ cellRotated: true }, '');
+    window.history.pushState({ cellRotated: true }, "");
 
     const handlePopState = () => {
       setIsRotated(false);
     };
 
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener("popstate", handlePopState);
     return () => {
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener("popstate", handlePopState);
       if (window.history.state && window.history.state.cellRotated) {
         window.history.back();
       }
@@ -721,7 +899,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
           state.isSwipe = false;
           state.initialCenter = {
             x: e.touches[0].clientX,
-            y: e.touches[0].clientY
+            y: e.touches[0].clientY,
           };
           state.initialPan = { ...currentPan };
         } else {
@@ -735,14 +913,14 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
         state.isPanning = false;
         state.isSwipe = false;
         state.gestureOccurred = true;
-        
+
         const t1 = e.touches[0];
         const t2 = e.touches[1];
-        
+
         const dx = t1.clientX - t2.clientX;
         const dy = t1.clientY - t2.clientY;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        
+
         state.initialDistance = dist;
         state.initialScale = currentScale;
         state.initialPan = { ...currentPan };
@@ -755,43 +933,50 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       if (state.isPinching && e.touches.length === 2) {
         if (e.cancelable) e.preventDefault();
         state.gestureOccurred = true;
-        
+
         const t1 = e.touches[0];
         const t2 = e.touches[1];
-        
+
         const dx = t1.clientX - t2.clientX;
         const dy = t1.clientY - t2.clientY;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        
+
         const initialDist = state.initialDistance;
         if (initialDist > 0) {
           const factor = dist / initialDist;
-          const newScale = Math.min(Math.max(state.initialScale * factor, 1), 4);
+          const newScale = Math.min(
+            Math.max(state.initialScale * factor, 1),
+            4,
+          );
           setZoomScale(newScale);
-          
+
           if (newScale === 1) {
             setPanOffset({ x: 0, y: 0 });
           }
         }
-      } else if (state.isPanning && e.touches.length === 1 && currentScale > 1) {
+      } else if (
+        state.isPanning &&
+        e.touches.length === 1 &&
+        currentScale > 1
+      ) {
         if (e.cancelable) e.preventDefault();
         state.gestureOccurred = true;
-        
+
         const clientX = e.touches[0].clientX;
         const clientY = e.touches[0].clientY;
 
         state.currentX = clientX;
         state.currentY = clientY;
-        
+
         const dx = clientX - state.initialCenter.x;
         const dy = clientY - state.initialCenter.y;
-        
+
         const width = el.clientWidth;
         const height = el.clientHeight;
 
         const maxPanX = (width * (currentScale - 1)) / (2 * currentScale);
         const maxPanY = (height * (currentScale - 1)) / (2 * currentScale);
-        
+
         let targetX: number;
         let targetY: number;
 
@@ -804,15 +989,19 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
           targetX = state.initialPan.x + dx / currentScale;
           targetY = state.initialPan.y + dy / currentScale;
         }
-        
+
         const boundedX = Math.min(Math.max(targetX, -maxPanX), maxPanX);
         const boundedY = Math.min(Math.max(targetY, -maxPanY), maxPanY);
 
         setPanOffset({
           x: boundedX,
-          y: boundedY
+          y: boundedY,
         });
-      } else if (state.isSwipe && e.touches.length === 1 && currentScale === 1) {
+      } else if (
+        state.isSwipe &&
+        e.touches.length === 1 &&
+        currentScale === 1
+      ) {
         const clientY = e.touches[0].clientY;
         const dy = clientY - state.startY;
         if (Math.abs(dy) > 10) {
@@ -827,10 +1016,10 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
     const onTouchEnd = (e: TouchEvent) => {
       setIsTouching(false);
       const currentScale = zoomScaleRef.current;
-      
+
       const dx = state.currentX - state.startX;
       const dy = state.currentY - state.startY;
-      
+
       if (!state.gestureOccurred && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
         if (e.cancelable) {
           e.preventDefault();
@@ -853,16 +1042,16 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       state.isSwipe = false;
     };
 
-    el.addEventListener('touchstart', onTouchStart, { passive: true });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd, { passive: false });
-    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: false });
+    el.addEventListener("touchcancel", onTouchEnd, { passive: true });
 
     return () => {
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-      el.removeEventListener('touchcancel', onTouchEnd);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
     };
   }, []);
 
@@ -877,9 +1066,10 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       e.preventDefault();
       const currentScale = zoomScaleRef.current;
       const zoomFactor = 0.25;
-      const newScale = e.deltaY < 0
-        ? Math.min(currentScale + zoomFactor, 4)
-        : Math.max(currentScale - zoomFactor, 1);
+      const newScale =
+        e.deltaY < 0
+          ? Math.min(currentScale + zoomFactor, 4)
+          : Math.max(currentScale - zoomFactor, 1);
 
       if (newScale !== currentScale) {
         setZoomScale(newScale);
@@ -943,7 +1133,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
 
       setPanOffset({
         x: boundedX,
-        y: boundedY
+        y: boundedY,
       });
     };
 
@@ -965,30 +1155,30 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       }
     };
 
-    el.addEventListener('wheel', onWheel, { passive: false });
-    el.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp, { capture: true });
-    el.addEventListener('mouseleave', onMouseLeave);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp, { capture: true });
+    el.addEventListener("mouseleave", onMouseLeave);
 
     return () => {
-      el.removeEventListener('wheel', onWheel);
-      el.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp, { capture: true });
-      el.removeEventListener('mouseleave', onMouseLeave);
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp, { capture: true });
+      el.removeEventListener("mouseleave", onMouseLeave);
     };
   }, []);
 
   // Take snapshot
   const takeSnapshot = useCallback(() => {
     if (isMjpeg) {
-      const img = cellContainerRef.current?.querySelector('img');
+      const img = cellContainerRef.current?.querySelector("img");
       if (!img || !isLoaded) return;
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = img.naturalWidth || 640;
       canvas.height = img.naturalHeight || 480;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (!ctx) return;
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       drawWatermark(ctx, canvas, cctv.name);
@@ -996,12 +1186,12 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       return;
     }
     if (isJsmpeg) {
-      const sourceCanvas = jsmpegCanvasRef.current?.querySelector('canvas');
+      const sourceCanvas = jsmpegCanvasRef.current?.querySelector("canvas");
       if (!sourceCanvas || !isLoaded) return;
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = sourceCanvas.width || 640;
       canvas.height = sourceCanvas.height || 480;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (!ctx) return;
       ctx.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
       drawWatermark(ctx, canvas, cctv.name);
@@ -1010,10 +1200,10 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
     }
     const video = videoRef.current;
     if (!video || !isLoaded) return;
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth || 1280;
     canvas.height = video.videoHeight || 720;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     drawWatermark(ctx, canvas, cctv.name);
@@ -1022,7 +1212,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
 
   return (
     <div
-      className={`multiview-cell-player ${isFullscreen ? 'cell-fullscreen' : ''} ${isRotated ? 'cell-rotated-landscape' : ''}`}
+      className={`multiview-cell-player ${isFullscreen ? "cell-fullscreen" : ""} ${isRotated ? "cell-rotated-landscape" : ""}`}
       ref={cellContainerRef}
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
@@ -1031,7 +1221,10 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       {isRotated && !isMobileDevice && (
         <div className="cell-rotated-top-bar">
           <span className="cell-rotated-title">{cctv.name}</span>
-          <button className="cell-rotated-close-btn" onClick={() => setIsRotated(false)}>
+          <button
+            className="cell-rotated-close-btn"
+            onClick={() => setIsRotated(false)}
+          >
             <X size={16} />
           </button>
         </div>
@@ -1040,12 +1233,16 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
       {!isRotated && (
         <div className="cell-header">
           <span className="cell-title">{cctv.name}</span>
-          <button className="cell-btn remove-btn" onClick={onClear} title="Hapus dari slot">
+          <button
+            className="cell-btn remove-btn"
+            onClick={onClear}
+            title="Hapus dari slot"
+          >
             <X size={12} />
           </button>
         </div>
       )}
-      
+
       <div className="cell-content">
         {!isLoaded && !hasError && (
           <div className="cell-status">
@@ -1060,38 +1257,52 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
           </div>
         )}
 
-        <div 
+        <div
           className="cell-video-viewport"
           ref={viewportContainerRef}
           style={{
-            width: '100%',
-            height: '100%',
+            width: "100%",
+            height: "100%",
             transform: `scale(${zoomScale}) translate(${panOffset.x}px, ${panOffset.y}px)`,
-            transformOrigin: 'center center',
-            transition: isTouching ? 'none' : 'transform 0.15s ease-out'
+            transformOrigin: "center center",
+            transition: isTouching ? "none" : "transform 0.15s ease-out",
           }}
         >
           {isIframe && !hasError ? (
             <iframe
-              src={isYoutube ? `${cctv.streamUrl}?autoplay=1&mute=1` : cctv.streamUrl}
+              src={
+                isYoutube
+                  ? `${cctv.streamUrl}?autoplay=1&mute=1`
+                  : cctv.streamUrl
+              }
               title={cctv.name}
               frameBorder="0"
               allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-              style={{ width: '100%', height: '100%', border: 'none', display: isLoaded ? 'block' : 'none' }}
+              style={{
+                width: "100%",
+                height: "100%",
+                border: "none",
+                display: isLoaded ? "block" : "none",
+              }}
               onLoad={() => setIsLoaded(true)}
             />
           ) : isMjpeg ? (
             <img
               src={cctv.streamUrl}
               alt={cctv.name}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', display: isLoaded ? 'block' : 'none' }}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                display: isLoaded ? "block" : "none",
+              }}
               onLoad={() => setIsLoaded(true)}
               onError={() => setHasError(true)}
             />
           ) : isJsmpeg ? (
             <div
               ref={jsmpegCanvasRef}
-              style={{ width: '100%', height: '100%', background: '#000' }}
+              style={{ width: "100%", height: "100%", background: "#000" }}
             />
           ) : (
             <video
@@ -1101,7 +1312,7 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
               preload="auto"
               muted={isMuted}
               playsInline
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
               onClick={(e) => {
                 if (!isMobileDevice) {
                   togglePlay();
@@ -1111,7 +1322,9 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
                 }
               }}
             >
-              {isRtsp && <source src={cctv.streamUrl} type="application/x-rtsp" />}
+              {isRtsp && (
+                <source src={cctv.streamUrl} type="application/x-rtsp" />
+              )}
             </video>
           )}
         </div>
@@ -1125,135 +1338,217 @@ const MultiVideoCellPlayer: React.FC<MultiVideoCellPlayerProps> = ({ cctv, onCle
         )}
 
         {/* HUD Controls overlay */}
-        {isLoaded && !hasError && (!isMobileDevice || availableLevels.length >= 1) && (
-          <div className={`cell-hud ${showControls || !isPlaying ? 'active' : ''}`}>
-            <div className="cell-hud-bar">
-              {!isMobileDevice && (
-                <div className="cell-hud-left">
-                  {!isMjpeg && !isIframe && !isJsmpeg && (
-                    <button className="cell-hud-btn" onClick={togglePlay} title={isPlaying ? 'Jeda' : 'Putar'}>
-                      {isPlaying ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
-                    </button>
-                  )}
-                  {!isMjpeg && !isIframe && !isJsmpeg && (
-                    <div className="cell-volume-wrapper">
-                      <button className="cell-hud-btn" onClick={toggleMute} title={isMuted ? 'Bunyikan' : 'Bisukan'}>
-                        {isMuted ? <VolumeX size={12} /> : <Volume2 size={12} />}
+        {isLoaded &&
+          !hasError &&
+          (!isMobileDevice || availableLevels.length >= 1) && (
+            <div
+              className={`cell-hud ${showControls || !isPlaying ? "active" : ""}`}
+            >
+              <div className="cell-hud-bar">
+                {!isMobileDevice && (
+                  <div className="cell-hud-left">
+                    {!isMjpeg && !isIframe && !isJsmpeg && (
+                      <button
+                        className="cell-hud-btn"
+                        onClick={togglePlay}
+                        title={isPlaying ? "Jeda" : "Putar"}
+                      >
+                        {isPlaying ? (
+                          <Pause size={12} fill="currentColor" />
+                        ) : (
+                          <Play size={12} fill="currentColor" />
+                        )}
                       </button>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value={volume}
-                        onChange={handleVolumeChange}
-                        className="cell-volume-slider"
-                        title="Volume"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-              <div className="cell-hud-right" style={isMobileDevice ? { width: 'auto', justifyContent: 'center' } : {}}>
-                {!isMobileDevice && !isIframe && (
-                  <button className="cell-hud-btn" onClick={takeSnapshot} title="Ambil Foto">
-                    <Camera size={12} />
-                  </button>
-                )}
-                {availableLevels.length >= 1 && (
-                  <div className="quality-control-wrapper" style={{ position: 'relative' }}>
-                    <button
-                      type="button"
-                      className={`cell-hud-btn quality-btn ${showQualityMenu ? 'active' : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowQualityMenu(!showQualityMenu);
-                      }}
-                      title="Pilih Kualitas Video"
-                      aria-label="Pilih Kualitas Video"
-                    >
-                      <Settings size={12} className={showQualityMenu ? 'rotated-icon' : ''} />
-                      <span className="quality-label" style={{ fontSize: '10px', marginLeft: '3px', fontWeight: 500 }}>
-                        {currentLevelIndex === -1 
-                          ? `Auto${activePlayLevelIndex !== -1 && availableLevels[activePlayLevelIndex] ? ` (${availableLevels[activePlayLevelIndex].height || 'HD'})` : ''}` 
-                          : `${availableLevels[currentLevelIndex]?.height || 'HD'}p`}
-                      </span>
-                    </button>
-
-                    {showQualityMenu && (
-                      <div className="quality-menu-popup glass-panel">
-                        <div className="quality-menu-header">Resolusi</div>
+                    )}
+                    {!isMjpeg && !isIframe && !isJsmpeg && (
+                      <div className="cell-volume-wrapper">
                         <button
-                          type="button"
-                          className={`quality-menu-item ${currentLevelIndex === -1 ? 'active' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            changeLevel(-1);
-                          }}
+                          className="cell-hud-btn"
+                          onClick={toggleMute}
+                          title={isMuted ? "Bunyikan" : "Bisukan"}
                         >
-                          <span className="checkmark">{currentLevelIndex === -1 ? '✓' : ''}</span>
-                          <span>Otomatis (Auto)</span>
+                          {isMuted ? (
+                            <VolumeX size={12} />
+                          ) : (
+                            <Volume2 size={12} />
+                          )}
                         </button>
-                        {[...availableLevels]
-                          .map((level, idx) => ({ ...level, originalIdx: idx }))
-                          .sort((a, b) => b.height - a.height || b.bitrate - a.bitrate)
-                          .map((level) => (
-                            <button
-                              key={level.originalIdx}
-                              type="button"
-                              className={`quality-menu-item ${currentLevelIndex === level.originalIdx ? 'active' : ''}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                changeLevel(level.originalIdx);
-                              }}
-                            >
-                              <span className="checkmark">{currentLevelIndex === level.originalIdx ? '✓' : ''}</span>
-                              <span>{level.height ? `${level.height}p` : `Kualitas ${level.originalIdx + 1}`}</span>
-                            </button>
-                          ))
-                        }
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          value={volume}
+                          onChange={handleVolumeChange}
+                          className="cell-volume-slider"
+                          title="Volume"
+                        />
                       </div>
                     )}
                   </div>
                 )}
-                {!isMobileDevice && (
-                  <button className="cell-hud-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}>
-                    <Maximize size={12} />
-                  </button>
-                )}
+                <div
+                  className="cell-hud-right"
+                  style={
+                    isMobileDevice
+                      ? { width: "auto", justifyContent: "center" }
+                      : {}
+                  }
+                >
+                  {!isMobileDevice && !isIframe && (
+                    <button
+                      className="cell-hud-btn"
+                      onClick={takeSnapshot}
+                      title="Ambil Foto"
+                    >
+                      <Camera size={12} />
+                    </button>
+                  )}
+                  {availableLevels.length >= 1 && (
+                    <div
+                      className="quality-control-wrapper"
+                      style={{ position: "relative" }}
+                    >
+                      <button
+                        type="button"
+                        className={`cell-hud-btn quality-btn ${showQualityMenu ? "active" : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowQualityMenu(!showQualityMenu);
+                        }}
+                        title="Pilih Kualitas Video"
+                        aria-label="Pilih Kualitas Video"
+                      >
+                        <Settings
+                          size={12}
+                          className={showQualityMenu ? "rotated-icon" : ""}
+                        />
+                        <span
+                          className="quality-label"
+                          style={{
+                            fontSize: "10px",
+                            marginLeft: "3px",
+                            fontWeight: 500,
+                          }}
+                        >
+                          {currentLevelIndex === -1
+                            ? `Auto${activePlayLevelIndex !== -1 && availableLevels[activePlayLevelIndex] ? ` (${availableLevels[activePlayLevelIndex].height || "HD"})` : ""}`
+                            : `${availableLevels[currentLevelIndex]?.height || "HD"}p`}
+                        </span>
+                      </button>
+
+                      {showQualityMenu && (
+                        <div className="quality-menu-popup glass-panel">
+                          <div className="quality-menu-header">Resolusi</div>
+                          <button
+                            type="button"
+                            className={`quality-menu-item ${currentLevelIndex === -1 ? "active" : ""}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              changeLevel(-1);
+                            }}
+                          >
+                            <span className="checkmark">
+                              {currentLevelIndex === -1 ? "✓" : ""}
+                            </span>
+                            <span>Otomatis (Auto)</span>
+                          </button>
+                          {[...availableLevels]
+                            .map((level, idx) => ({
+                              ...level,
+                              originalIdx: idx,
+                            }))
+                            .sort(
+                              (a, b) =>
+                                b.height - a.height || b.bitrate - a.bitrate,
+                            )
+                            .map((level) => (
+                              <button
+                                key={level.originalIdx}
+                                type="button"
+                                className={`quality-menu-item ${currentLevelIndex === level.originalIdx ? "active" : ""}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  changeLevel(level.originalIdx);
+                                }}
+                              >
+                                <span className="checkmark">
+                                  {currentLevelIndex === level.originalIdx
+                                    ? "✓"
+                                    : ""}
+                                </span>
+                                <span>
+                                  {level.height
+                                    ? `${level.height}p`
+                                    : `Kualitas ${level.originalIdx + 1}`}
+                                </span>
+                              </button>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {!isMobileDevice && (
+                    <button
+                      className="cell-hud-btn"
+                      onClick={toggleFullscreen}
+                      title={
+                        isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"
+                      }
+                    >
+                      <Maximize size={12} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     </div>
   );
 };
 
 // Snapshot watermark helpers
-function drawWatermark(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, name: string) {
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+function drawWatermark(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  name: string,
+) {
+  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
   ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
-  ctx.fillStyle = '#10b981';
-  ctx.font = 'bold 16px Outfit, sans-serif';
-  ctx.fillText('NUSANTARA CCTV', 16, canvas.height - 18);
+  ctx.fillStyle = "#10b981";
+  ctx.font = "bold 16px Outfit, sans-serif";
+  ctx.fillText("PANTAU CCTV", 16, canvas.height - 18);
   const now = new Date();
-  const formattedTime = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID');
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '13px Inter, sans-serif';
-  ctx.fillText(`|  ${name.toUpperCase()}  |  ${formattedTime}`, 180, canvas.height - 18);
+  const formattedTime =
+    now.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }) +
+    " " +
+    now.toLocaleTimeString("id-ID");
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "13px Inter, sans-serif";
+  ctx.fillText(
+    `|  ${name.toUpperCase()}  |  ${formattedTime}`,
+    180,
+    canvas.height - 18,
+  );
 }
 
 function downloadCanvas(canvas: HTMLCanvasElement, name: string) {
   try {
-    const dataUrl = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.download = `CCTV_${name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.png`;
+    const dataUrl = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.download = `CCTV_${name.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.png`;
     link.href = dataUrl;
     link.click();
   } catch {
     /* CORS restriction on stream source */
-    alert('Gagal mengambil screenshot: batasan keamanan CORS pada server stream.');
+    alert(
+      "Gagal mengambil screenshot: batasan keamanan CORS pada server stream.",
+    );
   }
 }
 
@@ -1267,22 +1562,26 @@ interface MultiViewDashboardProps {
 export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
   cctvs,
   favorites,
-  onBackToMap
+  onBackToMap,
 }) => {
   const [gridSize, setGridSize] = useState<1 | 2 | 3 | 4>(2); // 1x1, 2x2, 3x3, 4x4
-  const [slotAssignments, setSlotAssignments] = useState<Record<number, string>>({});
+  const [slotAssignments, setSlotAssignments] = useState<
+    Record<number, string>
+  >({});
 
   const favoritedCCTVs = useMemo(() => {
-    return cctvs.filter(c => favorites.includes(c.id));
+    return cctvs.filter((c) => favorites.includes(c.id));
   }, [cctvs, favorites]);
 
   // Auto-populate empty slots with unassigned favorites
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional slot population on prop change
-    setSlotAssignments(prev => {
+    setSlotAssignments((prev) => {
       const newAssignments = { ...prev };
       const assignedIds = Object.values(newAssignments);
-      const unassignedFavs = favorites.filter(id => !assignedIds.includes(id));
+      const unassignedFavs = favorites.filter(
+        (id) => !assignedIds.includes(id),
+      );
 
       let unassignedIndex = 0;
       const totalSlots = gridSize * gridSize;
@@ -1309,14 +1608,14 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
   }, [favorites, gridSize]);
 
   const handleAssignCamera = (slotIndex: number, cctvId: string) => {
-    setSlotAssignments(prev => ({
+    setSlotAssignments((prev) => ({
       ...prev,
-      [slotIndex]: cctvId
+      [slotIndex]: cctvId,
     }));
   };
 
   const handleClearSlot = (slotIndex: number) => {
-    setSlotAssignments(prev => {
+    setSlotAssignments((prev) => {
       const updated = { ...prev };
       delete updated[slotIndex];
       return updated;
@@ -1329,10 +1628,30 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
     <div className="multiview-dashboard">
       <div className="multiview-header">
         <div className="grid-selector">
-          <button className={`grid-btn ${gridSize === 1 ? 'active' : ''}`} onClick={() => setGridSize(1)}>1x1</button>
-          <button className={`grid-btn ${gridSize === 2 ? 'active' : ''}`} onClick={() => setGridSize(2)}>2x2</button>
-          <button className={`grid-btn ${gridSize === 3 ? 'active' : ''}`} onClick={() => setGridSize(3)}>3x3</button>
-          <button className={`grid-btn ${gridSize === 4 ? 'active' : ''}`} onClick={() => setGridSize(4)}>4x4</button>
+          <button
+            className={`grid-btn ${gridSize === 1 ? "active" : ""}`}
+            onClick={() => setGridSize(1)}
+          >
+            1x1
+          </button>
+          <button
+            className={`grid-btn ${gridSize === 2 ? "active" : ""}`}
+            onClick={() => setGridSize(2)}
+          >
+            2x2
+          </button>
+          <button
+            className={`grid-btn ${gridSize === 3 ? "active" : ""}`}
+            onClick={() => setGridSize(3)}
+          >
+            3x3
+          </button>
+          <button
+            className={`grid-btn ${gridSize === 4 ? "active" : ""}`}
+            onClick={() => setGridSize(4)}
+          >
+            4x4
+          </button>
         </div>
 
         <button className="btn-secondary back-map-btn" onClick={onBackToMap}>
@@ -1345,7 +1664,10 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
         <div className="multiview-empty-dashboard">
           <Heart size={48} className="empty-heart-icon animate-pulse-slow" />
           <h3>Belum Ada Kamera Terfavorit</h3>
-          <p>Tambahkan kamera CCTV ke daftar favorit Anda di peta untuk memantau beberapa stream sekaligus di sini.</p>
+          <p>
+            Tambahkan kamera CCTV ke daftar favorit Anda di peta untuk memantau
+            beberapa stream sekaligus di sini.
+          </p>
           <button className="btn-primary" onClick={onBackToMap}>
             Kembali ke Peta & Cari CCTV
           </button>
@@ -1354,28 +1676,40 @@ export const MultiViewDashboard: React.FC<MultiViewDashboardProps> = ({
         <div className={`multiview-grid grid-${gridSize}x${gridSize}`}>
           {Array.from({ length: totalSlots }).map((_, index) => {
             const assignedId = slotAssignments[index];
-            const assignedCCTV = assignedId ? favoritedCCTVs.find((c: CCTV) => c.id === assignedId) : null;
+            const assignedCCTV = assignedId
+              ? favoritedCCTVs.find((c: CCTV) => c.id === assignedId)
+              : null;
 
             return (
               <div key={index} className="multiview-grid-cell">
                 {assignedCCTV ? (
-                  <MultiVideoCellPlayer 
-                    cctv={assignedCCTV} 
-                    onClear={() => handleClearSlot(index)} 
+                  <MultiVideoCellPlayer
+                    cctv={assignedCCTV}
+                    onClear={() => handleClearSlot(index)}
                   />
                 ) : (
                   <div className="empty-cell-placeholder">
                     <Heart size={20} className="empty-cell-icon" />
-                    <span className="empty-cell-text">Slot {index + 1} Kosong</span>
-                    
+                    <span className="empty-cell-text">
+                      Slot {index + 1} Kosong
+                    </span>
+
                     <select
                       className="empty-cell-select"
-                      onChange={(e) => e.target.value && handleAssignCamera(index, e.target.value)}
+                      onChange={(e) =>
+                        e.target.value &&
+                        handleAssignCamera(index, e.target.value)
+                      }
                       defaultValue=""
                     >
-                      <option value="" disabled>Pilih CCTV Favorit...</option>
+                      <option value="" disabled>
+                        Pilih CCTV Favorit...
+                      </option>
                       {favoritedCCTVs
-                        .filter((c: CCTV) => !Object.values(slotAssignments).includes(c.id))
+                        .filter(
+                          (c: CCTV) =>
+                            !Object.values(slotAssignments).includes(c.id),
+                        )
                         .map((c: CCTV) => (
                           <option key={c.id} value={c.id}>
                             {c.name} ({c.city})

@@ -1,64 +1,106 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, prefer-const, react-hooks/set-state-in-effect */
-import React, { useRef, useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Tooltip, ZoomControl } from 'react-leaflet';
-import * as L from 'leaflet';
-import Hls, { XhrLoader, Level } from 'hls.js';
-import { type User } from 'firebase/auth';
+import React, { useRef, useEffect, useState } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap,
+  Tooltip,
+  ZoomControl,
+} from "react-leaflet";
+import * as L from "leaflet";
+import Hls, { XhrLoader, Level } from "hls.js";
+import { type User } from "firebase/auth";
 
 class PlaylistLoader extends XhrLoader {
   load(context: any, config: any, callbacks: any) {
     const originalOnSuccess = callbacks.onSuccess;
-    callbacks.onSuccess = function(response: any, stats: any, ctx: any, networkDetails: any) {
-      if (typeof response.data === 'string' && ctx.url.includes('bandarlampung-stream')) {
+    callbacks.onSuccess = function (
+      response: any,
+      stats: any,
+      ctx: any,
+      networkDetails: any,
+    ) {
+      if (
+        typeof response.data === "string" &&
+        ctx.url.includes("bandarlampung-stream")
+      ) {
         let playlistText = response.data;
-        playlistText = playlistText.replace(/https:\/\/sliceseribuwajah\.bandarlampungkota\.go\.id\//g, '/bandarlampung-stream/');
-        playlistText = playlistText.replace(/\/resource\//g, '/bandarlampung-stream/resource/');
+        playlistText = playlistText.replace(
+          /https:\/\/sliceseribuwajah\.bandarlampungkota\.go\.id\//g,
+          "/bandarlampung-stream/",
+        );
+        playlistText = playlistText.replace(
+          /\/resource\//g,
+          "/bandarlampung-stream/resource/",
+        );
         response.data = playlistText;
       }
       originalOnSuccess(response, stats, ctx, networkDetails);
     };
 
-    if (context.url.includes('.m3u8') || context.url.includes('bandarlampung-stream')) {
+    if (
+      context.url.includes(".m3u8") ||
+      context.url.includes("bandarlampung-stream")
+    ) {
       const isBanyuwangi =
-        context.url.includes('bwi-hls') ||
-        context.url.includes('live.banyuwangikab.go.id');
+        context.url.includes("bwi-hls") ||
+        context.url.includes("live.banyuwangikab.go.id");
 
       if (isBanyuwangi) {
         // Extract raw stream ID from URL path, e.g. /bwi-hls/37/index.m3u8 → "37"
         const match = context.url.match(/\/(?:bwi-hls|hls)\/(\d+)\//);
-        const rawId = match ? match[1] : '0';
+        const rawId = match ? match[1] : "0";
         const epochSec = Math.floor(Date.now() / 1000);
         // Strip any existing t= or _ts= params to avoid accumulation
         let cleanUrl = context.url
-          .replace(/[?&]t=[^&]+/, '')
-          .replace(/[?&]_ts=[^&]+/, '');
-        const sep = cleanUrl.includes('?') ? '&' : '?';
+          .replace(/[?&]t=[^&]+/, "")
+          .replace(/[?&]_ts=[^&]+/, "");
+        const sep = cleanUrl.includes("?") ? "&" : "?";
         // Use the server's native cache-bypass format: ?t=<rawId>-<epochSeconds>
         context.url = `${cleanUrl}${sep}t=${rawId}-${epochSec}`;
       } else {
         // For all other cities, use a standard _ts param cache buster
-        let cleanUrl = context.url.replace(/[?&]_ts=[^&]+/, '');
-        const sep = cleanUrl.includes('?') ? '&' : '?';
+        let cleanUrl = context.url.replace(/[?&]_ts=[^&]+/, "");
+        const sep = cleanUrl.includes("?") ? "&" : "?";
         context.url = `${cleanUrl}${sep}_ts=${Date.now()}`;
       }
     }
     super.load(context, config, callbacks);
   }
 }
-import flvjs from 'flv.js';
-import JSMpeg from '@cycjimmy/jsmpeg-player';
-import type { CCTV } from '../data/cctvData';
-import { Play, Pause, Volume2, VolumeX, Maximize, Camera, MapPin, Tag, X, Radio, Heart, Settings } from 'lucide-react';
-import 'leaflet/dist/leaflet.css';
+import flvjs from "flv.js";
+import JSMpeg from "@cycjimmy/jsmpeg-player";
+import type { CCTV } from "../data/cctvData";
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  Camera,
+  MapPin,
+  Tag,
+  X,
+  Radio,
+  Heart,
+  Settings,
+} from "lucide-react";
+import "leaflet/dist/leaflet.css";
 
-const isMobileDevice = typeof window !== 'undefined' && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-
+const isMobileDevice =
+  typeof window !== "undefined" &&
+  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
 // Create CCTV camera pin marker icon (SVG-based)
-const createCCTVMarker = (status: 'online' | 'offline', showAnimation = true) => {
-  const isOnline = status === 'online';
-  const pinColor = isOnline ? '#3b82f6' : '#ef4444';
-  const pinColorDark = isOnline ? '#2563eb' : '#dc2626';
+const createCCTVMarker = (
+  status: "online" | "offline",
+  showAnimation = true,
+) => {
+  const isOnline = status === "online";
+  const pinColor = isOnline ? "#3b82f6" : "#ef4444";
+  const pinColorDark = isOnline ? "#2563eb" : "#dc2626";
 
   return L.divIcon({
     html: `
@@ -75,46 +117,50 @@ const createCCTVMarker = (status: 'online' | 'offline', showAnimation = true) =>
             <circle cx="5.5" cy="6.5" r="2" fill="white" opacity="0.7"/>
           </g>
         </svg>
-        ${isOnline && showAnimation ? '<div class="cctv-pin-pulse"></div>' : ''}
+        ${isOnline && showAnimation ? '<div class="cctv-pin-pulse"></div>' : ""}
       </div>
     `,
-    className: 'custom-cctv-marker',
+    className: "custom-cctv-marker",
     iconSize: [32, 42],
     iconAnchor: [16, 42],
-    popupAnchor: [0, -42]
+    popupAnchor: [0, -42],
   });
 };
 
 // Pre-created static marker icon instances to prevent recreating icons on every single render cycle.
-const ONLINE_ICON = createCCTVMarker('online', true);
-const OFFLINE_ICON = createCCTVMarker('offline', true);
-const ONLINE_ICON_NO_ANIM = createCCTVMarker('online', false);
-const OFFLINE_ICON_NO_ANIM = createCCTVMarker('offline', false);
+const ONLINE_ICON = createCCTVMarker("online", true);
+const OFFLINE_ICON = createCCTVMarker("offline", true);
+const ONLINE_ICON_NO_ANIM = createCCTVMarker("online", false);
+const OFFLINE_ICON_NO_ANIM = createCCTVMarker("offline", false);
 
-const createCCTVDotMarker = (status: 'online' | 'offline', showAnimation = true) => {
-  const isOnline = status === 'online';
-  const dotColor = isOnline ? '#3b82f6' : '#ef4444';
-  const pulseClass = isOnline ? 'cctv-dot-pulse-online' : 'cctv-dot-pulse-offline';
+const createCCTVDotMarker = (
+  status: "online" | "offline",
+  showAnimation = true,
+) => {
+  const isOnline = status === "online";
+  const dotColor = isOnline ? "#3b82f6" : "#ef4444";
+  const pulseClass = isOnline
+    ? "cctv-dot-pulse-online"
+    : "cctv-dot-pulse-offline";
 
   return L.divIcon({
     html: `
       <div class="cctv-dot-marker">
         <div class="cctv-dot-core" style="background-color: ${dotColor}"></div>
-        ${showAnimation ? `<div class="cctv-dot-pulse ${pulseClass}" style="border-color: ${dotColor}"></div>` : ''}
+        ${showAnimation ? `<div class="cctv-dot-pulse ${pulseClass}" style="border-color: ${dotColor}"></div>` : ""}
       </div>
     `,
-    className: 'custom-cctv-dot',
+    className: "custom-cctv-dot",
     iconSize: [16, 16],
     iconAnchor: [8, 8],
-    popupAnchor: [0, -8]
+    popupAnchor: [0, -8],
   });
 };
 
-const ONLINE_DOT_ICON = createCCTVDotMarker('online', true);
-const OFFLINE_DOT_ICON = createCCTVDotMarker('offline', true);
-const ONLINE_DOT_ICON_NO_ANIM = createCCTVDotMarker('online', false);
-const OFFLINE_DOT_ICON_NO_ANIM = createCCTVDotMarker('offline', false);
-
+const ONLINE_DOT_ICON = createCCTVDotMarker("online", true);
+const OFFLINE_DOT_ICON = createCCTVDotMarker("offline", true);
+const ONLINE_DOT_ICON_NO_ANIM = createCCTVDotMarker("online", false);
+const OFFLINE_DOT_ICON_NO_ANIM = createCCTVDotMarker("offline", false);
 
 interface MapControllerProps {
   lat: number;
@@ -135,7 +181,7 @@ const MapController: React.FC<MapControllerProps> = ({
   watchingCCTV,
   selectedCCTV,
   isPlayerFullscreen,
-  isPlayerRotated
+  isPlayerRotated,
 }) => {
   const map = useMap();
 
@@ -153,20 +199,22 @@ const MapController: React.FC<MapControllerProps> = ({
 
   useEffect(() => {
     const handle = requestAnimationFrame(() => {
-      const isOffsetActive = watchingCCTVRef.current && !isPlayerFullscreenRef.current && !isPlayerRotatedRef.current;
+      const isOffsetActive =
+        watchingCCTVRef.current &&
+        !isPlayerFullscreenRef.current &&
+        !isPlayerRotatedRef.current;
 
-      
       if (selectedCCTVRef.current || watchingCCTVRef.current) {
         const liveZoom = map.getZoom();
-        
+
         if (isOffsetActive) {
           const mapHeight = map.getSize().y;
           const targetLatLng = L.latLng(lat, lng);
-          
+
           const Y_target = (() => {
-            const overlay = document.querySelector('.map-video-overlay');
+            const overlay = document.querySelector(".map-video-overlay");
             const container = map.getContainer();
-            
+
             if (overlay && container) {
               const rect = overlay.getBoundingClientRect();
               const containerRect = container.getBoundingClientRect();
@@ -186,9 +234,11 @@ const MapController: React.FC<MapControllerProps> = ({
           })();
 
           const targetPoint = map.project(targetLatLng, liveZoom);
-          const centerPoint = targetPoint.add(L.point(0, (mapHeight / 2) - Y_target));
+          const centerPoint = targetPoint.add(
+            L.point(0, mapHeight / 2 - Y_target),
+          );
           const centerLatLng = map.unproject(centerPoint, liveZoom);
-          
+
           map.setView(centerLatLng, liveZoom, { animate: true });
         } else {
           map.setView([lat, lng], liveZoom, { animate: true });
@@ -199,7 +249,17 @@ const MapController: React.FC<MapControllerProps> = ({
     });
 
     return () => cancelAnimationFrame(handle);
-  }, [lat, lng, zoom, timestamp, watchingCCTV, selectedCCTV, isPlayerFullscreen, isPlayerRotated, map]);
+  }, [
+    lat,
+    lng,
+    zoom,
+    timestamp,
+    watchingCCTV,
+    selectedCCTV,
+    isPlayerFullscreen,
+    isPlayerRotated,
+    map,
+  ]);
 
   useEffect(() => {
     map.invalidateSize();
@@ -209,7 +269,7 @@ const MapController: React.FC<MapControllerProps> = ({
 
     const container = map.getContainer();
     let ro: ResizeObserver | null = null;
-    if (container && typeof ResizeObserver !== 'undefined') {
+    if (container && typeof ResizeObserver !== "undefined") {
       ro = new ResizeObserver(() => {
         map.invalidateSize();
       });
@@ -239,7 +299,9 @@ const PopupCloser: React.FC<{ watching: CCTV | null }> = ({ watching }) => {
 };
 
 // Component to track map instance for parent access
-const MapInstanceTracker: React.FC<{ onMapReady: (map: L.Map) => void }> = ({ onMapReady }) => {
+const MapInstanceTracker: React.FC<{ onMapReady: (map: L.Map) => void }> = ({
+  onMapReady,
+}) => {
   const map = useMap();
   useEffect(() => {
     onMapReady(map);
@@ -252,7 +314,10 @@ interface MapBoundsTrackerProps {
   onZoomChange: (zoom: number) => void;
 }
 
-const MapBoundsTracker: React.FC<MapBoundsTrackerProps> = ({ onBoundsChange, onZoomChange }) => {
+const MapBoundsTracker: React.FC<MapBoundsTrackerProps> = ({
+  onBoundsChange,
+  onZoomChange,
+}) => {
   const map = useMap();
 
   useEffect(() => {
@@ -264,12 +329,12 @@ const MapBoundsTracker: React.FC<MapBoundsTrackerProps> = ({ onBoundsChange, onZ
       onZoomChange(map.getZoom());
     };
 
-    map.on('moveend', handleMapChange);
-    map.on('zoomend', handleMapChange);
+    map.on("moveend", handleMapChange);
+    map.on("zoomend", handleMapChange);
 
     return () => {
-      map.off('moveend', handleMapChange);
-      map.off('zoomend', handleMapChange);
+      map.off("moveend", handleMapChange);
+      map.off("zoomend", handleMapChange);
     };
   }, [map, onBoundsChange, onZoomChange]);
 
@@ -292,13 +357,13 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
   isFavorite,
   onToggleFavorite,
   onFullscreenChange,
-  onRotationChange
+  onRotationChange,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const jsmpegCanvasRef = useRef<HTMLDivElement>(null);
   const jsmpegPlayerRef = useRef<any>(null);
-  
+
   const hlsRef = useRef<Hls | null>(null);
   const [availableLevels, setAvailableLevels] = useState<Level[]>([]);
   const [currentLevelIndex, setCurrentLevelIndex] = useState<number>(-1); // -1 is Auto
@@ -320,7 +385,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
 
   const viewportContainerRef = useRef<HTMLDivElement>(null);
   const togglePlayRef = useRef<() => void>(() => {});
-  
+
   const zoomScaleRef = useRef(1);
   const panOffsetRef = useRef({ x: 0, y: 0 });
   const touchStateRef = useRef({
@@ -335,14 +400,14 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     currentX: 0,
     currentY: 0,
     isSwipe: false,
-    gestureOccurred: false
+    gestureOccurred: false,
   });
   const mouseStateRef = useRef({
     isDragging: false,
     startX: 0,
     startY: 0,
     initialPan: { x: 0, y: 0 },
-    dragOccurred: false
+    dragOccurred: false,
   });
 
   // Sync refs with state changes
@@ -390,15 +455,15 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
   useEffect(() => {
     if (!isRotated) return;
 
-    window.history.pushState({ rotated: true }, '');
+    window.history.pushState({ rotated: true }, "");
 
     const handlePopState = () => {
       setIsRotated(false);
     };
 
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener("popstate", handlePopState);
     return () => {
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener("popstate", handlePopState);
       if (window.history.state && window.history.state.rotated) {
         window.history.back();
       }
@@ -412,15 +477,15 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
 
     const width = el.clientWidth;
     const height = el.clientHeight;
-    
+
     // local bounds are always determined by layout width and height, independent of rotation
     const maxPanX = (width * (zoomScale - 1)) / (2 * zoomScale);
     const maxPanY = (height * (zoomScale - 1)) / (2 * zoomScale);
 
-    setPanOffset(prev => {
+    setPanOffset((prev) => {
       const clampedX = Math.min(Math.max(prev.x, -maxPanX), maxPanX);
       const clampedY = Math.min(Math.max(prev.y, -maxPanY), maxPanY);
-      
+
       if (clampedX !== prev.x || clampedY !== prev.y) {
         return { x: clampedX, y: clampedY };
       }
@@ -454,7 +519,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           state.isSwipe = false;
           state.initialCenter = {
             x: e.touches[0].clientX,
-            y: e.touches[0].clientY
+            y: e.touches[0].clientY,
           };
           state.initialPan = { ...currentPan };
         } else {
@@ -468,14 +533,14 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         state.isPanning = false;
         state.isSwipe = false;
         state.gestureOccurred = true;
-        
+
         const t1 = e.touches[0];
         const t2 = e.touches[1];
-        
+
         const dx = t1.clientX - t2.clientX;
         const dy = t1.clientY - t2.clientY;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        
+
         state.initialDistance = dist;
         state.initialScale = currentScale;
         state.initialPan = { ...currentPan };
@@ -488,43 +553,50 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       if (state.isPinching && e.touches.length === 2) {
         if (e.cancelable) e.preventDefault();
         state.gestureOccurred = true;
-        
+
         const t1 = e.touches[0];
         const t2 = e.touches[1];
-        
+
         const dx = t1.clientX - t2.clientX;
         const dy = t1.clientY - t2.clientY;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        
+
         const initialDist = state.initialDistance;
         if (initialDist > 0) {
           const factor = dist / initialDist;
-          const newScale = Math.min(Math.max(state.initialScale * factor, 1), 4);
+          const newScale = Math.min(
+            Math.max(state.initialScale * factor, 1),
+            4,
+          );
           setZoomScale(newScale);
-          
+
           if (newScale === 1) {
             setPanOffset({ x: 0, y: 0 });
           }
         }
-      } else if (state.isPanning && e.touches.length === 1 && currentScale > 1) {
+      } else if (
+        state.isPanning &&
+        e.touches.length === 1 &&
+        currentScale > 1
+      ) {
         if (e.cancelable) e.preventDefault();
         state.gestureOccurred = true;
-        
+
         const clientX = e.touches[0].clientX;
         const clientY = e.touches[0].clientY;
 
         state.currentX = clientX;
         state.currentY = clientY;
-        
+
         const dx = clientX - state.initialCenter.x;
         const dy = clientY - state.initialCenter.y;
-        
+
         const width = el.clientWidth;
         const height = el.clientHeight;
 
         const maxPanX = (width * (currentScale - 1)) / (2 * currentScale);
         const maxPanY = (height * (currentScale - 1)) / (2 * currentScale);
-        
+
         let targetX: number;
         let targetY: number;
 
@@ -537,15 +609,19 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           targetX = state.initialPan.x + dx / currentScale;
           targetY = state.initialPan.y + dy / currentScale;
         }
-        
+
         const boundedX = Math.min(Math.max(targetX, -maxPanX), maxPanX);
         const boundedY = Math.min(Math.max(targetY, -maxPanY), maxPanY);
 
         setPanOffset({
           x: boundedX,
-          y: boundedY
+          y: boundedY,
         });
-      } else if (state.isSwipe && e.touches.length === 1 && currentScale === 1) {
+      } else if (
+        state.isSwipe &&
+        e.touches.length === 1 &&
+        currentScale === 1
+      ) {
         const clientY = e.touches[0].clientY;
         const dy = clientY - state.startY;
         if (Math.abs(dy) > 10) {
@@ -560,10 +636,10 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     const onTouchEnd = (e: TouchEvent) => {
       setIsTouching(false);
       const currentScale = zoomScaleRef.current;
-      
+
       const dx = state.currentX - state.startX;
       const dy = state.currentY - state.startY;
-      
+
       if (!state.gestureOccurred && Math.abs(dx) < 10 && Math.abs(dy) < 10) {
         if (e.cancelable) {
           e.preventDefault();
@@ -588,16 +664,16 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       state.isSwipe = false;
     };
 
-    el.addEventListener('touchstart', onTouchStart, { passive: true });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd, { passive: false });
-    el.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: false });
+    el.addEventListener("touchcancel", onTouchEnd, { passive: true });
 
     return () => {
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-      el.removeEventListener('touchcancel', onTouchEnd);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
     };
   }, []);
 
@@ -612,9 +688,10 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       e.preventDefault();
       const currentScale = zoomScaleRef.current;
       const zoomFactor = 0.25;
-      const newScale = e.deltaY < 0
-        ? Math.min(currentScale + zoomFactor, 4)
-        : Math.max(currentScale - zoomFactor, 1);
+      const newScale =
+        e.deltaY < 0
+          ? Math.min(currentScale + zoomFactor, 4)
+          : Math.max(currentScale - zoomFactor, 1);
 
       if (newScale !== currentScale) {
         setZoomScale(newScale);
@@ -678,7 +755,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
 
       setPanOffset({
         x: boundedX,
-        y: boundedY
+        y: boundedY,
       });
     };
 
@@ -700,30 +777,46 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       }
     };
 
-    el.addEventListener('wheel', onWheel, { passive: false });
-    el.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp, { capture: true });
-    el.addEventListener('mouseleave', onMouseLeave);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp, { capture: true });
+    el.addEventListener("mouseleave", onMouseLeave);
 
     return () => {
-      el.removeEventListener('wheel', onWheel);
-      el.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp, { capture: true });
-      el.removeEventListener('mouseleave', onMouseLeave);
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp, { capture: true });
+      el.removeEventListener("mouseleave", onMouseLeave);
     };
   }, []);
 
-  const isMjpeg = cctv.streamUrl.includes('nph-zms') || cctv.streamUrl.includes('cgi-bin/nph-zms') || cctv.streamUrl.includes('jombangkab.go.id');
-  const isJsmpeg = cctv.streamUrl.includes('streamer-jsmpeg') || cctv.streamUrl.includes('villabs.id/streamer');
-  const isFlv = !isJsmpeg && (cctv.streamUrl.startsWith('wss://') || cctv.streamUrl.startsWith('ws://') || cctv.streamUrl.endsWith('.flv'));
-  const isYoutube = cctv.streamUrl.includes('youtube.com') || cctv.streamUrl.includes('youtu.be');
-  const isIframe = isYoutube || cctv.streamUrl.includes('smartcctv.wonogirikab.go.id') || cctv.streamUrl.includes('.html');
-  const isMp4 = cctv.streamUrl.includes('.mp4');
-  const isPurwakarta = cctv.id.startsWith('purwakarta-');
-  const isRtsp = cctv.streamUrl.startsWith('rtsp://');
-  const uniqueVideoIdRef = useRef(`video-player-${cctv.id}-${Math.floor(Math.random() * 1000000)}`);
+  const isMjpeg =
+    cctv.streamUrl.includes("nph-zms") ||
+    cctv.streamUrl.includes("cgi-bin/nph-zms") ||
+    cctv.streamUrl.includes("jombangkab.go.id");
+  const isJsmpeg =
+    cctv.streamUrl.includes("streamer-jsmpeg") ||
+    cctv.streamUrl.includes("villabs.id/streamer");
+  const isFlv =
+    !isJsmpeg &&
+    (cctv.streamUrl.startsWith("wss://") ||
+      cctv.streamUrl.startsWith("ws://") ||
+      cctv.streamUrl.endsWith(".flv"));
+  const isYoutube =
+    cctv.streamUrl.includes("youtube.com") ||
+    cctv.streamUrl.includes("youtu.be");
+  const isIframe =
+    isYoutube ||
+    cctv.streamUrl.includes("smartcctv.wonogirikab.go.id") ||
+    cctv.streamUrl.includes(".html");
+  const isMp4 = cctv.streamUrl.includes(".mp4");
+  const isPurwakarta = cctv.id.startsWith("purwakarta-");
+  const isRtsp = cctv.streamUrl.startsWith("rtsp://");
+  const uniqueVideoIdRef = useRef(
+    `video-player-${cctv.id}-${Math.floor(Math.random() * 1000000)}`,
+  );
   const uniqueVideoId = uniqueVideoIdRef.current;
 
   // Initialize Video Player (HLS or FLV)
@@ -731,7 +824,13 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     let active = true;
     const cleanups: (() => void)[] = [];
 
-    if (cctv.status === 'offline' || (isIframe && (cctv.streamUrl === 'https://www.youtube.com/embed/' || cctv.streamUrl.endsWith('/embed/') || cctv.streamUrl === ''))) {
+    if (
+      cctv.status === "offline" ||
+      (isIframe &&
+        (cctv.streamUrl === "https://www.youtube.com/embed/" ||
+          cctv.streamUrl.endsWith("/embed/") ||
+          cctv.streamUrl === ""))
+    ) {
       setHasError(true);
       setIsLoaded(true);
       return;
@@ -749,33 +848,33 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     if (isJsmpeg) {
       const wrapper = jsmpegCanvasRef.current;
       if (!wrapper) return;
-      wrapper.innerHTML = '';
+      wrapper.innerHTML = "";
 
       try {
         const player = new (JSMpeg as any).VideoElement(
           wrapper,
           cctv.streamUrl,
           {
-            canvas: '',
+            canvas: "",
             autoplay: true,
             control: false,
             loop: false,
             decodeFirstFrame: true,
-            poster: '',
+            poster: "",
             hooks: {
               load: () => {
                 if (active) {
                   setIsLoaded(true);
                   setIsPlaying(true);
                 }
-              }
-            }
+              },
+            },
           },
           {
             video: { preserveDrawingBuffer: true },
             audio: false,
-            disableWebAssembly: false
-          }
+            disableWebAssembly: false,
+          },
         );
         jsmpegPlayerRef.current = player;
 
@@ -796,7 +895,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           jsmpegPlayerRef.current = null;
         };
       } catch (e) {
-        console.error('Failed to init JSMpeg player:', e);
+        console.error("Failed to init JSMpeg player:", e);
         setHasError(true);
         setIsLoaded(true);
         return;
@@ -807,7 +906,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       const video = videoRef.current;
       if (!video) return;
 
-      const camId = cctv.id.replace('purwakarta-', '');
+      const camId = cctv.id.replace("purwakarta-", "");
       const wsUrl = `wss://cctv.purwakartakab.go.id/go2rtc/api/ws?src=${camId}`;
 
       let ws: WebSocket | null = null;
@@ -818,9 +917,22 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       const buffer = new Uint8Array(2 * 1024 * 1024);
       let bufferLength = 0;
 
-      const codecs = ["avc1.640029", "avc1.64002A", "avc1.640033", "hvc1.1.6.L153.B0", "mp4a.40.2", "mp4a.40.5", "flac", "opus"];
+      const codecs = [
+        "avc1.640029",
+        "avc1.64002A",
+        "avc1.640033",
+        "hvc1.1.6.L153.B0",
+        "mp4a.40.2",
+        "mp4a.40.5",
+        "flac",
+        "opus",
+      ];
       const getSupportedCodecs = () => {
-        return codecs.filter(codec => MediaSource.isTypeSupported(`video/mp4; codecs="${codec}"`)).join(',');
+        return codecs
+          .filter((codec) =>
+            MediaSource.isTypeSupported(`video/mp4; codecs="${codec}"`),
+          )
+          .join(",");
       };
 
       const cleanup = () => {
@@ -838,7 +950,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         ms = null;
         sb = null;
         try {
-          video.src = '';
+          video.src = "";
           video.srcObject = null;
         } catch {
           // Ignore error on resetting video sources
@@ -851,100 +963,117 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         ms = new MediaSource();
         video.src = URL.createObjectURL(ms);
 
-        ms.addEventListener('sourceopen', () => {
-          if (!active || !ms) return;
-          URL.revokeObjectURL(video.src);
-
-          ws = new WebSocket(wsUrl);
-          ws.binaryType = 'arraybuffer';
-
-          ws.onopen = () => {
-            if (!active || !ws) return;
-            ws.send(JSON.stringify({ type: 'mse', value: getSupportedCodecs() }));
-          };
-
-          ws.onmessage = (event) => {
+        ms.addEventListener(
+          "sourceopen",
+          () => {
             if (!active || !ms) return;
-            if (typeof event.data === 'string') {
-              const msg = JSON.parse(event.data);
-              if (msg.type === 'mse' && msg.value && ms.readyState === 'open') {
-                try {
-                  sb = ms.addSourceBuffer(msg.value);
-                  sb.mode = 'segments';
-                  sb.addEventListener('updateend', () => {
-                    if (!active || !sb || !ms || ms.readyState !== 'open') return;
-                    if (!sb.updating && bufferLength > 0) {
+            URL.revokeObjectURL(video.src);
+
+            ws = new WebSocket(wsUrl);
+            ws.binaryType = "arraybuffer";
+
+            ws.onopen = () => {
+              if (!active || !ws) return;
+              ws.send(
+                JSON.stringify({ type: "mse", value: getSupportedCodecs() }),
+              );
+            };
+
+            ws.onmessage = (event) => {
+              if (!active || !ms) return;
+              if (typeof event.data === "string") {
+                const msg = JSON.parse(event.data);
+                if (
+                  msg.type === "mse" &&
+                  msg.value &&
+                  ms.readyState === "open"
+                ) {
+                  try {
+                    sb = ms.addSourceBuffer(msg.value);
+                    sb.mode = "segments";
+                    sb.addEventListener("updateend", () => {
+                      if (!active || !sb || !ms || ms.readyState !== "open")
+                        return;
+                      if (!sb.updating && bufferLength > 0) {
+                        try {
+                          sb.appendBuffer(buffer.slice(0, bufferLength));
+                          bufferLength = 0;
+                        } catch (e) {
+                          console.warn(
+                            "[PurwakartaPlayer] appendBuffer error:",
+                            e,
+                          );
+                        }
+                      }
                       try {
-                        sb.appendBuffer(buffer.slice(0, bufferLength));
-                        bufferLength = 0;
-                      } catch (e) {
-                        console.warn('[PurwakartaPlayer] appendBuffer error:', e);
+                        if (!sb.updating && sb.buffered && sb.buffered.length) {
+                          const end = sb.buffered.end(sb.buffered.length - 1);
+                          const start = sb.buffered.start(0);
+                          const cleanStart = end - 2;
+                          if (cleanStart > start && !sb.updating) {
+                            sb.remove(start, cleanStart);
+                            ms.setLiveSeekableRange(cleanStart, end);
+                          }
+                          const latency = end - video.currentTime;
+                          if (latency > 4.0) {
+                            video.currentTime = end - 1.0;
+                          }
+                          if (latency > 2.0) {
+                            video.playbackRate = 1.15;
+                          } else if (latency < 1.0) {
+                            video.playbackRate = 1.0;
+                          }
+                        }
+                      } catch {
+                        // Ignore error during buffer latency check
                       }
-                    }
-                    try {
-                      if (!sb.updating && sb.buffered && sb.buffered.length) {
-                        const end = sb.buffered.end(sb.buffered.length - 1);
-                        const start = sb.buffered.start(0);
-                        const cleanStart = end - 2;
-                        if (cleanStart > start && !sb.updating) {
-                          sb.remove(start, cleanStart);
-                          ms.setLiveSeekableRange(cleanStart, end);
-                        }
-                        const latency = end - video.currentTime;
-                        if (latency > 4.0) {
-                          video.currentTime = end - 1.0;
-                        }
-                        if (latency > 2.0) {
-                          video.playbackRate = 1.15;
-                        } else if (latency < 1.0) {
-                          video.playbackRate = 1.0;
-                        }
-                      }
-                    } catch {
-                      // Ignore error during buffer latency check
-                    }
+                    });
+                  } catch (e: any) {
+                    console.warn(
+                      "[PurwakartaPlayer] addSourceBuffer:",
+                      e.message,
+                    );
+                  }
+                }
+              } else if (sb) {
+                if (!isPlayingStarted) {
+                  isPlayingStarted = true;
+                  video.play().catch(() => {
+                    video.muted = true;
+                    video.play().catch(() => {});
                   });
-                } catch (e: any) {
-                  console.warn('[PurwakartaPlayer] addSourceBuffer:', e.message);
+                }
+                if (sb.updating || bufferLength > 0) {
+                  const data = new Uint8Array(event.data);
+                  buffer.set(data, bufferLength);
+                  bufferLength += data.byteLength;
+                } else {
+                  try {
+                    sb.appendBuffer(event.data);
+                  } catch (e) {
+                    console.warn("[PurwakartaPlayer] direct append error:", e);
+                  }
                 }
               }
-            } else if (sb) {
-              if (!isPlayingStarted) {
-                isPlayingStarted = true;
-                video.play().catch(() => {
-                  video.muted = true;
-                  video.play().catch(() => {});
-                });
-              }
-              if (sb.updating || bufferLength > 0) {
-                const data = new Uint8Array(event.data);
-                buffer.set(data, bufferLength);
-                bufferLength += data.byteLength;
-              } else {
-                try {
-                  sb.appendBuffer(event.data);
-                } catch (e) {
-                  console.warn('[PurwakartaPlayer] direct append error:', e);
-                }
-              }
-            }
-          };
+            };
 
-          ws.onclose = () => {
-            if (!active) return;
-            reconnectTID = setTimeout(() => {
-              cleanup();
-              connect();
-            }, 3000);
-          };
+            ws.onclose = () => {
+              if (!active) return;
+              reconnectTID = setTimeout(() => {
+                cleanup();
+                connect();
+              }, 3000);
+            };
 
-          ws.onerror = (e) => {
-            console.error('[PurwakartaPlayer] WS error:', e);
-            if (active) {
-              setHasError(true);
-            }
-          };
-        }, { once: true });
+            ws.onerror = (e) => {
+              console.error("[PurwakartaPlayer] WS error:", e);
+              if (active) {
+                setHasError(true);
+              }
+            };
+          },
+          { once: true },
+        );
       };
 
       connect();
@@ -960,37 +1089,37 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     const handlePlaying = () => {
       if (active) setIsLoaded(true);
     };
-    video.addEventListener('playing', handlePlaying);
-    cleanups.push(() => video.removeEventListener('playing', handlePlaying));
+    video.addEventListener("playing", handlePlaying);
+    cleanups.push(() => video.removeEventListener("playing", handlePlaying));
 
     let hls: Hls | null = null;
     let flvPlayer: flvjs.Player | null = null;
 
     const initPlayer = async () => {
-      if (cctv.id.startsWith('gresik-')) {
-        const rawId = cctv.id.replace('gresik-', '');
-        fetch('/gresik-api/rpc/cctv/startStreamById', {
-          method: 'POST',
+      if (cctv.id.startsWith("gresik-")) {
+        const rawId = cctv.id.replace("gresik-", "");
+        fetch("/gresik-api/rpc/cctv/startStreamById", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer default-token'
+            "Content-Type": "application/json",
+            Authorization: "Bearer default-token",
           },
-          body: JSON.stringify({ json: { id: rawId } })
-        }).catch((e) => console.error('Failed to start Gresik stream:', e));
+          body: JSON.stringify({ json: { id: rawId } }),
+        }).catch((e) => console.error("Failed to start Gresik stream:", e));
       }
 
-      if (cctv.id.startsWith('surabaya-')) {
-        const rawId = cctv.id.replace('surabaya-', '');
+      if (cctv.id.startsWith("surabaya-")) {
+        const rawId = cctv.id.replace("surabaya-", "");
         fetch(`/surabaya-api/api/start_stream/${rawId}`, {
-          method: 'POST'
-        }).catch((e) => console.error('Failed to start Surabaya stream:', e));
+          method: "POST",
+        }).catch((e) => console.error("Failed to start Surabaya stream:", e));
       }
 
       if (!active) return;
 
       let streamUrl = cctv.streamUrl;
-      if (cctv.id.startsWith('tuban-')) {
-        const rawId = cctv.id.replace('tuban-', '');
+      if (cctv.id.startsWith("tuban-")) {
+        const rawId = cctv.id.replace("tuban-", "");
         try {
           const res = await fetch(`/tuban-api/stream-token/${rawId}`);
           if (res.ok) {
@@ -1000,44 +1129,107 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
             }
           }
         } catch (e) {
-          console.error('Failed to fetch Tuban stream token:', e);
+          console.error("Failed to fetch Tuban stream token:", e);
         }
       }
 
-      if (streamUrl.startsWith('https://testing-apicctv.gresikkab.go.id')) {
-        streamUrl = streamUrl.replace('https://testing-apicctv.gresikkab.go.id', '/gresik-api');
-      } else if (streamUrl.startsWith('https://live.banyuwangikab.go.id/hls/')) {
-        streamUrl = streamUrl.replace('https://live.banyuwangikab.go.id/hls/', '/bwi-hls/');
-      } else if (streamUrl.startsWith('https://atcs.banjarmasinkota.go.id/stream/')) {
-        streamUrl = streamUrl.replace('https://atcs.banjarmasinkota.go.id/stream/', '/bjm-stream/');
-      } else if (streamUrl.startsWith('https://streaming.patikab.go.id/memfs/')) {
-        streamUrl = streamUrl.replace('https://streaming.patikab.go.id/memfs/', '/pati-stream/memfs/');
-      } else if (streamUrl.startsWith('https://dishub.cradnu.com/memfs/')) {
-        streamUrl = streamUrl.replace('https://dishub.cradnu.com/memfs/', '/grobogan-cradnu/memfs/');
-      } else if (streamUrl.startsWith('https://stream.dishub.grobogan.go.id/memfs/')) {
-        streamUrl = streamUrl.replace('https://stream.dishub.grobogan.go.id/memfs/', '/grobogan-stream/memfs/');
-      } else if (streamUrl.startsWith('https://cctv.kotawaringinbaratkab.go.id/storage/')) {
-        streamUrl = streamUrl.replace('https://cctv.kotawaringinbaratkab.go.id/storage/', '/kobar-stream/storage/');
-      } else if (streamUrl.startsWith('https://cctv.malangkota.go.id/')) {
-        streamUrl = streamUrl.replace('https://cctv.malangkota.go.id/', '/malang-stream/');
-      } else if (streamUrl.startsWith('https://cctv.cirebonkota.go.id/')) {
-        streamUrl = streamUrl.replace('https://cctv.cirebonkota.go.id/', '/cirebon-stream/');
-      } else if (streamUrl.startsWith('https://cctv.purwakartakab.go.id/')) {
-        streamUrl = streamUrl.replace('https://cctv.purwakartakab.go.id/', '/purwakarta-stream/');
-      } else if (streamUrl.startsWith('https://cctv.tubankab.go.id/')) {
-        streamUrl = streamUrl.replace('https://cctv.tubankab.go.id/', '/tuban-stream/');
-      } else if (streamUrl.startsWith('https://stream.palembang.go.id/')) {
-        streamUrl = streamUrl.replace('https://stream.palembang.go.id/', '/palembang-stream/');
-      } else if (streamUrl.startsWith('https://shinobi.bulelengkab.go.id/')) {
-        streamUrl = streamUrl.replace('https://shinobi.bulelengkab.go.id/', '/buleleng-stream/');
-      } else if (streamUrl.startsWith('http://36.66.208.101:5000/')) {
-        streamUrl = streamUrl.replace('http://36.66.208.101:5000/', '/surabaya-api/');
-      } else if (streamUrl.startsWith('https://dishub.depok.go.id/')) {
-        streamUrl = streamUrl.replace('https://dishub.depok.go.id/', '/depok-stream/');
-      } else if (streamUrl.startsWith('https://cctv-dishub.sukabumikab.go.id/')) {
-        streamUrl = streamUrl.replace('https://cctv-dishub.sukabumikab.go.id/', '/sukabumikab-stream/');
-      } else if (streamUrl.startsWith('https://cctv.pekalongankab.go.id/')) {
-        streamUrl = streamUrl.replace('https://cctv.pekalongankab.go.id/', '/pekalongankab-stream/');
+      if (streamUrl.startsWith("https://testing-apicctv.gresikkab.go.id")) {
+        streamUrl = streamUrl.replace(
+          "https://testing-apicctv.gresikkab.go.id",
+          "/gresik-api",
+        );
+      } else if (
+        streamUrl.startsWith("https://live.banyuwangikab.go.id/hls/")
+      ) {
+        streamUrl = streamUrl.replace(
+          "https://live.banyuwangikab.go.id/hls/",
+          "/bwi-hls/",
+        );
+      } else if (
+        streamUrl.startsWith("https://atcs.banjarmasinkota.go.id/stream/")
+      ) {
+        streamUrl = streamUrl.replace(
+          "https://atcs.banjarmasinkota.go.id/stream/",
+          "/bjm-stream/",
+        );
+      } else if (
+        streamUrl.startsWith("https://streaming.patikab.go.id/memfs/")
+      ) {
+        streamUrl = streamUrl.replace(
+          "https://streaming.patikab.go.id/memfs/",
+          "/pati-stream/memfs/",
+        );
+      } else if (streamUrl.startsWith("https://dishub.cradnu.com/memfs/")) {
+        streamUrl = streamUrl.replace(
+          "https://dishub.cradnu.com/memfs/",
+          "/grobogan-cradnu/memfs/",
+        );
+      } else if (
+        streamUrl.startsWith("https://stream.dishub.grobogan.go.id/memfs/")
+      ) {
+        streamUrl = streamUrl.replace(
+          "https://stream.dishub.grobogan.go.id/memfs/",
+          "/grobogan-stream/memfs/",
+        );
+      } else if (
+        streamUrl.startsWith("https://cctv.kotawaringinbaratkab.go.id/storage/")
+      ) {
+        streamUrl = streamUrl.replace(
+          "https://cctv.kotawaringinbaratkab.go.id/storage/",
+          "/kobar-stream/storage/",
+        );
+      } else if (streamUrl.startsWith("https://cctv.malangkota.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://cctv.malangkota.go.id/",
+          "/malang-stream/",
+        );
+      } else if (streamUrl.startsWith("https://cctv.cirebonkota.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://cctv.cirebonkota.go.id/",
+          "/cirebon-stream/",
+        );
+      } else if (streamUrl.startsWith("https://cctv.purwakartakab.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://cctv.purwakartakab.go.id/",
+          "/purwakarta-stream/",
+        );
+      } else if (streamUrl.startsWith("https://cctv.tubankab.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://cctv.tubankab.go.id/",
+          "/tuban-stream/",
+        );
+      } else if (streamUrl.startsWith("https://stream.palembang.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://stream.palembang.go.id/",
+          "/palembang-stream/",
+        );
+      } else if (streamUrl.startsWith("https://shinobi.bulelengkab.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://shinobi.bulelengkab.go.id/",
+          "/buleleng-stream/",
+        );
+      } else if (streamUrl.startsWith("http://36.66.208.101:5000/")) {
+        streamUrl = streamUrl.replace(
+          "http://36.66.208.101:5000/",
+          "/surabaya-api/",
+        );
+      } else if (streamUrl.startsWith("https://dishub.depok.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://dishub.depok.go.id/",
+          "/depok-stream/",
+        );
+      } else if (
+        streamUrl.startsWith("https://cctv-dishub.sukabumikab.go.id/")
+      ) {
+        streamUrl = streamUrl.replace(
+          "https://cctv-dishub.sukabumikab.go.id/",
+          "/sukabumikab-stream/",
+        );
+      } else if (streamUrl.startsWith("https://cctv.pekalongankab.go.id/")) {
+        streamUrl = streamUrl.replace(
+          "https://cctv.pekalongankab.go.id/",
+          "/pekalongankab-stream/",
+        );
       }
 
       if (isRtsp) {
@@ -1047,11 +1239,12 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
               resolve();
               return;
             }
-            const script = document.createElement('script');
-            script.src = '/js/streamedian.min.js';
+            const script = document.createElement("script");
+            script.src = "/js/streamedian.min.js";
             script.async = true;
             script.onload = () => resolve();
-            script.onerror = () => reject(new Error('Failed to load Streamedian script'));
+            script.onerror = () =>
+              reject(new Error("Failed to load Streamedian script"));
             document.body.appendChild(script);
           });
 
@@ -1061,7 +1254,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
             if (!active) return;
             try {
               const player = (window as any).Streamedian.player(uniqueVideoId, {
-                socket: 'wss://specforge.com/ws/'
+                socket: "wss://specforge.com/ws/",
               });
               setIsLoaded(true);
               setIsPlaying(true);
@@ -1072,11 +1265,11 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
                     player.destroy();
                   }
                 } catch (e) {
-                  console.error('Error destroying Streamedian player:', e);
+                  console.error("Error destroying Streamedian player:", e);
                 }
               });
             } catch (e) {
-              console.error('Failed to init Streamedian player:', e);
+              console.error("Failed to init Streamedian player:", e);
               setHasError(true);
             }
           }, 100);
@@ -1087,45 +1280,64 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       } else if (isFlv) {
         if (flvjs.isSupported()) {
           try {
-            flvPlayer = flvjs.createPlayer({
-              type: 'flv',
-              url: streamUrl,
-              isLive: true,
-              hasAudio: false
-            }, {
-              enableStashBuffer: false
-            });
+            flvPlayer = flvjs.createPlayer(
+              {
+                type: "flv",
+                url: streamUrl,
+                isLive: true,
+                hasAudio: false,
+              },
+              {
+                enableStashBuffer: false,
+              },
+            );
             flvPlayer.attachMediaElement(video);
             flvPlayer.load();
-            
-            flvPlayer.on(flvjs.Events.ERROR, (errType: unknown, errDetail: unknown) => {
-              console.error('FLV.js Error:', errType, errDetail);
-              if (active) {
-                setHasError(true);
-                setIsLoaded(false);
-              }
-            });
+
+            flvPlayer.on(
+              flvjs.Events.ERROR,
+              (errType: unknown, errDetail: unknown) => {
+                console.error("FLV.js Error:", errType, errDetail);
+                if (active) {
+                  setHasError(true);
+                  setIsLoaded(false);
+                }
+              },
+            );
 
             const handleCanPlay = () => {
               if (!active) return;
               video.play().catch((e) => {
-                console.warn('Playback prevented:', e);
+                console.warn("Playback prevented:", e);
                 setIsPlaying(false);
               });
             };
-            video.addEventListener('canplay', handleCanPlay);
-            cleanups.push(() => video.removeEventListener('canplay', handleCanPlay));
+            video.addEventListener("canplay", handleCanPlay);
+            cleanups.push(() =>
+              video.removeEventListener("canplay", handleCanPlay),
+            );
 
             const handleVisibilityChange = () => {
-              if (document.visibilityState === 'visible' && video.buffered.length > 0) {
+              if (
+                document.visibilityState === "visible" &&
+                video.buffered.length > 0
+              ) {
                 const end = video.buffered.end(0);
                 if (end - video.currentTime > 1.5) {
                   video.currentTime = end - 0.5;
                 }
               }
             };
-            document.addEventListener('visibilitychange', handleVisibilityChange);
-            cleanups.push(() => document.removeEventListener('visibilitychange', handleVisibilityChange));
+            document.addEventListener(
+              "visibilitychange",
+              handleVisibilityChange,
+            );
+            cleanups.push(() =>
+              document.removeEventListener(
+                "visibilitychange",
+                handleVisibilityChange,
+              ),
+            );
 
             const latencyInterval = setInterval(() => {
               if (active && !video.paused && video.buffered.length > 0) {
@@ -1136,9 +1348,8 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
               }
             }, 3000);
             cleanups.push(() => clearInterval(latencyInterval));
-
           } catch (e) {
-            console.error('Failed to initialize flv.js player:', e);
+            console.error("Failed to initialize flv.js player:", e);
             setHasError(true);
           }
         } else {
@@ -1149,7 +1360,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         const handleCanPlay = () => {
           if (!active) return;
           video.play().catch((e) => {
-            console.warn('Playback prevented:', e);
+            console.warn("Playback prevented:", e);
             setIsPlaying(false);
           });
         };
@@ -1158,19 +1369,19 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           setHasError(true);
           setIsLoaded(false);
         };
-        video.addEventListener('canplay', handleCanPlay);
-        video.addEventListener('error', handleError);
+        video.addEventListener("canplay", handleCanPlay);
+        video.addEventListener("error", handleError);
         cleanups.push(() => {
-          video.removeEventListener('canplay', handleCanPlay);
-          video.removeEventListener('error', handleError);
+          video.removeEventListener("canplay", handleCanPlay);
+          video.removeEventListener("error", handleError);
         });
       } else {
         if (Hls.isSupported()) {
           const isShortWindowStream =
-            streamUrl.includes('bwi-hls') ||
-            streamUrl.includes('kuningan-stream') ||
-            streamUrl.includes('bandarlampung-stream') ||
-            streamUrl.includes('surabaya-api');
+            streamUrl.includes("bwi-hls") ||
+            streamUrl.includes("kuningan-stream") ||
+            streamUrl.includes("bandarlampung-stream") ||
+            streamUrl.includes("surabaya-api");
           hls = new Hls({
             enableWorker: true,
             lowLatencyMode: true,
@@ -1190,14 +1401,14 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
                 errorRetry: {
                   maxNumRetry: 8,
                   retryDelayMs: 500,
-                  maxRetryDelayMs: 2000
+                  maxRetryDelayMs: 2000,
                 },
                 timeoutRetry: {
                   maxNumRetry: 3,
                   retryDelayMs: 500,
-                  maxRetryDelayMs: 4000
-                }
-              }
+                  maxRetryDelayMs: 4000,
+                },
+              },
             },
             playlistLoadPolicy: {
               default: {
@@ -1206,14 +1417,14 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
                 errorRetry: {
                   maxNumRetry: 8,
                   retryDelayMs: 500,
-                  maxRetryDelayMs: 2000
+                  maxRetryDelayMs: 2000,
                 },
                 timeoutRetry: {
                   maxNumRetry: 3,
                   retryDelayMs: 500,
-                  maxRetryDelayMs: 4000
-                }
-              }
+                  maxRetryDelayMs: 4000,
+                },
+              },
             },
             fragLoadPolicy: {
               default: {
@@ -1222,16 +1433,16 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
                 errorRetry: {
                   maxNumRetry: 6,
                   retryDelayMs: 500,
-                  maxRetryDelayMs: 4000
+                  maxRetryDelayMs: 4000,
                 },
                 timeoutRetry: {
                   maxNumRetry: 3,
                   retryDelayMs: 500,
-                  maxRetryDelayMs: 4000
-                }
-              }
+                  maxRetryDelayMs: 4000,
+                },
+              },
             },
-            pLoader: PlaylistLoader as any
+            pLoader: PlaylistLoader as any,
           });
 
           hlsRef.current = hls;
@@ -1291,7 +1502,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
               }
             }
           });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
           video.src = streamUrl;
           const handleLoadedMetadata = () => {
             if (!active) return;
@@ -1301,11 +1512,11 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
             if (!active) return;
             setHasError(true);
           };
-          video.addEventListener('loadedmetadata', handleLoadedMetadata);
-          video.addEventListener('error', handleError);
+          video.addEventListener("loadedmetadata", handleLoadedMetadata);
+          video.addEventListener("error", handleError);
           cleanups.push(() => {
-            video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-            video.removeEventListener('error', handleError);
+            video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+            video.removeEventListener("error", handleError);
           });
         } else {
           setHasError(true);
@@ -1326,12 +1537,22 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           flvPlayer.detachMediaElement();
           flvPlayer.destroy();
         } catch (e) {
-          console.error('Error destroying FLV player:', e);
+          console.error("Error destroying FLV player:", e);
         }
       }
-      if (video) video.src = '';
+      if (video) video.src = "";
     };
-  }, [cctv, isMjpeg, isFlv, isIframe, isJsmpeg, isMp4, isPurwakarta, isRtsp, uniqueVideoId]);
+  }, [
+    cctv,
+    isMjpeg,
+    isFlv,
+    isIframe,
+    isJsmpeg,
+    isMp4,
+    isPurwakarta,
+    isRtsp,
+    uniqueVideoId,
+  ]);
 
   // Sync isMuted and volume states to the HTML5 video element on load
   useEffect(() => {
@@ -1407,9 +1628,12 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     if (!container) return;
 
     if (!document.fullscreenElement) {
-      container.requestFullscreen().then(() => {
-        setIsFullscreen(true);
-      }).catch(err => console.error(err));
+      container
+        .requestFullscreen()
+        .then(() => {
+          setIsFullscreen(true);
+        })
+        .catch((err) => console.error(err));
     } else {
       document.exitFullscreen().then(() => {
         setIsFullscreen(false);
@@ -1443,8 +1667,9 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
   // Auto-hide controls when idle
@@ -1466,45 +1691,54 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
   // Take Snapshot
   const takeSnapshot = () => {
     if (isMjpeg) {
-      const img = containerRef.current?.querySelector('img');
+      const img = containerRef.current?.querySelector("img");
       if (!img || !isLoaded || !cctv) return;
 
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = img.naturalWidth || 640;
       canvas.height = img.naturalHeight || 480;
-      
-      const ctx = canvas.getContext('2d');
+
+      const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
       ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
 
-      ctx.fillStyle = '#10b981'; // green accent
-      ctx.font = 'bold 20px Outfit, sans-serif';
-      ctx.fillText('NUSANTARA CCTV', 30, canvas.height - 24);
+      ctx.fillStyle = "#10b981"; // green accent
+      ctx.font = "bold 20px Outfit, sans-serif";
+      ctx.fillText("PANTAU CCTV", 30, canvas.height - 24);
 
       const now = new Date();
-      const formattedTime = now.toLocaleDateString('id-ID', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-      }) + ' ' + now.toLocaleTimeString('id-ID');
+      const formattedTime =
+        now.toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }) +
+        " " +
+        now.toLocaleTimeString("id-ID");
 
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '16px Inter, sans-serif';
-      ctx.fillText(`|  ${cctv.name.toUpperCase()}  |  ${formattedTime}`, 220, canvas.height - 24);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "16px Inter, sans-serif";
+      ctx.fillText(
+        `|  ${cctv.name.toUpperCase()}  |  ${formattedTime}`,
+        220,
+        canvas.height - 24,
+      );
 
       try {
-        const dataUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.download = `CCTV_${cctv.name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,19).replace(/[:T]/g, '-')}.png`;
+        const dataUrl = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.download = `CCTV_${cctv.name.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.png`;
         link.href = dataUrl;
         link.click();
       } catch (e) {
-        console.error('Failed to take screenshot:', e);
-        alert('Gagal mengambil screenshot: Pemutar mendeteksi batasan keamanan CORS pada server stream CCTV asal.');
+        console.error("Failed to take screenshot:", e);
+        alert(
+          "Gagal mengambil screenshot: Pemutar mendeteksi batasan keamanan CORS pada server stream CCTV asal.",
+        );
       }
       return;
     }
@@ -1512,38 +1746,49 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     // JSMpeg snapshot from canvas
     if (isJsmpeg) {
       const wrapper = jsmpegCanvasRef.current;
-      const sourceCanvas = wrapper?.querySelector('canvas');
+      const sourceCanvas = wrapper?.querySelector("canvas");
       if (!sourceCanvas || !isLoaded || !cctv) return;
 
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = sourceCanvas.width || 640;
       canvas.height = sourceCanvas.height || 480;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
       ctx.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
       ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
-      ctx.fillStyle = '#10b981';
-      ctx.font = 'bold 20px Outfit, sans-serif';
-      ctx.fillText('NUSANTARA CCTV', 30, canvas.height - 24);
+      ctx.fillStyle = "#10b981";
+      ctx.font = "bold 20px Outfit, sans-serif";
+      ctx.fillText("PANTAU CCTV", 30, canvas.height - 24);
 
       const now = new Date();
-      const formattedTime = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('id-ID');
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '16px Inter, sans-serif';
-      ctx.fillText(`|  ${cctv.name.toUpperCase()}  |  ${formattedTime}`, 220, canvas.height - 24);
+      const formattedTime =
+        now.toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }) +
+        " " +
+        now.toLocaleTimeString("id-ID");
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "16px Inter, sans-serif";
+      ctx.fillText(
+        `|  ${cctv.name.toUpperCase()}  |  ${formattedTime}`,
+        220,
+        canvas.height - 24,
+      );
 
       try {
-        const dataUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.download = `CCTV_${cctv.name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,19).replace(/[:T]/g, '-')}.png`;
+        const dataUrl = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.download = `CCTV_${cctv.name.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.png`;
         link.href = dataUrl;
         link.click();
       } catch (e) {
-        console.error('Failed to take screenshot:', e);
-        alert('Gagal mengambil screenshot.');
+        console.error("Failed to take screenshot:", e);
+        alert("Gagal mengambil screenshot.");
       }
       return;
     }
@@ -1551,48 +1796,57 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
     const video = videoRef.current;
     if (!video || !isLoaded || !cctv) return;
 
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth || 1280;
     canvas.height = video.videoHeight || 720;
-    
-    const ctx = canvas.getContext('2d');
+
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
     ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
 
-    ctx.fillStyle = '#10b981'; // green accent
-    ctx.font = 'bold 20px Outfit, sans-serif';
-    ctx.fillText('NUSANTARA CCTV', 30, canvas.height - 24);
+    ctx.fillStyle = "#10b981"; // green accent
+    ctx.font = "bold 20px Outfit, sans-serif";
+    ctx.fillText("PANTAU CCTV", 30, canvas.height - 24);
 
     const now = new Date();
-    const formattedTime = now.toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    }) + ' ' + now.toLocaleTimeString('id-ID');
+    const formattedTime =
+      now.toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }) +
+      " " +
+      now.toLocaleTimeString("id-ID");
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '16px Inter, sans-serif';
-    ctx.fillText(`|  ${cctv.name.toUpperCase()}  |  ${formattedTime}`, 220, canvas.height - 24);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "16px Inter, sans-serif";
+    ctx.fillText(
+      `|  ${cctv.name.toUpperCase()}  |  ${formattedTime}`,
+      220,
+      canvas.height - 24,
+    );
 
     try {
-      const dataUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = `CCTV_${cctv.name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,19).replace(/[:T]/g, '-')}.png`;
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `CCTV_${cctv.name.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.png`;
       link.href = dataUrl;
       link.click();
     } catch (e) {
-      console.error('Failed to take screenshot:', e);
-      alert('Gagal mengambil screenshot: Pemutar mendeteksi batasan keamanan CORS pada server stream CCTV asal.');
+      console.error("Failed to take screenshot:", e);
+      alert(
+        "Gagal mengambil screenshot: Pemutar mendeteksi batasan keamanan CORS pada server stream CCTV asal.",
+      );
     }
   };
 
   return (
-    <div 
-      className={`map-video-overlay ${isFullscreen ? 'fullscreen' : ''} ${isRotated ? 'rotated-landscape' : ''}`} 
+    <div
+      className={`map-video-overlay ${isFullscreen ? "fullscreen" : ""} ${isRotated ? "rotated-landscape" : ""}`}
       ref={containerRef}
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
@@ -1608,14 +1862,21 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           </div>
           <div className="map-video-actions">
             <button
-              className={`map-video-btn map-video-fav ${isFavorite ? 'map-video-fav-active' : ''}`}
+              className={`map-video-btn map-video-fav ${isFavorite ? "map-video-fav-active" : ""}`}
               onClick={onToggleFavorite}
               title={isFavorite ? "Hapus dari Favorit" : "Tambah ke Favorit"}
-              aria-label={isFavorite ? "Hapus dari Favorit" : "Tambah ke Favorit"}
+              aria-label={
+                isFavorite ? "Hapus dari Favorit" : "Tambah ke Favorit"
+              }
             >
               <Heart size={14} fill={isFavorite ? "currentColor" : "none"} />
             </button>
-            <button className="map-video-btn map-video-close" onClick={onClose} title="Tutup" aria-label="Tutup pemutar">
+            <button
+              className="map-video-btn map-video-close"
+              onClick={onClose}
+              title="Tutup"
+              aria-label="Tutup pemutar"
+            >
               <X size={16} />
             </button>
           </div>
@@ -1623,10 +1884,15 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
       )}
 
       {/* Video */}
-      <div className="map-video-content" style={{ position: 'relative', overflow: 'hidden' }}>
+      <div
+        className="map-video-content"
+        style={{ position: "relative", overflow: "hidden" }}
+      >
         {/* Fullscreen Top Bar Overlay */}
         {(isFullscreen || isRotated) && !isMobileDevice && (
-          <div className={`map-video-fullscreen-top-bar ${showControls ? 'active' : ''}`}>
+          <div
+            className={`map-video-fullscreen-top-bar ${showControls ? "active" : ""}`}
+          >
             <div className="top-left">
               <span className="fullscreen-live-badge">
                 <span className="live-dot"></span>
@@ -1635,12 +1901,16 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
               <span className="fullscreen-cam-name">{cctv.name}</span>
             </div>
             <div className="top-right">
-              <button 
-                className="map-video-btn map-video-close" 
-                onClick={onClose} 
-                title="Tutup" 
+              <button
+                className="map-video-btn map-video-close"
+                onClick={onClose}
+                title="Tutup"
                 aria-label="Tutup pemutar"
-                style={{ background: 'rgba(0,0,0,0.4)', borderColor: 'rgba(255,255,255,0.25)', color: '#fff' }}
+                style={{
+                  background: "rgba(0,0,0,0.4)",
+                  borderColor: "rgba(255,255,255,0.25)",
+                  color: "#fff",
+                }}
               >
                 <X size={16} />
               </button>
@@ -1660,39 +1930,53 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
           </div>
         )}
 
-        <div 
+        <div
           className="map-video-viewport"
           ref={viewportContainerRef}
           style={{
-            width: '100%',
-            height: '100%',
+            width: "100%",
+            height: "100%",
             transform: `scale(${zoomScale}) translate(${panOffset.x}px, ${panOffset.y}px)`,
-            transformOrigin: 'center center',
-            transition: isTouching ? 'none' : 'transform 0.15s ease-out'
+            transformOrigin: "center center",
+            transition: isTouching ? "none" : "transform 0.15s ease-out",
           }}
         >
           {isIframe && !hasError ? (
             <iframe
-              src={isYoutube ? `${cctv.streamUrl}?autoplay=1&mute=1` : cctv.streamUrl}
+              src={
+                isYoutube
+                  ? `${cctv.streamUrl}?autoplay=1&mute=1`
+                  : cctv.streamUrl
+              }
               title={cctv.name}
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              style={{ width: '100%', height: '100%', border: 'none', display: isLoaded ? 'block' : 'none' }}
+              style={{
+                width: "100%",
+                height: "100%",
+                border: "none",
+                display: isLoaded ? "block" : "none",
+              }}
               onLoad={() => setIsLoaded(true)}
             />
           ) : isMjpeg ? (
             <img
               src={cctv.streamUrl}
               alt={cctv.name}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', display: isLoaded ? 'block' : 'none' }}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                display: isLoaded ? "block" : "none",
+              }}
               onLoad={() => setIsLoaded(true)}
               onError={() => setHasError(true)}
             />
           ) : isJsmpeg ? (
             <div
               ref={jsmpegCanvasRef}
-              style={{ width: '100%', height: '100%', background: '#000' }}
+              style={{ width: "100%", height: "100%", background: "#000" }}
             />
           ) : (
             <video
@@ -1702,7 +1986,7 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
               preload="auto"
               muted={isMuted}
               playsInline
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
               onClick={(e) => {
                 if (!isMobileDevice) {
                   togglePlay();
@@ -1712,7 +1996,9 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
                 }
               }}
             >
-              {isRtsp && <source src={cctv.streamUrl} type="application/x-rtsp" />}
+              {isRtsp && (
+                <source src={cctv.streamUrl} type="application/x-rtsp" />
+              )}
             </video>
           )}
         </div>
@@ -1726,129 +2012,180 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
         )}
 
         {/* Floating controls HUD that appears on hover */}
-        {isLoaded && !hasError && (!isMobileDevice || availableLevels.length >= 1) && (
-          <div className={`map-video-hud ${showControls || !isPlaying ? 'active' : ''}`}>
-            <div className="map-hud-controls-bar">
-              {!isMobileDevice && (
-                <div className="controls-left">
-                  {!isMjpeg && !isIframe && (
-                    <button
-                      className="hud-btn"
-                      onClick={togglePlay}
-                      title={isPlaying ? "Jeda" : "Putar"}
-                      aria-label={isPlaying ? "Jeda" : "Putar"}
-                    >
-                      {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
-                    </button>
-                  )}
-
-                  {!isMjpeg && !isIframe && (
-                    <div className="volume-control-wrapper">
+        {isLoaded &&
+          !hasError &&
+          (!isMobileDevice || availableLevels.length >= 1) && (
+            <div
+              className={`map-video-hud ${showControls || !isPlaying ? "active" : ""}`}
+            >
+              <div className="map-hud-controls-bar">
+                {!isMobileDevice && (
+                  <div className="controls-left">
+                    {!isMjpeg && !isIframe && (
                       <button
                         className="hud-btn"
-                        onClick={toggleMute}
-                        title={isMuted ? "Bunyikan" : "Bisukan"}
-                        aria-label={isMuted ? "Bunyikan" : "Bisukan"}
+                        onClick={togglePlay}
+                        title={isPlaying ? "Jeda" : "Putar"}
+                        aria-label={isPlaying ? "Jeda" : "Putar"}
                       >
-                        {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                        {isPlaying ? (
+                          <Pause size={14} fill="currentColor" />
+                        ) : (
+                          <Play size={14} fill="currentColor" />
+                        )}
                       </button>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value={volume}
-                        onChange={handleVolumeChange}
-                        className="volume-slider"
-                        title="Volume"
-                        aria-label="Volume"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
 
-              <div className="controls-right" style={isMobileDevice ? { width: 'auto', justifyContent: 'center' } : {}}>
-                {!isMobileDevice && !isIframe && (
-                  <button
-                    className="hud-btn snapshot-btn"
-                    onClick={takeSnapshot}
-                    title="Ambil Foto CCTV"
-                    aria-label="Ambil Foto CCTV"
-                  >
-                    <Camera size={14} />
-                    <span>Ambil Foto</span>
-                  </button>
-                )}
-                {availableLevels.length >= 1 && (
-                  <div className="quality-control-wrapper" style={{ position: 'relative' }}>
-                    <button
-                      className={`hud-btn quality-btn ${showQualityMenu ? 'active' : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowQualityMenu(!showQualityMenu);
-                      }}
-                      title="Pilih Kualitas Video"
-                      aria-label="Pilih Kualitas Video"
-                    >
-                      <Settings size={14} className={showQualityMenu ? 'rotated-icon' : ''} />
-                      <span className="quality-label" style={{ fontSize: '11px', marginLeft: '4px', fontWeight: 500 }}>
-                        {currentLevelIndex === -1 
-                          ? `Auto${activePlayLevelIndex !== -1 && availableLevels[activePlayLevelIndex] ? ` (${availableLevels[activePlayLevelIndex].height || 'HD'})` : ''}` 
-                          : `${availableLevels[currentLevelIndex]?.height || 'HD'}p`}
-                      </span>
-                    </button>
-
-                    {showQualityMenu && (
-                      <div className="quality-menu-popup glass-panel">
-                        <div className="quality-menu-header">Resolusi</div>
+                    {!isMjpeg && !isIframe && (
+                      <div className="volume-control-wrapper">
                         <button
-                          type="button"
-                          className={`quality-menu-item ${currentLevelIndex === -1 ? 'active' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            changeLevel(-1);
-                          }}
+                          className="hud-btn"
+                          onClick={toggleMute}
+                          title={isMuted ? "Bunyikan" : "Bisukan"}
+                          aria-label={isMuted ? "Bunyikan" : "Bisukan"}
                         >
-                          <span className="checkmark">{currentLevelIndex === -1 ? '✓' : ''}</span>
-                          <span>Otomatis (Auto)</span>
+                          {isMuted ? (
+                            <VolumeX size={14} />
+                          ) : (
+                            <Volume2 size={14} />
+                          )}
                         </button>
-                        {[...availableLevels]
-                          .map((level, idx) => ({ ...level, originalIdx: idx }))
-                          .sort((a, b) => b.height - a.height || b.bitrate - a.bitrate)
-                          .map((level) => (
-                            <button
-                              key={level.originalIdx}
-                              type="button"
-                              className={`quality-menu-item ${currentLevelIndex === level.originalIdx ? 'active' : ''}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                changeLevel(level.originalIdx);
-                              }}
-                            >
-                              <span className="checkmark">{currentLevelIndex === level.originalIdx ? '✓' : ''}</span>
-                              <span>{level.height ? `${level.height}p` : `Kualitas ${level.originalIdx + 1}`}</span>
-                            </button>
-                          ))
-                        }
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.05"
+                          value={volume}
+                          onChange={handleVolumeChange}
+                          className="volume-slider"
+                          title="Volume"
+                          aria-label="Volume"
+                        />
                       </div>
                     )}
                   </div>
                 )}
-                {!isMobileDevice && (
-                  <button
-                    className="hud-btn"
-                    onClick={toggleFullscreen}
-                    title={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
-                    aria-label={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
-                  >
-                    <Maximize size={14} />
-                  </button>
-                )}
+
+                <div
+                  className="controls-right"
+                  style={
+                    isMobileDevice
+                      ? { width: "auto", justifyContent: "center" }
+                      : {}
+                  }
+                >
+                  {!isMobileDevice && !isIframe && (
+                    <button
+                      className="hud-btn snapshot-btn"
+                      onClick={takeSnapshot}
+                      title="Ambil Foto CCTV"
+                      aria-label="Ambil Foto CCTV"
+                    >
+                      <Camera size={14} />
+                      <span>Ambil Foto</span>
+                    </button>
+                  )}
+                  {availableLevels.length >= 1 && (
+                    <div
+                      className="quality-control-wrapper"
+                      style={{ position: "relative" }}
+                    >
+                      <button
+                        className={`hud-btn quality-btn ${showQualityMenu ? "active" : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowQualityMenu(!showQualityMenu);
+                        }}
+                        title="Pilih Kualitas Video"
+                        aria-label="Pilih Kualitas Video"
+                      >
+                        <Settings
+                          size={14}
+                          className={showQualityMenu ? "rotated-icon" : ""}
+                        />
+                        <span
+                          className="quality-label"
+                          style={{
+                            fontSize: "11px",
+                            marginLeft: "4px",
+                            fontWeight: 500,
+                          }}
+                        >
+                          {currentLevelIndex === -1
+                            ? `Auto${activePlayLevelIndex !== -1 && availableLevels[activePlayLevelIndex] ? ` (${availableLevels[activePlayLevelIndex].height || "HD"})` : ""}`
+                            : `${availableLevels[currentLevelIndex]?.height || "HD"}p`}
+                        </span>
+                      </button>
+
+                      {showQualityMenu && (
+                        <div className="quality-menu-popup glass-panel">
+                          <div className="quality-menu-header">Resolusi</div>
+                          <button
+                            type="button"
+                            className={`quality-menu-item ${currentLevelIndex === -1 ? "active" : ""}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              changeLevel(-1);
+                            }}
+                          >
+                            <span className="checkmark">
+                              {currentLevelIndex === -1 ? "✓" : ""}
+                            </span>
+                            <span>Otomatis (Auto)</span>
+                          </button>
+                          {[...availableLevels]
+                            .map((level, idx) => ({
+                              ...level,
+                              originalIdx: idx,
+                            }))
+                            .sort(
+                              (a, b) =>
+                                b.height - a.height || b.bitrate - a.bitrate,
+                            )
+                            .map((level) => (
+                              <button
+                                key={level.originalIdx}
+                                type="button"
+                                className={`quality-menu-item ${currentLevelIndex === level.originalIdx ? "active" : ""}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  changeLevel(level.originalIdx);
+                                }}
+                              >
+                                <span className="checkmark">
+                                  {currentLevelIndex === level.originalIdx
+                                    ? "✓"
+                                    : ""}
+                                </span>
+                                <span>
+                                  {level.height
+                                    ? `${level.height}p`
+                                    : `Kualitas ${level.originalIdx + 1}`}
+                                </span>
+                              </button>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {!isMobileDevice && (
+                    <button
+                      className="hud-btn"
+                      onClick={toggleFullscreen}
+                      title={
+                        isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"
+                      }
+                      aria-label={
+                        isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"
+                      }
+                    >
+                      <Maximize size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
 
       {/* Footer (only in windowed mode) */}
@@ -1864,7 +2201,6 @@ const MapVideoPlayer: React.FC<MapVideoPlayerProps> = ({
   );
 };
 
-
 interface LeafletMapProps {
   cctvs: CCTV[];
   onSelectCCTV: (cctv: CCTV | null) => void;
@@ -1879,108 +2215,116 @@ interface LeafletMapProps {
 }
 
 // Coordinates dictionary for province and city centers
-const provinceCenters: Record<string, { lat: number; lng: number; zoom: number }> = {
-  'DI Yogyakarta': { lat: -7.7956, lng: 110.3695, zoom: 12 },
-  'Jawa Timur': { lat: -7.5360, lng: 112.2331, zoom: 8.5 }, // covers Banyuwangi to Madiun nicely
-  'Jawa Tengah': { lat: -7.150975, lng: 110.140259, zoom: 8.5 },
-  'Jawa Barat': { lat: -6.9175, lng: 107.6191, zoom: 8.5 },
-  'Sumatera Selatan': { lat: -2.9909, lng: 104.7567, zoom: 11 },
-  'Kalimantan Selatan': { lat: -3.316694, lng: 114.590111, zoom: 12 },
-  'Kalimantan Tengah': { lat: -2.692928, lng: 111.658969, zoom: 8.5 },
-  'Kalimantan Barat': { lat: 0.9099, lng: 108.9889, zoom: 8.5 },
-  'Kalimantan Utara': { lat: 3.3025, lng: 117.5936, zoom: 8.5 },
-  'Sumatera Utara': { lat: 2.1121, lng: 99.0898, zoom: 8.5 },
-  'Bali': { lat: -8.4095, lng: 115.1889, zoom: 10 },
-  'Banten': { lat: -6.4058, lng: 106.0642, zoom: 9.5 },
-  'Jambi': { lat: -1.6101, lng: 103.6131, zoom: 9.5 },
-  'Sumatera Barat': { lat: -0.7399, lng: 100.8000, zoom: 8.5 },
-  'Riau': { lat: 0.5070, lng: 101.4478, zoom: 9 },
-  'Kepulauan Riau': { lat: 1.1301, lng: 104.0531, zoom: 9 },
-  'Sulawesi Selatan': { lat: -5.14, lng: 119.44, zoom: 9 },
-  'Semua Provinsi': { lat: -6.9908, lng: 110.4223, zoom: 12 }
+const provinceCenters: Record<
+  string,
+  { lat: number; lng: number; zoom: number }
+> = {
+  "DI Yogyakarta": { lat: -7.7956, lng: 110.3695, zoom: 12 },
+  "Jawa Timur": { lat: -7.536, lng: 112.2331, zoom: 8.5 }, // covers Banyuwangi to Madiun nicely
+  "Jawa Tengah": { lat: -7.150975, lng: 110.140259, zoom: 8.5 },
+  "Jawa Barat": { lat: -6.9175, lng: 107.6191, zoom: 8.5 },
+  "Sumatera Selatan": { lat: -2.9909, lng: 104.7567, zoom: 11 },
+  "Kalimantan Selatan": { lat: -3.316694, lng: 114.590111, zoom: 12 },
+  "Kalimantan Tengah": { lat: -2.692928, lng: 111.658969, zoom: 8.5 },
+  "Kalimantan Barat": { lat: 0.9099, lng: 108.9889, zoom: 8.5 },
+  "Kalimantan Utara": { lat: 3.3025, lng: 117.5936, zoom: 8.5 },
+  "Sumatera Utara": { lat: 2.1121, lng: 99.0898, zoom: 8.5 },
+  Bali: { lat: -8.4095, lng: 115.1889, zoom: 10 },
+  Banten: { lat: -6.4058, lng: 106.0642, zoom: 9.5 },
+  Jambi: { lat: -1.6101, lng: 103.6131, zoom: 9.5 },
+  "Sumatera Barat": { lat: -0.7399, lng: 100.8, zoom: 8.5 },
+  Riau: { lat: 0.507, lng: 101.4478, zoom: 9 },
+  "Kepulauan Riau": { lat: 1.1301, lng: 104.0531, zoom: 9 },
+  "Sulawesi Selatan": { lat: -5.14, lng: 119.44, zoom: 9 },
+  "Semua Provinsi": { lat: -6.9908, lng: 110.4223, zoom: 12 },
 };
 
-const cityCenters: Record<string, { lat: number; lng: number; zoom: number }> = {
-  'Kota Yogyakarta': { lat: -7.7956, lng: 110.3695, zoom: 13 },
-  'Kab. Jombang': { lat: -7.5461, lng: 112.2331, zoom: 13 },
-  'Kab. Gresik': { lat: -7.1612, lng: 112.6524, zoom: 12 },
-  'Kab. Mojokerto': { lat: -7.4726, lng: 112.4381, zoom: 12 },
-  'Kab. Banyuwangi': { lat: -8.2192, lng: 114.3691, zoom: 11 },
-  'Kab. Banyumas': { lat: -7.424, lng: 109.239, zoom: 12 },
-  'Kota Madiun': { lat: -7.6220, lng: 111.5225, zoom: 14 },
-  'Kab. Magetan': { lat: -7.656107, lng: 111.325608, zoom: 12 },
-  'Kab. Magelang': { lat: -7.504182, lng: 110.223830, zoom: 12 },
-  'Kab. Sukoharjo': { lat: -7.6841, lng: 110.8243, zoom: 12 },
-  'Kota Palembang': { lat: -2.9909, lng: 104.7567, zoom: 12 },
-  'Kota Banjarmasin': { lat: -3.316694, lng: 114.590111, zoom: 13 },
-  'Kab. Pati': { lat: -6.7536, lng: 111.0404, zoom: 12 },
-  'Kab. Grobogan': { lat: -7.0874, lng: 110.9143, zoom: 12 },
-  'Kota Salatiga': { lat: -7.3312, lng: 110.5005, zoom: 13 },
-  'Kota Pematangsiantar': { lat: 2.9586, lng: 99.0574, zoom: 13 },
-  'Kab. Boyolali': { lat: -7.408653, lng: 110.623076, zoom: 12 },
-  'Kota Banjarbaru': { lat: -3.453726, lng: 114.803635, zoom: 13 },
-  'Kab. Kotawaringin Barat': { lat: -2.692928, lng: 111.658969, zoom: 12 },
-  'Kota Malang': { lat: -7.977836, lng: 112.633932, zoom: 13 },
-  'Kab. Bondowoso': { lat: -7.911939, lng: 113.82297, zoom: 13 },
-  'Kab. Tulungagung': { lat: -8.066, lng: 111.901, zoom: 12 },
-  'Kota Semarang': { lat: -6.9908, lng: 110.4223, zoom: 13 },
-  'Kota Batu': { lat: -7.8712, lng: 112.5262, zoom: 13 },
-  'Kab. Bantul': { lat: -7.8938, lng: 110.3306, zoom: 12 },
-  'Kota Cirebon': { lat: -6.7320, lng: 108.5523, zoom: 13 },
-  'Kota Kediri': { lat: -7.8135, lng: 112.0090, zoom: 13 },
-  'Kota Bogor': { lat: -6.5971, lng: 106.8060, zoom: 12 },
-  'Kota Banjar': { lat: -7.370152, lng: 108.544060, zoom: 13 },
-  'Kota Bandung': { lat: -6.9175, lng: 107.6191, zoom: 12 },
-  'Kab. Kuningan': { lat: -6.9758, lng: 108.4800, zoom: 12 },
-  'Kab. Jepara': { lat: -6.5896, lng: 110.6690, zoom: 12 },
-  'Kota Singkawang': { lat: 0.9099, lng: 108.9889, zoom: 13 },
-  'Kota Tarakan': { lat: 3.3025, lng: 117.5936, zoom: 13 },
-  'Kab. Cianjur': { lat: -6.816, lng: 107.14, zoom: 12 },
-  'Kab. Garut': { lat: -7.210, lng: 107.900, zoom: 12 },
-  'Kab. Purwakarta': { lat: -6.5558, lng: 107.4421, zoom: 12 },
-  'Kab. Buleleng': { lat: -8.1148, lng: 115.0910, zoom: 12 },
-  'Kab. Tuban': { lat: -6.9008, lng: 112.0663, zoom: 12 },
-  'Kota Bandar Lampung': { lat: -5.4404, lng: 105.2671, zoom: 12 },
-  'Kab. Ciamis': { lat: -7.3274, lng: 108.3556, zoom: 12 },
-  'Kab. Tangerang': { lat: -6.1781, lng: 106.4950, zoom: 12 },
-  'Kota Serang': { lat: -6.1158, lng: 106.1542, zoom: 13 },
-  'Kota Jambi': { lat: -1.6101, lng: 103.6131, zoom: 13 },
-  'Kota Padang': { lat: -0.9471, lng: 100.4172, zoom: 12 },
-  'Kota Solok': { lat: -0.7937, lng: 100.6586, zoom: 13 },
-  'Kab. Sleman': { lat: -7.6974, lng: 110.3647, zoom: 12 },
-  'Kab. Karanganyar': { lat: -7.6291, lng: 110.9997, zoom: 12 },
-  'Kab. Kebumen': { lat: -7.6687, lng: 109.6517, zoom: 12 },
-  'Kab. Rembang': { lat: -6.7118, lng: 111.3414, zoom: 12 },
-  'Kab. Temanggung': { lat: -7.3135, lng: 110.1654, zoom: 12 },
-  'Kab. Wonosobo': { lat: -7.3576, lng: 109.9023, zoom: 12 },
-  'Kab. Wonogiri': { lat: -7.8137, lng: 110.9255, zoom: 12 },
-  'Kab. Nganjuk': { lat: -7.601, lng: 111.903, zoom: 12 },
-  'Kota Surabaya': { lat: -7.28, lng: 112.75, zoom: 12 },
-  'Kota Pekanbaru': { lat: 0.5070, lng: 101.4478, zoom: 12 },
-  'Kota Batam': { lat: 1.1301, lng: 104.0531, zoom: 12 },
-  'Kab. Kutai Timur': { lat: 0.5149, lng: 117.5577, zoom: 12 },
-  'Kota Bontang': { lat: 0.134, lng: 117.474, zoom: 13 },
-  'Kab. Tapin': { lat: -2.92, lng: 115.15, zoom: 12 },
-  'Kab. Pemalang': { lat: -6.89, lng: 109.38, zoom: 12 },
-  'Kota Surakarta': { lat: -7.568, lng: 110.821, zoom: 13 },
-  'Kota Makassar': { lat: -5.14, lng: 119.44, zoom: 12 },
-  'Kota Depok': { lat: -6.4022, lng: 106.7928, zoom: 12 },
-  'Kab. Bandung': { lat: -7.02, lng: 107.54, zoom: 11 },
-  'Kab. Bogor': { lat: -6.48, lng: 106.85, zoom: 11 },
-  'Kab. Indramayu': { lat: -6.33, lng: 108.32, zoom: 11 },
-  'Kab. Sukabumi': { lat: -6.92, lng: 106.86, zoom: 11 },
-  'Kab. Tasikmalaya': { lat: -7.35, lng: 108.12, zoom: 11 },
-  'Kota Tasikmalaya': { lat: -7.33, lng: 108.22, zoom: 12 },
-  'Kota Magelang': { lat: -7.48, lng: 110.22, zoom: 13 },
-  'Kab. Pekalongan': { lat: -7.02, lng: 109.58, zoom: 11 }
-};
+const cityCenters: Record<string, { lat: number; lng: number; zoom: number }> =
+  {
+    "Kota Yogyakarta": { lat: -7.7956, lng: 110.3695, zoom: 13 },
+    "Kab. Jombang": { lat: -7.5461, lng: 112.2331, zoom: 13 },
+    "Kab. Gresik": { lat: -7.1612, lng: 112.6524, zoom: 12 },
+    "Kab. Mojokerto": { lat: -7.4726, lng: 112.4381, zoom: 12 },
+    "Kab. Banyuwangi": { lat: -8.2192, lng: 114.3691, zoom: 11 },
+    "Kab. Banyumas": { lat: -7.424, lng: 109.239, zoom: 12 },
+    "Kota Madiun": { lat: -7.622, lng: 111.5225, zoom: 14 },
+    "Kab. Magetan": { lat: -7.656107, lng: 111.325608, zoom: 12 },
+    "Kab. Magelang": { lat: -7.504182, lng: 110.22383, zoom: 12 },
+    "Kab. Sukoharjo": { lat: -7.6841, lng: 110.8243, zoom: 12 },
+    "Kota Palembang": { lat: -2.9909, lng: 104.7567, zoom: 12 },
+    "Kota Banjarmasin": { lat: -3.316694, lng: 114.590111, zoom: 13 },
+    "Kab. Pati": { lat: -6.7536, lng: 111.0404, zoom: 12 },
+    "Kab. Grobogan": { lat: -7.0874, lng: 110.9143, zoom: 12 },
+    "Kota Salatiga": { lat: -7.3312, lng: 110.5005, zoom: 13 },
+    "Kota Pematangsiantar": { lat: 2.9586, lng: 99.0574, zoom: 13 },
+    "Kab. Boyolali": { lat: -7.408653, lng: 110.623076, zoom: 12 },
+    "Kota Banjarbaru": { lat: -3.453726, lng: 114.803635, zoom: 13 },
+    "Kab. Kotawaringin Barat": { lat: -2.692928, lng: 111.658969, zoom: 12 },
+    "Kota Malang": { lat: -7.977836, lng: 112.633932, zoom: 13 },
+    "Kab. Bondowoso": { lat: -7.911939, lng: 113.82297, zoom: 13 },
+    "Kab. Tulungagung": { lat: -8.066, lng: 111.901, zoom: 12 },
+    "Kota Semarang": { lat: -6.9908, lng: 110.4223, zoom: 13 },
+    "Kota Batu": { lat: -7.8712, lng: 112.5262, zoom: 13 },
+    "Kab. Bantul": { lat: -7.8938, lng: 110.3306, zoom: 12 },
+    "Kota Cirebon": { lat: -6.732, lng: 108.5523, zoom: 13 },
+    "Kota Kediri": { lat: -7.8135, lng: 112.009, zoom: 13 },
+    "Kota Bogor": { lat: -6.5971, lng: 106.806, zoom: 12 },
+    "Kota Banjar": { lat: -7.370152, lng: 108.54406, zoom: 13 },
+    "Kota Bandung": { lat: -6.9175, lng: 107.6191, zoom: 12 },
+    "Kab. Kuningan": { lat: -6.9758, lng: 108.48, zoom: 12 },
+    "Kab. Jepara": { lat: -6.5896, lng: 110.669, zoom: 12 },
+    "Kota Singkawang": { lat: 0.9099, lng: 108.9889, zoom: 13 },
+    "Kota Tarakan": { lat: 3.3025, lng: 117.5936, zoom: 13 },
+    "Kab. Cianjur": { lat: -6.816, lng: 107.14, zoom: 12 },
+    "Kab. Garut": { lat: -7.21, lng: 107.9, zoom: 12 },
+    "Kab. Purwakarta": { lat: -6.5558, lng: 107.4421, zoom: 12 },
+    "Kab. Buleleng": { lat: -8.1148, lng: 115.091, zoom: 12 },
+    "Kab. Tuban": { lat: -6.9008, lng: 112.0663, zoom: 12 },
+    "Kota Bandar Lampung": { lat: -5.4404, lng: 105.2671, zoom: 12 },
+    "Kab. Ciamis": { lat: -7.3274, lng: 108.3556, zoom: 12 },
+    "Kab. Tangerang": { lat: -6.1781, lng: 106.495, zoom: 12 },
+    "Kota Serang": { lat: -6.1158, lng: 106.1542, zoom: 13 },
+    "Kota Jambi": { lat: -1.6101, lng: 103.6131, zoom: 13 },
+    "Kota Padang": { lat: -0.9471, lng: 100.4172, zoom: 12 },
+    "Kota Solok": { lat: -0.7937, lng: 100.6586, zoom: 13 },
+    "Kab. Sleman": { lat: -7.6974, lng: 110.3647, zoom: 12 },
+    "Kab. Karanganyar": { lat: -7.6291, lng: 110.9997, zoom: 12 },
+    "Kab. Kebumen": { lat: -7.6687, lng: 109.6517, zoom: 12 },
+    "Kab. Rembang": { lat: -6.7118, lng: 111.3414, zoom: 12 },
+    "Kab. Temanggung": { lat: -7.3135, lng: 110.1654, zoom: 12 },
+    "Kab. Wonosobo": { lat: -7.3576, lng: 109.9023, zoom: 12 },
+    "Kab. Wonogiri": { lat: -7.8137, lng: 110.9255, zoom: 12 },
+    "Kab. Nganjuk": { lat: -7.601, lng: 111.903, zoom: 12 },
+    "Kota Surabaya": { lat: -7.28, lng: 112.75, zoom: 12 },
+    "Kota Pekanbaru": { lat: 0.507, lng: 101.4478, zoom: 12 },
+    "Kota Batam": { lat: 1.1301, lng: 104.0531, zoom: 12 },
+    "Kab. Kutai Timur": { lat: 0.5149, lng: 117.5577, zoom: 12 },
+    "Kota Bontang": { lat: 0.134, lng: 117.474, zoom: 13 },
+    "Kab. Tapin": { lat: -2.92, lng: 115.15, zoom: 12 },
+    "Kab. Pemalang": { lat: -6.89, lng: 109.38, zoom: 12 },
+    "Kota Surakarta": { lat: -7.568, lng: 110.821, zoom: 13 },
+    "Kota Makassar": { lat: -5.14, lng: 119.44, zoom: 12 },
+    "Kota Depok": { lat: -6.4022, lng: 106.7928, zoom: 12 },
+    "Kab. Bandung": { lat: -7.02, lng: 107.54, zoom: 11 },
+    "Kab. Bogor": { lat: -6.48, lng: 106.85, zoom: 11 },
+    "Kab. Indramayu": { lat: -6.33, lng: 108.32, zoom: 11 },
+    "Kab. Sukabumi": { lat: -6.92, lng: 106.86, zoom: 11 },
+    "Kab. Tasikmalaya": { lat: -7.35, lng: 108.12, zoom: 11 },
+    "Kota Tasikmalaya": { lat: -7.33, lng: 108.22, zoom: 12 },
+    "Kota Magelang": { lat: -7.48, lng: 110.22, zoom: 13 },
+    "Kab. Pekalongan": { lat: -7.02, lng: 109.58, zoom: 11 },
+  };
 
 const getCategoryLabel = (category: string) => {
   switch (category) {
-    case 'traffic': return 'Lalu Lintas';
-    case 'public': return 'Fasilitas Umum';
-    case 'tourism': return 'Wisata';
-    default: return category;
+    case "traffic":
+      return "Lalu Lintas";
+    case "public":
+      return "Fasilitas Umum";
+    case "tourism":
+      return "Wisata";
+    default:
+      return category;
   }
 };
 
@@ -1989,7 +2333,10 @@ interface CCTVMarkerProps {
   isFavorite: boolean;
   onSelect: (cctv: CCTV) => void;
   onToggleFavorite: (id: string) => void;
-  onHover: (cctv: CCTV | null, pos: { lat: number; lng: number } | null) => void;
+  onHover: (
+    cctv: CCTV | null,
+    pos: { lat: number; lng: number } | null,
+  ) => void;
   onClick: (cctv: CCTV) => void;
   showDotOnly: boolean;
   showAnimation: boolean;
@@ -1999,145 +2346,173 @@ interface CCTVMarkerProps {
   isVideoActive?: boolean;
 }
 
-const CCTVMarker = React.memo<CCTVMarkerProps>(({
-  cctv,
-  isFavorite,
-  onSelect,
-  onToggleFavorite,
-  onHover,
-  onClick,
-  showDotOnly,
-  showAnimation,
-  user,
-  onEdit,
-  onDelete,
-  isVideoActive
-}) => {
-  const eventHandlers = React.useMemo(() => ({
-    click: () => {
-      onClick(cctv);
-    },
-    mouseover: () => {
-      onHover(cctv, { lat: cctv.lat, lng: cctv.lng });
-    },
-    mouseout: () => {
-      onHover(null, null);
-    }
-  }), [cctv, onHover, onClick]);
+const CCTVMarker = React.memo<CCTVMarkerProps>(
+  ({
+    cctv,
+    isFavorite,
+    onSelect,
+    onToggleFavorite,
+    onHover,
+    onClick,
+    showDotOnly,
+    showAnimation,
+    user,
+    onEdit,
+    onDelete,
+    isVideoActive,
+  }) => {
+    const eventHandlers = React.useMemo(
+      () => ({
+        click: () => {
+          onClick(cctv);
+        },
+        mouseover: () => {
+          onHover(cctv, { lat: cctv.lat, lng: cctv.lng });
+        },
+        mouseout: () => {
+          onHover(null, null);
+        },
+      }),
+      [cctv, onHover, onClick],
+    );
 
-  return (
-    <Marker 
-      position={[cctv.lat, cctv.lng]}
-      icon={
-        showDotOnly
-          ? showAnimation
-            ? (cctv.status === 'online' ? ONLINE_DOT_ICON : OFFLINE_DOT_ICON)
-            : (cctv.status === 'online' ? ONLINE_DOT_ICON_NO_ANIM : OFFLINE_DOT_ICON_NO_ANIM)
-          : showAnimation
-            ? (cctv.status === 'online' ? ONLINE_ICON : OFFLINE_ICON)
-            : (cctv.status === 'online' ? ONLINE_ICON_NO_ANIM : OFFLINE_ICON_NO_ANIM)
-      }
-      alt={`Kamera CCTV ${cctv.name} - ${cctv.status === 'online' ? 'Online' : 'Offline'}`}
-      eventHandlers={eventHandlers}
-    >
-      <Popup className="map-popup-custom" autoPan={!isVideoActive}>
-        <div className="map-popup-card">
-          <div className="popup-header">
-            <span className={`status-badge ${cctv.status === 'online' ? 'status-online' : 'status-offline'}`}>
-              <span className="pulse-dot"></span>
-              <span>{cctv.status === 'online' ? 'ONLINE' : 'OFFLINE'}</span>
-            </span>
-            <span className="popup-category">
-              <Tag size={10} />
-              <span>{getCategoryLabel(cctv.category)}</span>
-            </span>
-          </div>
-          
-          <h3 className="popup-title">{cctv.name}</h3>
-          
-          <div className="popup-loc">
-            <MapPin size={10} />
-            <span>{cctv.city}, {cctv.province}</span>
-          </div>
-
-          <p className="popup-desc">{cctv.description}</p>
-          
-          <div className="popup-actions-row">
-            <button
-              id={`btn-map-popup-play-${cctv.id}`}
-              className={`btn-primary popup-play-btn ${cctv.status === 'offline' ? 'disabled' : ''}`}
-              onClick={() => cctv.status === 'online' && onSelect(cctv)}
-              disabled={cctv.status === 'offline'}
-            >
-              <Play size={10} fill="currentColor" />
-              <span>Pantau Live</span>
-            </button>
-            <button
-              id={`btn-map-popup-fav-${cctv.id}`}
-              className={`popup-fav-btn ${isFavorite ? 'active' : ''}`}
-              onClick={() => onToggleFavorite(cctv.id)}
-              title={isFavorite ? "Hapus dari Favorit" : "Tambah ke Favorit"}
-              aria-label={isFavorite ? "Hapus dari Favorit" : "Tambah ke Favorit"}
-            >
-              <Heart size={14} fill={isFavorite ? "currentColor" : "none"} />
-            </button>
-          </div>
-
-          {user && user.email === 'planetkapal@gmail.com' && (
-            <div className="popup-admin-actions" style={{ display: 'flex', gap: '6px', marginTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '8px' }}>
-              <button
-                type="button"
-                className="popup-admin-btn edit-btn"
-                onClick={() => onEdit(cctv)}
-                style={{
-                  flex: 1,
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#e2e8f0',
-                  fontSize: '0.75rem',
-                  padding: '5px 8px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 600,
-                  transition: 'all 0.2s ease'
-                }}
+    return (
+      <Marker
+        position={[cctv.lat, cctv.lng]}
+        icon={
+          showDotOnly
+            ? showAnimation
+              ? cctv.status === "online"
+                ? ONLINE_DOT_ICON
+                : OFFLINE_DOT_ICON
+              : cctv.status === "online"
+                ? ONLINE_DOT_ICON_NO_ANIM
+                : OFFLINE_DOT_ICON_NO_ANIM
+            : showAnimation
+              ? cctv.status === "online"
+                ? ONLINE_ICON
+                : OFFLINE_ICON
+              : cctv.status === "online"
+                ? ONLINE_ICON_NO_ANIM
+                : OFFLINE_ICON_NO_ANIM
+        }
+        alt={`Kamera CCTV ${cctv.name} - ${cctv.status === "online" ? "Online" : "Offline"}`}
+        eventHandlers={eventHandlers}
+      >
+        <Popup className="map-popup-custom" autoPan={!isVideoActive}>
+          <div className="map-popup-card">
+            <div className="popup-header">
+              <span
+                className={`status-badge ${cctv.status === "online" ? "status-online" : "status-offline"}`}
               >
-                Ubah
+                <span className="pulse-dot"></span>
+                <span>{cctv.status === "online" ? "ONLINE" : "OFFLINE"}</span>
+              </span>
+              <span className="popup-category">
+                <Tag size={10} />
+                <span>{getCategoryLabel(cctv.category)}</span>
+              </span>
+            </div>
+
+            <h3 className="popup-title">{cctv.name}</h3>
+
+            <div className="popup-loc">
+              <MapPin size={10} />
+              <span>
+                {cctv.city}, {cctv.province}
+              </span>
+            </div>
+
+            <p className="popup-desc">{cctv.description}</p>
+
+            <div className="popup-actions-row">
+              <button
+                id={`btn-map-popup-play-${cctv.id}`}
+                className={`btn-primary popup-play-btn ${cctv.status === "offline" ? "disabled" : ""}`}
+                onClick={() => cctv.status === "online" && onSelect(cctv)}
+                disabled={cctv.status === "offline"}
+              >
+                <Play size={10} fill="currentColor" />
+                <span>Pantau Live</span>
               </button>
               <button
-                type="button"
-                className="popup-admin-btn delete-btn"
-                onClick={() => onDelete(cctv.id)}
-                style={{
-                  flex: 1,
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.2)',
-                  color: '#f87171',
-                  fontSize: '0.75rem',
-                  padding: '5px 8px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 600,
-                  transition: 'all 0.2s ease'
-                }}
+                id={`btn-map-popup-fav-${cctv.id}`}
+                className={`popup-fav-btn ${isFavorite ? "active" : ""}`}
+                onClick={() => onToggleFavorite(cctv.id)}
+                title={isFavorite ? "Hapus dari Favorit" : "Tambah ke Favorit"}
+                aria-label={
+                  isFavorite ? "Hapus dari Favorit" : "Tambah ke Favorit"
+                }
               >
-                Hapus
+                <Heart size={14} fill={isFavorite ? "currentColor" : "none"} />
               </button>
             </div>
-          )}
-        </div>
-      </Popup>
-    </Marker>
-  );
-});
 
-CCTVMarker.displayName = 'CCTVMarker';
+            {user && user.email === "planetkapal@gmail.com" && (
+              <div
+                className="popup-admin-actions"
+                style={{
+                  display: "flex",
+                  gap: "6px",
+                  marginTop: "8px",
+                  borderTop: "1px solid rgba(255, 255, 255, 0.05)",
+                  paddingTop: "8px",
+                }}
+              >
+                <button
+                  type="button"
+                  className="popup-admin-btn edit-btn"
+                  onClick={() => onEdit(cctv)}
+                  style={{
+                    flex: 1,
+                    background: "rgba(255, 255, 255, 0.05)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    color: "#e2e8f0",
+                    fontSize: "0.75rem",
+                    padding: "5px 8px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 600,
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  Ubah
+                </button>
+                <button
+                  type="button"
+                  className="popup-admin-btn delete-btn"
+                  onClick={() => onDelete(cctv.id)}
+                  style={{
+                    flex: 1,
+                    background: "rgba(239, 68, 68, 0.1)",
+                    border: "1px solid rgba(239, 68, 68, 0.2)",
+                    color: "#f87171",
+                    fontSize: "0.75rem",
+                    padding: "5px 8px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 600,
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  Hapus
+                </button>
+              </div>
+            )}
+          </div>
+        </Popup>
+      </Marker>
+    );
+  },
+);
+
+CCTVMarker.displayName = "CCTVMarker";
 
 export const LeafletMap: React.FC<LeafletMapProps> = ({
   cctvs,
@@ -2149,14 +2524,17 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   selectedCity,
   user,
   onEditCCTV,
-  onDeleteCCTV
+  onDeleteCCTV,
 }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const [watchingCCTV, setWatchingCCTV] = useState<CCTV | null>(null);
   const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
   const [hoveredCCTV, setHoveredCCTV] = useState<CCTV | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(10);
   const currentZoomRef = useRef(currentZoom);
   useEffect(() => {
@@ -2170,7 +2548,9 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     if (!mapBounds) return cctvs;
     // Pad bounds by 10% to pre-render markers just outside the view for smooth dragging
     const paddedBounds = mapBounds.pad(0.1);
-    const inBounds = cctvs.filter((cctv) => paddedBounds.contains([cctv.lat, cctv.lng]));
+    const inBounds = cctvs.filter((cctv) =>
+      paddedBounds.contains([cctv.lat, cctv.lng]),
+    );
 
     // Thin out markers at low zoom levels to keep the map fast & responsive, especially on mobile
     const maxMarkers = isMobileDevice ? 150 : 250;
@@ -2181,9 +2561,18 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     return inBounds;
   }, [cctvs, mapBounds, currentZoom]);
 
-  const [mapTarget, setMapTarget] = useState<{ lat: number; lng: number; zoom: number; timestamp: number }>(() => {
+  const [mapTarget, setMapTarget] = useState<{
+    lat: number;
+    lng: number;
+    zoom: number;
+    timestamp: number;
+  }>(() => {
     let initialCenter = { lat: -7.1612, lng: 112.6524, zoom: 10 };
-    if (selectedCity && selectedCity !== 'Semua Kota' && cityCenters[selectedCity]) {
+    if (
+      selectedCity &&
+      selectedCity !== "Semua Kota" &&
+      cityCenters[selectedCity]
+    ) {
       initialCenter = cityCenters[selectedCity];
     } else if (selectedProvince && provinceCenters[selectedProvince]) {
       initialCenter = provinceCenters[selectedProvince];
@@ -2209,7 +2598,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
       return;
     }
 
-    if (selectedCity && selectedCity !== 'Semua Kota') {
+    if (selectedCity && selectedCity !== "Semua Kota") {
       const center = cityCenters[selectedCity];
       if (center) {
         setMapTarget({ ...center, timestamp: Date.now() });
@@ -2227,23 +2616,41 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   }, [selectedProvince, selectedCity]);
   // Update map center when a specific CCTV is selected/clicked
   useEffect(() => {
-    console.log('[LeafletMap] selectedCCTV effect. selected:', selectedCCTV?.name, 'user:', user?.email);
+    console.log(
+      "[LeafletMap] selectedCCTV effect. selected:",
+      selectedCCTV?.name,
+      "user:",
+      user?.email,
+    );
     if (selectedCCTV) {
-      if (selectedCCTV.id !== 'bantul-14' && !user) {
-        console.log('[LeafletMap] selectedCCTV is restricted and user is not logged in. Skip autoplay.');
+      if (selectedCCTV.id !== "bantul-14" && !user) {
+        console.log(
+          "[LeafletMap] selectedCCTV is restricted and user is not logged in. Skip autoplay.",
+        );
         return;
       }
-      console.log('[LeafletMap] autoplaying selectedCCTV:', selectedCCTV.name);
-      
+      console.log("[LeafletMap] autoplaying selectedCCTV:", selectedCCTV.name);
+
       // Use direct map instance zoom if ready, fallback to tracked currentZoomRef
-      const activeZoom = mapRef.current ? mapRef.current.getZoom() : currentZoomRef.current;
-      console.log('[LeafletMap] selectedCCTV effect. selected:', selectedCCTV.name, 'activeZoom computed:', activeZoom, 'mapZoom:', mapRef.current?.getZoom(), 'currentZoomRef:', currentZoomRef.current);
-      
+      const activeZoom = mapRef.current
+        ? mapRef.current.getZoom()
+        : currentZoomRef.current;
+      console.log(
+        "[LeafletMap] selectedCCTV effect. selected:",
+        selectedCCTV.name,
+        "activeZoom computed:",
+        activeZoom,
+        "mapZoom:",
+        mapRef.current?.getZoom(),
+        "currentZoomRef:",
+        currentZoomRef.current,
+      );
+
       setMapTarget({
         lat: selectedCCTV.lat,
         lng: selectedCCTV.lng,
         zoom: activeZoom,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
       setWatchingCCTV(selectedCCTV);
     }
@@ -2269,63 +2676,81 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
     onToggleFavoriteRef.current(id);
   }, []);
 
-  const handleHover = React.useCallback((cctv: CCTV | null, pos: { lat: number; lng: number } | null) => {
-    setHoveredCCTV(cctv);
-    setTooltipPos(pos);
-  }, []);
+  const handleHover = React.useCallback(
+    (cctv: CCTV | null, pos: { lat: number; lng: number } | null) => {
+      setHoveredCCTV(cctv);
+      setTooltipPos(pos);
+    },
+    [],
+  );
 
   const handleMarkerClick = React.useCallback((cctv: CCTV) => {
-    const activeZoom = mapRef.current ? mapRef.current.getZoom() : currentZoomRef.current;
+    const activeZoom = mapRef.current
+      ? mapRef.current.getZoom()
+      : currentZoomRef.current;
     setMapTarget({
       lat: cctv.lat,
       lng: cctv.lng,
       zoom: activeZoom,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }, []);
 
-  const handlePantauLive = React.useCallback((cctv: CCTV) => {
-    if (cctv.id !== 'bantul-14' && !user) {
+  const handlePantauLive = React.useCallback(
+    (cctv: CCTV) => {
+      if (cctv.id !== "bantul-14" && !user) {
+        onSelectCCTVRef.current(cctv);
+        return;
+      }
+      setWatchingCCTV(cctv);
       onSelectCCTVRef.current(cctv);
-      return;
-    }
-    setWatchingCCTV(cctv);
-    onSelectCCTVRef.current(cctv);
-  }, [user]);
+    },
+    [user],
+  );
 
   return (
-    <div 
+    <div
       ref={wrapperRef}
-      className={`map-view-wrapper ${watchingCCTV ? 'video-active' : ''} ${isPlayerRotated || isPlayerFullscreen ? 'player-expanded' : ''}`}
+      className={`map-view-wrapper ${watchingCCTV ? "video-active" : ""} ${isPlayerRotated || isPlayerFullscreen ? "player-expanded" : ""}`}
       style={{
-        width: '100%',
-        height: '100%',
-        borderRadius: 'var(--radius-md)',
-        overflow: 'hidden',
-        position: 'relative',
-        zIndex: (isPlayerRotated || isPlayerFullscreen) && watchingCCTV ? 99999 : undefined
+        width: "100%",
+        height: "100%",
+        borderRadius: "var(--radius-md)",
+        overflow: "hidden",
+        position: "relative",
+        zIndex:
+          (isPlayerRotated || isPlayerFullscreen) && watchingCCTV
+            ? 99999
+            : undefined,
       }}
     >
-      <MapContainer 
-        center={[lat, lng]} 
-        zoom={zoom} 
+      <MapContainer
+        center={[lat, lng]}
+        zoom={zoom}
         scrollWheelZoom={true}
         maxZoom={19}
         zoomControl={false}
-        style={{ height: '100%', width: '100%' }}
+        style={{ height: "100%", width: "100%" }}
       >
-        <MapController 
-          lat={lat} 
-          lng={lng} 
-          zoom={zoom} 
+        <MapController
+          lat={lat}
+          lng={lng}
+          zoom={zoom}
           timestamp={mapTarget.timestamp}
           watchingCCTV={watchingCCTV}
           selectedCCTV={selectedCCTV}
           isPlayerFullscreen={isPlayerFullscreen}
           isPlayerRotated={isPlayerRotated}
         />
-        <MapBoundsTracker onBoundsChange={setMapBounds} onZoomChange={setCurrentZoom} />
-        <MapInstanceTracker onMapReady={(map) => { mapRef.current = map; }} />
+        <MapBoundsTracker
+          onBoundsChange={setMapBounds}
+          onZoomChange={setCurrentZoom}
+        />
+        <MapInstanceTracker
+          onMapReady={(map) => {
+            mapRef.current = map;
+          }}
+        />
         <PopupCloser watching={watchingCCTV} />
         <ZoomControl position="bottomright" />
         {/* OpenStreetMap Standard Light TileLayer */}
@@ -2336,7 +2761,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         />
 
         {visibleCCTVs.map((cctv) => (
-          <CCTVMarker 
+          <CCTVMarker
             key={cctv.id}
             cctv={cctv}
             isFavorite={favorites.includes(cctv.id)}
@@ -2356,13 +2781,15 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         {hoveredCCTV && tooltipPos && (
           <Marker
             position={[tooltipPos.lat, tooltipPos.lng]}
-            icon={L.divIcon({ className: 'dummy-tooltip-marker', html: '' })}
+            icon={L.divIcon({ className: "dummy-tooltip-marker", html: "" })}
             interactive={false}
           >
             <Tooltip direction="top" offset={[0, -30]} permanent opacity={0.95}>
               <div className="cctv-map-tooltip">
                 <span className="tooltip-name">{hoveredCCTV.name}</span>
-                <span className="tooltip-loc">{hoveredCCTV.city}, {hoveredCCTV.province}</span>
+                <span className="tooltip-loc">
+                  {hoveredCCTV.city}, {hoveredCCTV.province}
+                </span>
               </div>
             </Tooltip>
           </Marker>
@@ -2370,9 +2797,9 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
       </MapContainer>
 
       {/* Floating video player overlay */}
-      {watchingCCTV && (watchingCCTV.id === 'bantul-14' || user) && (
+      {watchingCCTV && (watchingCCTV.id === "bantul-14" || user) && (
         <div
-          className={`map-video-backdrop ${isPlayerFullscreen || isPlayerRotated ? 'active-fullscreen' : ''}`}
+          className={`map-video-backdrop ${isPlayerFullscreen || isPlayerRotated ? "active-fullscreen" : ""}`}
           onClick={() => {
             setIsPlayerFullscreen(false);
             setIsPlayerRotated(false);

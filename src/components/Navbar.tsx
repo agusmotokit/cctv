@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Menu, LogOut, LogIn, Search, Heart } from 'lucide-react';
-import { type User } from 'firebase/auth';
+import React, { useState, useEffect, useRef } from "react";
+import { Camera, Menu, LogOut, LogIn, Search, Heart } from "lucide-react";
+import { type User } from "firebase/auth";
 
 interface NavbarProps {
   isSidebarCollapsed: boolean;
@@ -10,8 +10,8 @@ interface NavbarProps {
   onLogout: () => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  viewMode: 'map' | 'multiview';
-  setViewMode: (mode: 'map' | 'multiview') => void;
+  viewMode: "map" | "multiview";
+  setViewMode: (mode: "map" | "multiview") => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -23,20 +23,23 @@ export const Navbar: React.FC<NavbarProps> = ({
   searchQuery,
   setSearchQuery,
   viewMode,
-  setViewMode
+  setViewMode,
 }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target as Node)) {
+      if (
+        searchWrapperRef.current &&
+        !searchWrapperRef.current.contains(event.target as Node)
+      ) {
         setIsSearchOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
   return (
@@ -47,7 +50,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="brand-pulse-dot"></span>
         </div>
         <div className="brand-text">
-          <h1>NUSANTARA<span>CCTV</span></h1>
+          <h1>
+            PANTAU<span>CCTV</span>
+          </h1>
           <p>Live Monitoring System</p>
         </div>
       </div>
@@ -57,14 +62,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="navbar-search-wrapper" ref={searchWrapperRef}>
           <button
             id="nav-btn-search-toggle"
-            className={`search-toggle-btn ${isSearchOpen ? 'active' : ''}`}
+            className={`search-toggle-btn ${isSearchOpen ? "active" : ""}`}
             onClick={() => setIsSearchOpen(!isSearchOpen)}
             title="Cari Kamera CCTV"
             aria-label="Cari Kamera CCTV"
           >
             <Search size={16} />
           </button>
-          
+
           {isSearchOpen && (
             <div className="search-popup-dropdown">
               <div className="search-popup-arrow"></div>
@@ -85,24 +90,33 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Favorites Multi-View Toggle */}
         <button
           id="nav-btn-favorites-toggle"
-          className={`favorites-toggle-btn ${viewMode === 'multiview' ? 'active' : ''}`}
-          onClick={() => setViewMode(viewMode === 'map' ? 'multiview' : 'map')}
-          title={viewMode === 'map' ? 'Buka Multi-View Favorit' : 'Kembali ke Peta'}
-          aria-label={viewMode === 'map' ? 'Buka Multi-View Favorit' : 'Kembali ke Peta'}
+          className={`favorites-toggle-btn ${viewMode === "multiview" ? "active" : ""}`}
+          onClick={() => setViewMode(viewMode === "map" ? "multiview" : "map")}
+          title={
+            viewMode === "map" ? "Buka Multi-View Favorit" : "Kembali ke Peta"
+          }
+          aria-label={
+            viewMode === "map" ? "Buka Multi-View Favorit" : "Kembali ke Peta"
+          }
         >
           <Heart size={16} />
         </button>
 
         {user ? (
           <>
-            <span className="user-email-display" title={user.email || undefined}>{user.email}</span>
+            <span
+              className="user-email-display"
+              title={user.email || undefined}
+            >
+              {user.email}
+            </span>
             <button
               id="nav-btn-logout"
               className="nav-action-btn logout-btn"
               onClick={onLogout}
               title="Keluar dari Akun"
             >
-              <LogOut size={14} style={{ marginRight: '6px' }} />
+              <LogOut size={14} style={{ marginRight: "6px" }} />
               <span>Keluar</span>
             </button>
           </>
@@ -113,16 +127,24 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={onAuthClick}
             title="Masuk / Daftar Akun"
           >
-            <LogIn size={14} style={{ marginRight: '6px' }} />
+            <LogIn size={14} style={{ marginRight: "6px" }} />
             <span>Masuk / Daftar</span>
           </button>
         )}
         <button
           id="nav-btn-menu"
-          className={`menu-toggle-btn ${!isSidebarCollapsed ? 'active' : ''}`}
+          className={`menu-toggle-btn ${!isSidebarCollapsed ? "active" : ""}`}
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          title={isSidebarCollapsed ? "Tampilkan Filter Pemantauan" : "Sembunyikan Filter Pemantauan"}
-          aria-label={isSidebarCollapsed ? "Tampilkan Filter Pemantauan" : "Sembunyikan Filter Pemantauan"}
+          title={
+            isSidebarCollapsed
+              ? "Tampilkan Filter Pemantauan"
+              : "Sembunyikan Filter Pemantauan"
+          }
+          aria-label={
+            isSidebarCollapsed
+              ? "Tampilkan Filter Pemantauan"
+              : "Sembunyikan Filter Pemantauan"
+          }
         >
           <Menu className="menu-icon" />
         </button>

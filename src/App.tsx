@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
-import { Navbar } from './components/Navbar';
-import { Sidebar } from './components/Sidebar';
-import { MultiViewDashboard } from './components/MultiViewDashboard';
-import { type CCTV } from './data/cctvData';
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
-import { auth } from './firebase';
-import { AuthModal } from './components/AuthModal';
-import { AdminCctvModal } from './components/AdminCctvModal';
-import { fetchCctvDataSecure } from './utils/apiSecurity';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from "react";
+import { Navbar } from "./components/Navbar";
+import { Sidebar } from "./components/Sidebar";
+import { MultiViewDashboard } from "./components/MultiViewDashboard";
+import { type CCTV } from "./data/cctvData";
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { auth } from "./firebase";
+import { AuthModal } from "./components/AuthModal";
+import { AdminCctvModal } from "./components/AdminCctvModal";
+import { fetchCctvDataSecure } from "./utils/apiSecurity";
 
-const LeafletMap = lazy(() => import('./components/LeafletMap'));
+const LeafletMap = lazy(() => import("./components/LeafletMap"));
 
 export const App: React.FC = () => {
   // CCTV Database state
@@ -25,12 +25,13 @@ export const App: React.FC = () => {
   const [pendingCCTVToPlay, setPendingCCTVToPlay] = useState<CCTV | null>(null);
 
   // Search and Filter States
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedCountry, setSelectedCountry] = useState<string>('Indonesia');
-  const [selectedProvince, setSelectedProvince] = useState<string>('Semua Provinsi');
-  const [selectedCity, setSelectedCity] = useState<string>('Semua Kota');
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedCountry, setSelectedCountry] = useState<string>("Indonesia");
+  const [selectedProvince, setSelectedProvince] =
+    useState<string>("Semua Provinsi");
+  const [selectedCity, setSelectedCity] = useState<string>("Semua Kota");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(true);
-  const [viewMode, setViewMode] = useState<'map' | 'multiview'>('map');
+  const [viewMode, setViewMode] = useState<"map" | "multiview">("map");
 
   // Play Camera Action (Used to center/track active map selection)
   const [playingCCTV, setPlayingCCTV] = useState<CCTV | null>(null);
@@ -51,137 +52,149 @@ export const App: React.FC = () => {
 
   // Fetch CCTV data on mount (with HMAC signature + obfuscated response)
   useEffect(() => {
-    fetchCctvDataSecure('/api/cctvs')
+    fetchCctvDataSecure("/api/cctvs")
       .then((data) => {
         const cctvList = data as CCTV[];
         setCctvs(cctvList);
         setIsLoading(false);
         // Find default CCTV after data loads if nothing is playing yet
-        const defaultCam = cctvList.find(c => c.id === 'bantul-14') || null;
+        const defaultCam = cctvList.find((c) => c.id === "bantul-14") || null;
         setPlayingCCTV(defaultCam);
       })
-      .catch(err => {
-        console.error('Failed to fetch CCTV data:', err);
+      .catch((err) => {
+        console.error("Failed to fetch CCTV data:", err);
         setIsLoading(false);
       });
   }, []);
 
   // Favorites (Stored in LocalStorage)
   const [favorites, setFavorites] = useState<string[]>(() => {
-    const saved = localStorage.getItem('nusantara_cctv_favs');
+    const saved = localStorage.getItem("nusantara_cctv_favs");
     return saved ? JSON.parse(saved) : [];
   });
 
   // History (Stored in LocalStorage)
   const [history, setHistory] = useState<string[]>(() => {
-    const saved = localStorage.getItem('nusantara_cctv_history');
+    const saved = localStorage.getItem("nusantara_cctv_history");
     return saved ? JSON.parse(saved) : [];
   });
 
   // Save favorites to LocalStorage
   useEffect(() => {
-    localStorage.setItem('nusantara_cctv_favs', JSON.stringify(favorites));
+    localStorage.setItem("nusantara_cctv_favs", JSON.stringify(favorites));
   }, [favorites]);
 
   // Save history to LocalStorage
   useEffect(() => {
-    localStorage.setItem('nusantara_cctv_history', JSON.stringify(history));
+    localStorage.setItem("nusantara_cctv_history", JSON.stringify(history));
   }, [history]);
 
   // Filter CCTV logic
   const filteredCCTVs = cctvs.filter((cctv) => {
-    const matchesSearch = 
+    const matchesSearch =
       cctv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       cctv.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
       cctv.province.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCountry = selectedCountry === 'Semua Negara' || selectedCountry === 'Indonesia';
-    const matchesProvince = selectedProvince === 'Semua Provinsi' || cctv.province === selectedProvince;
-    const matchesCity = selectedCity === 'Semua Kota' || cctv.city === selectedCity;
+
+    const matchesCountry =
+      selectedCountry === "Semua Negara" || selectedCountry === "Indonesia";
+    const matchesProvince =
+      selectedProvince === "Semua Provinsi" ||
+      cctv.province === selectedProvince;
+    const matchesCity =
+      selectedCity === "Semua Kota" || cctv.city === selectedCity;
     return matchesCountry && matchesSearch && matchesProvince && matchesCity;
   });
 
   useEffect(() => {
-    console.log('[App DEBUG] Filter state:', {
+    console.log("[App DEBUG] Filter state:", {
       selectedProvince,
       selectedCity,
-      filteredCount: filteredCCTVs.length
+      filteredCount: filteredCCTVs.length,
     });
   }, [selectedProvince, selectedCity, filteredCCTVs.length]);
 
   // Statistics
   const totalCount = cctvs.length;
-  const onlineCount = cctvs.filter(c => c.status === 'online').length;
-  const offlineCount = cctvs.filter(c => c.status === 'offline').length;
+  const onlineCount = cctvs.filter((c) => c.status === "online").length;
+  const offlineCount = cctvs.filter((c) => c.status === "offline").length;
 
   // Toggle Favorite Action
   const toggleFavorite = (id: string) => {
-    setFavorites((prev) => 
-      prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id]
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id],
     );
   };
 
   // Play Camera Action (called when marker is selected)
-  const handlePlayCCTV = useCallback((cctv: CCTV | null) => {
-    console.log('[App] handlePlayCCTV called with:', cctv?.name, 'user:', user?.email);
-    if (cctv && cctv.id !== 'bantul-14' && !user) {
-      console.log('[App] Restricted camera, set pending to:', cctv.name);
-      setPendingCCTVToPlay(cctv);
-      setShowAuthModal(true);
-      return;
-    }
-    console.log('[App] Play camera directly:', cctv?.name);
-    setPlayingCCTV(cctv);
-    
-    if (cctv) {
-      // Add to history (limit to last 4, keep unique)
-      setHistory((prev) => {
-        const filtered = prev.filter(histId => histId !== cctv.id);
-        return [cctv.id, ...filtered].slice(0, 4);
-      });
-    }
-  }, [user]);
+  const handlePlayCCTV = useCallback(
+    (cctv: CCTV | null) => {
+      console.log(
+        "[App] handlePlayCCTV called with:",
+        cctv?.name,
+        "user:",
+        user?.email,
+      );
+      if (cctv && cctv.id !== "bantul-14" && !user) {
+        console.log("[App] Restricted camera, set pending to:", cctv.name);
+        setPendingCCTVToPlay(cctv);
+        setShowAuthModal(true);
+        return;
+      }
+      console.log("[App] Play camera directly:", cctv?.name);
+      setPlayingCCTV(cctv);
 
-
+      if (cctv) {
+        // Add to history (limit to last 4, keep unique)
+        setHistory((prev) => {
+          const filtered = prev.filter((histId) => histId !== cctv.id);
+          return [cctv.id, ...filtered].slice(0, 4);
+        });
+      }
+    },
+    [user],
+  );
 
   // Auth & CRUD handlers
   const handleLogout = async () => {
     try {
       await signOut(auth);
     } catch (err) {
-      console.error('Logout error:', err);
+      console.error("Logout error:", err);
     }
   };
 
-  const handleSaveCCTV = async (cctvDataToSave: Omit<CCTV, 'id'> & { id?: string }) => {
+  const handleSaveCCTV = async (
+    cctvDataToSave: Omit<CCTV, "id"> & { id?: string },
+  ) => {
     if (!token) {
-      throw new Error('Anda harus login terlebih dahulu.');
+      throw new Error("Anda harus login terlebih dahulu.");
     }
 
     const isEditing = !!cctvDataToSave.id;
-    const url = isEditing ? `/api/cctvs/${cctvDataToSave.id}` : '/api/cctvs';
-    const method = isEditing ? 'PUT' : 'POST';
+    const url = isEditing ? `/api/cctvs/${cctvDataToSave.id}` : "/api/cctvs";
+    const method = isEditing ? "PUT" : "POST";
 
     const res = await fetch(url, {
       method,
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(cctvDataToSave)
+      body: JSON.stringify(cctvDataToSave),
     });
 
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.message || 'Gagal menyimpan data CCTV.');
+      throw new Error(errData.message || "Gagal menyimpan data CCTV.");
     }
 
     const savedCCTV = await res.json();
-    
+
     // Update local state cctvs
-    setCctvs(prev => {
+    setCctvs((prev) => {
       if (isEditing) {
-        return prev.map(c => c.id === savedCCTV.id ? savedCCTV : c);
+        return prev.map((c) => (c.id === savedCCTV.id ? savedCCTV : c));
       } else {
         return [...prev, savedCCTV];
       }
@@ -195,29 +208,29 @@ export const App: React.FC = () => {
 
   const handleDeleteCCTV = async (cctvId: string) => {
     if (!token) {
-      alert('Anda harus login terlebih dahulu.');
+      alert("Anda harus login terlebih dahulu.");
       return;
     }
 
-    if (!window.confirm('Apakah Anda yakin ingin menghapus kamera CCTV ini?')) {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus kamera CCTV ini?")) {
       return;
     }
 
     const res = await fetch(`/api/cctvs/${cctvId}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      alert(errData.message || 'Gagal menghapus data CCTV.');
+      alert(errData.message || "Gagal menghapus data CCTV.");
       return;
     }
 
     // Update local state
-    setCctvs(prev => prev.filter(c => c.id !== cctvId));
+    setCctvs((prev) => prev.filter((c) => c.id !== cctvId));
 
     if (playingCCTV && playingCCTV.id === cctvId) {
       setPlayingCCTV(null);
@@ -239,14 +252,25 @@ export const App: React.FC = () => {
       <div className="app-loading-screen">
         <div className="premium-spinner-container">
           <div className="pulsing-logo">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="#0066ff"/>
+            <svg
+              width="64"
+              height="64"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z"
+                fill="#0066ff"
+              />
             </svg>
           </div>
           <div className="spinner-progress-bar">
             <div className="progress-fill"></div>
           </div>
-          <span className="loading-text">Menghubungkan ke Server CCTV Nusantara...</span>
+          <span className="loading-text">
+            Menghubungkan ke Server CCTV Pantau...
+          </span>
         </div>
         <style>{`
           .app-loading-screen {
@@ -319,20 +343,22 @@ export const App: React.FC = () => {
 
       <main className="main-content">
         <div className="view-workspace">
-          {viewMode === 'multiview' ? (
+          {viewMode === "multiview" ? (
             <MultiViewDashboard
               cctvs={cctvs}
               favorites={favorites}
-              onBackToMap={() => setViewMode('map')}
+              onBackToMap={() => setViewMode("map")}
             />
           ) : (
             <div className="map-layout">
-              <Suspense fallback={
-                <div className="map-loading-placeholder">
-                  <div className="spinner"></div>
-                  <span>Memuat Peta Pemantauan...</span>
-                </div>
-              }>
+              <Suspense
+                fallback={
+                  <div className="map-loading-placeholder">
+                    <div className="spinner"></div>
+                    <span>Memuat Peta Pemantauan...</span>
+                  </div>
+                }
+              >
                 <LeafletMap
                   cctvs={filteredCCTVs}
                   onSelectCCTV={handlePlayCCTV}
@@ -371,16 +397,19 @@ export const App: React.FC = () => {
       <AuthModal
         isOpen={showAuthModal}
         onClose={(loginSuccess) => {
-          console.log('[App] AuthModal onClose called. success:', loginSuccess);
+          console.log("[App] AuthModal onClose called. success:", loginSuccess);
           setShowAuthModal(false);
           if (loginSuccess) {
             if (pendingCCTVToPlay) {
-              console.log('[App] Redirecting playingCCTV to pending:', pendingCCTVToPlay.name);
+              console.log(
+                "[App] Redirecting playingCCTV to pending:",
+                pendingCCTVToPlay.name,
+              );
               setPlayingCCTV(pendingCCTVToPlay);
               setPendingCCTVToPlay(null);
             }
           } else {
-            console.log('[App] Clearing pending CCTV');
+            console.log("[App] Clearing pending CCTV");
             setPendingCCTVToPlay(null);
           }
         }}
